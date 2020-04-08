@@ -1,15 +1,34 @@
 const chalk = require('chalk');
 const commandLineArgs = require('command-line-args');
+const commandLineUsage = require('command-line-usage');
 const csv = require('csv-parser');
 const fs = require('fs');
 const optionDefinitions = [
-  { name: 'src', alias: 's', type: String, defaultOption: true },
-  { name: 'min', type: Number },
-  { name: 'max', type: Number },
-  { name: 'out', alias: 'o', type: String },
-  { name: 'pretty', alias: 'p', type: Boolean },
-  { name: 'quiet', alias: 'q', type: Boolean },
+  { name: 'src', alias: 's', type: String, defaultOption: true, description: '(REQUIRED) Source CSV input file; see sample.csv' },
+  { name: 'min', type: Number, description: 'Lowest application ID to process, inclusive (default 0).' },
+  { name: 'max', type: Number, description: 'Highest application ID to process, inclusive (default ∞).' },
+  { name: 'out', alias: 'o', type: String, description: 'Path to output file; suggest naming like ola_datas_0-500.txt' },
+  { name: 'pretty', alias: 'p', type: Boolean, description: 'Format JSON nicely on screen (does not effect JSON lines in output file).' },
+  { name: 'quiet', alias: 'q', type: Boolean, description: 'Do not print JSON to screen.' },
 ];
+
+function printUsage() {
+  const usage = commandLineUsage([
+    {
+      header: 'CRM Input Constructor',
+      content: 'This takes grant data from a CSV input file and outputs corresponding single-line JSON objects for feeding to new OLA Datas records (JSON goes in the Application Data field; applicatoin ID goes in both the Name and Application ID fields; products_selected must be "Covid Small Business Emergency Assistance Grant"'
+    },
+    {
+      header: 'Options',
+      optionList: optionDefinitions,
+    },
+    {
+      content: 'Example: npm start sample.csv -- -p'
+    }
+  ])
+
+  console.log(usage);
+}
 
 function main() {
   const options = commandLineArgs(optionDefinitions);
@@ -20,10 +39,7 @@ function main() {
   if (options.src) {
     console.log(chalk.bold(`Generating OLA Datas creation JSON for applications ${options.min || 0} through ${options.max ? options.max : '∞'} (inclusive) from ${options.src}${options.out ? ' to ' + options.out : ''}\n`));
   } else {
-    console.log(chalk.bold(`Usage: npm start <path to CSV> [-- --pretty --min=<appnum> --max=[appnum] --out=ola_datas.txt\n`));
-    console.log('Example:\n');
-    console.log('    npm start first-100.csv -- --min=25 --max=27 -po ola_datas.txt\n');
-    console.log('Would generate 3 lines of JSON, corresponding to applications CV19G25, CV19G26, CV19G27.\n');
+    printUsage();
     return;
   }
 
