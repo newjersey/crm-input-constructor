@@ -1,0 +1,22 @@
+{
+  "name": "crm-input-constructor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^4.0.0",
+    "command-line-args": "^5.1.1",
+    "csv-parser": "^2.3.2"
+  },
+  "devDependencies": {
+    "husky": "^4.2.3",
+    "prettier": "^2.0.4",
+    "pretty-quick": "^2.0.1"
+  }
+}
