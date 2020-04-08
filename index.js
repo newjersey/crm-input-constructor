@@ -159,6 +159,14 @@ function productSubStatusId(application) {
   throw new Error('Unexpected state in productSubStatusId');
 }
 
+function getAmount(application) {
+  const value = parseInt(application['Potential Award Size'].replace(/\D/g, ''), 10);
+  return value ? {
+    "Value": value,
+    "ExtensionData": null
+  } : null;
+}
+
 function monitoringStatus(application) {
   // If Approved: Completed
   // If Exception: In Planning
@@ -265,10 +273,7 @@ function generateObject(application) {
       "DevelopmentOfficer": "",
       "ServicingOfficerId": servicingOfficerId(application),
       "AppReceivedDate": formatDate(new Date(application.Entry_DateSubmitted)),
-      "Amount": {
-        "Value": parseInt(application['Potential Award Size'].replace(/\D/g, ''), 10),
-        "ExtensionData": null
-      },
+      "Amount": getAmount(application),
       "nol_total_NOL_benefit": null,
       "nol_total_RD_benefit": null,
       "benefit_allocation_factor": null,
