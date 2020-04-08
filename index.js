@@ -15,9 +15,10 @@ function main() {
   const options = commandLineArgs(optionDefinitions);
   const writeStream = options.out && fs.createWriteStream(options.out);
   const errors = [];
+  let n = 0;
 
-  if (options.src && options.min && options.max) {
-    console.log(chalk.bold(`Generating OLA Datas creation JSON for applications ${options.min} through ${options.max} (inclusive) from ${options.src}${options.out ? ' to ' + options.out : ''}\n`));
+  if (options.src) {
+    console.log(chalk.bold(`Generating OLA Datas creation JSON for applications ${options.min || 0} through ${options.max ? options.max : '∞'} (inclusive) from ${options.src}${options.out ? ' to ' + options.out : ''}\n`));
   } else {
     console.log(chalk.bold(`Usage: npm start <path to CSV> [-- --pretty --min=<appnum> --max=[appnum] --out=ola_datas.txt\n`));
     console.log('Example:\n');
@@ -42,6 +43,8 @@ function main() {
           if (writeStream) {
             writeStream.write(json + '\n');
           }
+
+          n++;
         } catch (e) {
           errors.push(e);
         }
@@ -53,9 +56,9 @@ function main() {
       }
 
       if (errors.length) {
-        console.log(chalk.bold.red('\nFinished with errors:', errors))
+        console.log(chalk.bold.red(`\n${n} generated succesfully, ${errors.length} others had errors:`, errors))
       } else {
-        console.log(chalk.bold('\nFinished successfully.'));
+        console.log(chalk.bold(`\n${n} records generated successfully.`));
       }
     });
 }
@@ -111,10 +114,11 @@ function taxClearance(status) {
   }
 }
 
-function appReceivedDate(application) {
-  let date = new Date(application.Entry_DateSubmitted);
+// given a string to parse, return milliseconds only for the day part (not time)
+function formatDate(date) {
   date.setHours(0, 0, 0, 0);
-  return date.getTime();
+
+  return `\/Date(${date.getTime()})\/`
 }
 
 function productStatusId(application) {
@@ -244,7 +248,7 @@ function generateObject(application) {
     "Product": {
       "DevelopmentOfficer": "",
       "ServicingOfficerId": servicingOfficerId(application),
-      "AppReceivedDate": `\/Date(${appReceivedDate(application)})\/`,
+      "AppReceivedDate": formatDate(new Date(application.Entry_DateSubmitted)),
       "Amount": {
         "Value": parseInt(application['Potential Award Size'].replace(/\D/g, ''), 10),
         "ExtensionData": null
@@ -426,7 +430,8 @@ function generateObject(application) {
     "Monitoring": {
       "Status": monitoringStatus(application),
       "MonitoringType": monitoringType(application),
-      "Findings": monitoringFindings(application)
+      "Findings": monitoringFindings(application),
+      "CompletionDate": bool(application['MANUAL REVIEW']) ? null : formatDate(new Date()),
     }
   }
 }
