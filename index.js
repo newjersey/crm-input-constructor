@@ -40,7 +40,7 @@ function main() {
           }
 
           if (writeStream) {
-            writeStream.write(json);
+            writeStream.write(json + '\n');
           }
         } catch (e) {
           errors.push(e);
