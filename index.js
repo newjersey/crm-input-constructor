@@ -46,8 +46,8 @@ function main() {
   fs.createReadStream(options.src)
     .pipe(csv())
     .on('data', (row) => {
-      if ((!options.min || parseInt(row.__AppNum__) >= options.min) &&
-          (!options.max || parseInt(row.__AppNum__) <= options.max)) {
+      if ((!options.min || parseInt(row.appId) >= parseInt(options.min)) &&
+          (!options.max || parseInt(row.appId) <= parseInt(options.max))) {
         try {
           const data = generateObject(row);
           const json = JSON.stringify(data);
@@ -72,7 +72,8 @@ function main() {
       }
 
       if (errors.length) {
-        console.log(chalk.bold.red(`\n${n} generated succesfully, ${errors.length} others had errors:`, errors))
+        console.log(chalk.bold.red(`\n${n} generated succesfully, ${errors.length} others had errors:`));
+        errors.forEach(e => console.log(e));
       } else {
         console.log(chalk.bold(`\n${n} records generated successfully.`));
       }
@@ -292,8 +293,8 @@ function generateObject(application) {
       "jobTitle": "",
       "address1": application.ContactInformation_BusinessAddress_Line1,
       "address2": application.ContactInformation_BusinessAddress_Line2,
-      "city": application.ContactInformation_BusinessAddress_City, // TODO pull from list?
-      "zipcode": application.ContactInformation_ZipFirst5,
+      "city": application.normalized_city.trim(),
+      "zipcode": application.ContactInformation_ZipFirst5.padStart(5, '0'),
       "telephone": application.ContactInformation_Phone.split('x')[0].replace(/\D/g, ''),
       "telephoneExt": application.ContactInformation_Phone.split('x')[1] || null,
       "email": application.ContactInformation_Email,
@@ -375,7 +376,7 @@ function generateObject(application) {
         "Value": 0,
         "ExtensionData": null
       },
-      "applicationID": `CV19G${application.__AppNum__}`,
+      "applicationID": `CV19G${application.appId}`,
       "selectedProducts": "Covid Small Business Emergency Assistance Grant",
       "ReceivedPreiousFundingFromEDA": "",
       "ReceivedPreiousFundingFromOtherthanEDA": "",
@@ -430,16 +431,16 @@ function generateObject(application) {
       "isStartup": false,
       "address1Line1": application.ContactInformation_BusinessAddress_Line1,
       "address1Line2": application.ContactInformation_BusinessAddress_Line2,
-      "address1City": application.localname.trim(), // application.ContactInformation_BusinessAddress_City, // TODO lookup?
-      "address1Zip": application.ContactInformation_ZipFirst5,
+      "address1City": application.normalized_city.trim(),
+      "address1Zip": application.ContactInformation_ZipFirst5.padStart(5, '0'),
       "address1State": "NJ", // will always be NJ per input form
-      "address1County": application.county.trim(), // TODO fuzzy match to get these right
-      "address1Municipality": application.incmunc.trim(), // TODO fuzzy match to get these right
-      "block": "", // TODO lookup
-      "lot": "", // TODO lookup
-      "congressionalDistrict": application.congdist.trim(), // TODO lookup
-      "legislativeDistrict": application.legdist.trim(), // TODO lookup
-      "censusTract": "", // TODO lookup
+      "address1County": application.county.trim(),
+      "address1Municipality": application.incmunc.trim(),
+      "block": "",
+      "lot": "",
+      "congressionalDistrict": application.congdist.trim(),
+      "legislativeDistrict": application.legdist.trim(),
+      "censusTract": "",
       "Comments": `Home-Based Business: ${application.BusinessDetails_HomeBasedBusiness}`,
     },
     "FeeRequest": {
