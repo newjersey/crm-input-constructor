@@ -5,14 +5,15 @@ from csv import reader
 # usage
 if len(sys.argv) != 4:
   print("Usage:", sys.argv[0], "<csv1> <csv2> <out>")
-  print("csvA", sys.argv[1])
-  print("csvB", sys.argv[2])
-  print("out", sys.argv[3])
   sys.exit(2)
 
 csvA = sys.argv[1]
 csvB = sys.argv[2]
 out = sys.argv[3]
+
+print("csvA", csvA)
+print("csvB", csvB)
+print("out", out)
 
 # Open the input_file in read mode and output_file in write mode
 with open(out, 'w') as write_obj, \
