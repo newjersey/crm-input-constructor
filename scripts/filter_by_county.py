@@ -4,7 +4,7 @@ from csv import reader
 
 # application counts, not application IDs
 MIN = 0
-MAX = 10000
+MAX = 9999999
 
 # usage
 if len(sys.argv) != 4:
@@ -34,7 +34,7 @@ with open(out, 'w') as write_obj, \
         if i == 0:
             county_index = row.index("county") # lower-case is the good one (from fuzzy match geo script)
             csv_writer.writerow(row)
-        elif row[county_index] == county and i >= MIN and i <= MAX:
+        elif row[county_index].strip() == county.strip() and i >= MIN and i <= MAX:
             # Add the row / list to the output file
             csv_writer.writerow(row)
             n += 1
