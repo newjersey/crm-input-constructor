@@ -190,7 +190,6 @@ function printUsage() {
 
 function main() {
   const options = commandLineArgs(optionDefinitions);
-  const writeStream = options.out && fs.createWriteStream(options.out);
   const errors = [];
 
   if (options.src) {
@@ -238,6 +237,12 @@ function main() {
   });
 
   const json = JSON.stringify(data);
+
+  if (options.out) {
+    fs.writeFile(options.out, json, function () {
+      console.log(`Output written to ${chalk.blue(options.out)}`);
+    });
+  }
 
   if (!options.quiet) {
     console.log(options.pretty ? data : json);
