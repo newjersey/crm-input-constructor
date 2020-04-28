@@ -23,7 +23,7 @@ function printUsage() {
       optionList: optionDefinitions,
     },
     {
-      content: 'Example: npm start sample.csv -- -p'
+      content: 'Example: npm run grants grants/sample.csv -- -p'
     }
   ])
 
@@ -224,8 +224,12 @@ function monitoringFindings(application) {
     { trigger: 'EIN Missing from DOL and Taxation', language: `EIN is missing from both DOL and Taxation.` },
     { trigger: 'DOL UI No-Go', language: `Applicant is on the DOL UI no-go list.` },
     { trigger: 'DOL WHD No-Go', language: `Applicant is on the DOL WHD no-go list.` },
+    // revenues > $5M
+    // if not >= 1 owner w/ 600+ FICO
+    //
 
     // MANUAL REVIEW
+    // taxation issue
     { trigger: 'Dup EIN', language: `EIN was found in more than one application.` },
     { trigger: 'Dup Address', language: `Business address was found in more than one application.` },
     { trigger: 'Home Based == Commercial Location', language: `Applicant specified "${application.ContactInformation_CommercialLocation}" to having a commercial location but "${application.BusinessDetails_HomeBasedBusiness}" to being a home-based business.` },
