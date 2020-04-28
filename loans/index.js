@@ -6,6 +6,8 @@ const XLSX = require('xlsx');
 const { getJsDateFromExcel } = require('excel-date-to-js');
 const { utcToZonedTime, zonedTimeToUtc } = require('date-fns-tz');
 
+const grantEins = fs.readFileSync('loans/grant-eins.json');
+const GRANT_EINS = JSON.parse(grantEins);
 const US_STATES = {
   ALABAMA: 'AL',
   AL: 'AL',
@@ -208,7 +210,7 @@ function main() {
 
   const workbook = XLSX.readFile(options.src, {
     type: 'file',
-    sheets: ['LoanApplication'],
+    sheets: ['LoanApplication', 'ProposedUseOfLoanProceeds'],
   });
 
   const sheet = XLSX.utils
@@ -217,6 +219,11 @@ function main() {
     .sort((a, b) => a.Entry_DateSubmitted - b.Entry_DateSubmitted)
     .slice(options.skip, options.count && options.count + (options.skip || 0));
 
+  const useOfFundSheet = XLSX.utils.sheet_to_json(
+    workbook.Sheets['ProposedUseOfLoanProceeds'],
+    { defval: null }
+  );
+console.log(useOfFundSheet);
   const n = sheet.length;
   const cum = sheet
     .map(application => application.LoanAmountRequested)
@@ -226,7 +233,7 @@ function main() {
     try {
       return generateObject(decorate(application));
     } catch (e) {
-      errors.push(e);
+      errors.push(application, e);
     }
   });
 
@@ -265,33 +272,6 @@ function bool(yesNo) {
 
 function decorate(application) {
   return application;
-}
-
-let reviewersAssigned = 0;
-function servicingOfficerId(application) {
-  const RICHARD_TORO = '{834023BA-3ED6-E811-811B-1458D04E2F10}';
-  const reviewers = [
-    '{B59042A9-D571-EA11-A811-001DD8018943}',
-    '{DD23D309-E8F0-E911-A994-001DD800951B}',
-    '{2EC826BD-D871-EA11-A811-001DD8018943}',
-    '{B0458690-F377-E911-A974-001DD80081AD}',
-    '{03F90D62-DA71-EA11-A811-001DD8018943}',
-    '{9176B59B-DB71-EA11-A811-001DD8018943}',
-    // 834023BA-3ED6-E811-811B-1458D04E2F10
-    '{3E7536E2-DD71-EA11-A811-001DD8018943}',
-  ];
-
-  if (bool(application['CLEAR'])) {
-    return RICHARD_TORO;
-  }
-  if (bool(application['MANUAL REVIEW'])) {
-    return reviewers[reviewersAssigned++ % reviewers.length];
-  }
-  if (bool(application['IMMEDIATE DECLINE'])) {
-    return RICHARD_TORO;
-  }
-
-  throw new Error('Unexpected state in servicingOfficerId');
 }
 
 function taxClearance(status) {
@@ -346,19 +326,6 @@ function productSubStatusId(application) {
   }
 
   throw new Error('Unexpected state in productSubStatusId');
-}
-
-function getAmount(application) {
-  const value = parseInt(
-    application['Potential Award Size'].replace(/\D/g, ''),
-    10
-  );
-  return value
-    ? {
-        Value: value,
-        ExtensionData: null,
-      }
-    : null;
 }
 
 function monitoringStatus(application) {
@@ -561,15 +528,29 @@ function usStateCode(input) {
   if (
     input.trim().match(/(?:jersey)|(?:nj)/i) ||
     [
-      'Atlantic',
-      'Bergen',
-      'Burlington',
-      'Hudson',
-      'Monmouth',
-      'Ocean',
-      'Somerset',
-      'Primary residence',
-    ].includes(input)
+      '- PLEASE CHOOSE -',
+      '`',
+      '017',
+      'ATLANTIC',
+      'BERGEN',
+      'BUILDING',
+      'BURLINGTON',
+      'CHOOSE ONE',
+      'GLOUCESTER',
+      'HUDSON',
+      'HUNTERDON',
+      'MERCER',
+      'MIDDLESEX',
+      'MONMOUTH',
+      'MORRIS',
+      'N',
+      'OCEAN',
+      'PASSAIC',
+      'PRIMARY RESIDENCE',
+      'SOMERSET',
+      'SUSSEX',
+      'UNION',
+    ].includes(input.trim().toUpperCase())
   ) {
     return 'NJ';
   }
@@ -682,9 +663,11 @@ function generateObject(application) {
       ownershipStructure: ownershipStructure(
         application.Organization_EntityType
       ),
-      applicantBackground: '',
-      headquarterState: '',
-      headquarterCountry: '',
+      applicantBackground: `${application.Organization_EntityType} in ${application.Business_Services}: ${application.NAICSCodeInfo_Industry_Label}`,
+      headquarterState: usStateCode(
+        application.Organization_PhysicalAddress_State
+      ),
+      headquarterCountry: application.Organization_PhysicalAddress_Country,
       landAcquisitions: null,
       newBldgConstruction: null,
       acquisitionExistingBuilding: null,
@@ -726,21 +709,21 @@ function generateObject(application) {
         ExtensionData: null,
       },
       otherCost1: {
-        Value: 10000,
+        Value: 10000, // TODO
         ExtensionData: null,
       },
       otherCost2: {
-        Value: 20000,
+        Value: 20000, // TODO
         ExtensionData: null,
       },
       otherCost3: {
-        Value: 70000,
+        Value: 70000, // TODO
         ExtensionData: null,
       },
-      otherCost1Description: 'Payroll: 10000',
-      otherCost2Description: 'Rent: 5000 & Mortgage: 15000',
+      otherCost1Description: 'Payroll: 10000', // TODO
+      otherCost2Description: 'Rent: 5000 & Mortgage: 15000', // TODO
       otherCost3Description:
-        'Taxes: 20,000, Utilites: 10,000, Inventory: 10,000, Other Cost: 30,000',
+        'Taxes: 20,000, Utilites: 10,000, Inventory: 10,000, Other Cost: 30,000', // TODO
       counselFirmName: '',
       counselFirstName: '',
       counselLastName: '',
@@ -762,16 +745,22 @@ function generateObject(application) {
       accountantPhoneNumber: '',
       accountantEmailAddress: '',
       totalCost: {
-        Value: 100000,
+        Value: application.TotalFundsNeeded,
         ExtensionData: null,
       },
-      applicationID: 'CV19L05',
+      applicationID: `CV19L${application.LoanApplication_Id}`,
       selectedProducts: 'Covid Small Business Emergency Assistance Loan',
-      ReceivedPreiousFundingFromEDA: 'Not received from EDA',
+      ReceivedPreiousFundingFromEDA: `CVSBGR: ${yesNo(
+        GRANT_EINS.includes(application.Organization_EIN.replace(/\D/g, ''))
+      )}, other NJEDA: ${
+        application.OrganizationDetails_PreviousEDAAssistance
+      }`,
       ReceivedPreiousFundingFromOtherthanEDA: '',
       TotalFullTimeEligibleJobs: '',
-      NJFullTimeJobsAtapplication: '20',
-      PartTimeJobsAtapplication: '80',
+      NJFullTimeJobsAtapplication:
+        application.OrganizationDetails_FullTimeEmployeesW2,
+      PartTimeJobsAtapplication:
+        application.OrganizationDetails_PartTimeEmployeesW2,
       softCosts: {
         Value: 0,
         ExtensionData: null,
@@ -818,18 +807,20 @@ function generateObject(application) {
       isRelocation: null,
       isExpansion: null,
       isStartup: false,
-      address1Line1: '36 West State Street',
-      address1Line2: '',
-      address1City: 'Trenton City',
-      address1Zip: '08608',
-      address1State: 'NJ',
-      address1County: '',
-      address1Municipality: '',
-      address1Country: '',
+      address1Line1: application.Organization_PhysicalAddress_Line1.trim(),
+      address1Line2: application.Organization_PhysicalAddress_Line2.trim(),
+      address1City: application.Organization_PhysicalAddress_City.trim(),
+      address1Zip: application.Organization_Geography_ZipCodeFirst5.trim(),
+      address1State: usStateCode(
+        application.Organization_PhysicalAddress_State
+      ),
+      address1County: '', // TODO
+      address1Municipality: '', // TODO
+      address1Country: application.Organization_PhysicalAddress_Country,
       block: '',
       lot: '',
-      congressionalDistrict: '',
-      legislativeDistrict: '',
+      congressionalDistrict: '', // TODO
+      legislativeDistrict: '', // TODO
       censusTract: '',
       Comments: 'Not Home-Based Business',
     },
@@ -840,15 +831,16 @@ function generateObject(application) {
       productFeeAmount: null,
     },
     Monitoring: {
-      Status: 'In Planning',
-      MonitoringType: 'Desk Review',
-      Findings: 'No Issues from Application',
-      CompletionDate: '/Date(1583125200000)/',
-      GeneralComments: 'OtherWorkers (1099,seasonal,PEO): 30',
+      Status: 'In Planning', // TODO
+      MonitoringType: 'Desk Review', // TODO
+      Findings: 'No Issues from Application', // TODO
+      CompletionDate: formatDate(application.Entry_DateSubmitted),
+      GeneralComments: `Other Workers (1099, seasonal, PEO): ${application.OrganizationDetails_AllOtherWorkers1099SeasonalPEOEtc}`,
     },
   };
 }
 
+/*
 function generateObject_OLD(application) {
   return {
     Account: {
@@ -1056,5 +1048,6 @@ function generateObject_OLD(application) {
     },
   };
 }
+*/
 
 main();
