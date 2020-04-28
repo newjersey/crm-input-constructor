@@ -6,6 +6,126 @@ const XLSX = require('xlsx');
 const { getJsDateFromExcel } = require('excel-date-to-js');
 const { utcToZonedTime, zonedTimeToUtc } = require('date-fns-tz');
 
+const US_STATES = {
+  ALABAMA: 'AL',
+  AL: 'AL',
+  ALASKA: 'AK',
+  AK: 'AK',
+  ARIZONA: 'AZ',
+  AZ: 'AZ',
+  ARKANSAS: 'AR',
+  AR: 'AR',
+  CALIFORNIA: 'CA',
+  CA: 'CA',
+  COLORADO: 'CO',
+  CO: 'CO',
+  CONNECTICUT: 'CT',
+  CT: 'CT',
+  DELAWARE: 'DE',
+  DE: 'DE',
+  FLORIDA: 'FL',
+  FL: 'FL',
+  GEORGIA: 'GA',
+  GA: 'GA',
+  HAWAII: 'HI',
+  HI: 'HI',
+  IDAHO: 'ID',
+  ID: 'ID',
+  ILLINOIS: 'IL',
+  IL: 'IL',
+  INDIANA: 'IN',
+  IN: 'IN',
+  IOWA: 'IA',
+  IA: 'IA',
+  KANSAS: 'KS',
+  KS: 'KS',
+  KENTUCKY: 'KY',
+  KY: 'KY',
+  LOUISIANA: 'LA',
+  LA: 'LA',
+  MAINE: 'ME',
+  ME: 'ME',
+  MARYLAND: 'MD',
+  MD: 'MD',
+  MASSACHUSETTS: 'MA',
+  MA: 'MA',
+  MICHIGAN: 'MI',
+  MI: 'MI',
+  MINNESOTA: 'MN',
+  MN: 'MN',
+  MISSISSIPPI: 'MS',
+  MS: 'MS',
+  MISSOURI: 'MO',
+  MO: 'MO',
+  MONTANA: 'MT',
+  MT: 'MT',
+  NEBRASKA: 'NE',
+  NE: 'NE',
+  NEVADA: 'NV',
+  NV: 'NV',
+  'NEW HAMPSHIRE': 'NH',
+  NH: 'NH',
+  'NEW JERSEY': 'NJ',
+  NJ: 'NJ',
+  NJ: 'NJ',
+  'NEW MEXICO': 'NM',
+  NM: 'NM',
+  'NEW YORK': 'NY',
+  NY: 'NY',
+  'NORTH CAROLINA': 'NC',
+  NC: 'NC',
+  'NORTH DAKOTA': 'ND',
+  ND: 'ND',
+  OHIO: 'OH',
+  OH: 'OH',
+  OKLAHOMA: 'OK',
+  OK: 'OK',
+  OREGON: 'OR',
+  OR: 'OR',
+  PENNSYLVANIA: 'PA',
+  PA: 'PA',
+  'RHODE ISLAND': 'RI',
+  RI: 'RI',
+  'SOUTH CAROLINA': 'SC',
+  SC: 'SC',
+  'SOUTH DAKOTA': 'SD',
+  SD: 'SD',
+  TENNESSEE: 'TN',
+  TN: 'TN',
+  TEXAS: 'TX',
+  TX: 'TX',
+  UTAH: 'UT',
+  UT: 'UT',
+  VERMONT: 'VT',
+  VT: 'VT',
+  VIRGINIA: 'VA',
+  VA: 'VA',
+  WASHINGTON: 'WA',
+  WA: 'WA',
+  'WEST VIRGINIA': 'WV',
+  WV: 'WV',
+  WISCONSIN: 'WI',
+  WI: 'WI',
+  WYOMING: 'WY',
+  WY: 'WY',
+  'DISTRICT OF COLUMBIA': 'DC',
+  DC: 'DC',
+  'MARSHALL ISLANDS': 'MH',
+  MH: 'MH',
+  'ARMED FORCES AFRICA': 'AE',
+  AE: 'AE',
+  'ARMED FORCES AMERICAS': 'AA',
+  AA: 'AA',
+  'ARMED FORCES CANADA': 'AE',
+  AE: 'AE',
+  'ARMED FORCES EUROPE': 'AE',
+  AE: 'AE',
+  'ARMED FORCES MIDDLE EAST': 'AE',
+  AE: 'AE',
+  'ARMED FORCES PACIFIC': 'AP',
+  AP: 'AP',
+};
+
 const optionDefinitions = [
   {
     name: 'src',
@@ -79,7 +199,7 @@ function main() {
         options.skip || 0
       )}, from ${chalk.blue(options.src)}${
         options.out ? chalk.blue(' to ' + options.out) : ''
-      }\n`
+      }${options.quiet || '\n'}`
     );
   } else {
     printUsage();
@@ -104,7 +224,7 @@ function main() {
 
   const data = sheet.map(application => {
     try {
-      return generateObject(application);
+      return generateObject(decorate(application));
     } catch (e) {
       errors.push(e);
     }
@@ -141,6 +261,10 @@ function bool(yesNo) {
     default:
       throw new Error(`Cannot convert to boolean: ${yesNo}`);
   }
+}
+
+function decorate(application) {
+  return application;
 }
 
 let reviewersAssigned = 0;
@@ -433,73 +557,131 @@ function monitoringFindings(application) {
     : '';
 }
 
+function usStateCode(input) {
+  if (
+    input.trim().match(/(?:jersey)|(?:nj)/i) ||
+    [
+      'Atlantic',
+      'Bergen',
+      'Burlington',
+      'Hudson',
+      'Monmouth',
+      'Ocean',
+      'Somerset',
+      'Primary residence',
+    ].includes(input)
+  ) {
+    return 'NJ';
+  }
+
+  const code = US_STATES[input.trim().toUpperCase()];
+
+  if (!code) {
+    throw Error(`Unknown US state: ${input}`);
+  }
+
+  return code;
+}
+
+function yesNo(bool) {
+  return bool ? 'Yes' : 'No';
+}
+
+function ownershipStructure(input) {
+  const result = {
+    'Limited Liability Corporation (LLC)': 'Limited Liability Corporation',
+    'C Corporation': 'C Corporation',
+    'Subchapter S Corporation': 'S Corporation',
+    'Sole Proprietership': 'Sole Proprietorship',
+    Partnership: 'Partnership',
+    'Other (estate, municipality, etc.)': 'Other',
+    '501(c)(3) nonprofit': 'Not For Profit',
+    '501(c)(4) nonprofit': 'Not For Profit',
+    '501(c)(7) nonprofit': 'Not For Profit',
+  }[input];
+
+  if (!result) {
+    throw new Error(`Unexpected entity type: ${input}`);
+  }
+
+  return result;
+}
+
 function generateObject(application) {
   return {
     Account: {
-      Name: 'Covid5Loan',
-      DoingBusinessAs: 'NA',
-      Email: 'Covid5Loan@gmail.com',
-      Telephone: '6097867121',
-      WebSiteURL: 'https://www.Covid5Loan.com',
-      YearEstablished: '2011',
-      AnnualRevenue: null,
-      TaxClearanceComments: 'Cleared',
+      Name: application.Organization_OrganizationName.trim(),
+      DoingBusinessAs: application.Organization_DoingBusinessAsDBA.trim(),
+      Email: application.ContactInformation_AuthorizedRepresentative_Email.trim(),
+      Telephone: application.ContactInformation_AuthorizedRepresentative_Phone.trim(),
+      WebSiteURL: application.Organization_Website.trim(),
+      YearEstablished: date(
+        application.OrganizationDetails_DateEstablished
+      ).getFullYear(),
+      AnnualRevenue: application.OrganizationDetails_AnnualRevenues,
+      TaxClearanceComments: 'Cleared', // TODO
       ACHNonCompliance: '',
-      address2Line1: '11 American Blvd',
-      address2Line2: '',
-      address2City: 'Pennington',
-      address2Zip: '08534',
-      address2State: 'NJ',
-      address2County: '',
-      address2Country: '',
-      WomanOwned: 'Yes',
-      VeteranOwned: '',
-      MinorityOwned: 'Yes',
-      DisabilityOwned: '',
-      Comment: 'Yes, It is Small Business',
+      address2Line1: application.Organization_MailingAddress_Line1.trim(),
+      address2Line2: application.Organization_MailingAddress_Line2.trim(),
+      address2City: application.Organization_MailingAddress_City.trim(),
+      address2Zip: application.Organization_MailingAddress_PostalCode.trim(),
+      address2State: usStateCode(application.Organization_MailingAddress_State),
+      address2County: '', // TODO
+      address2Country: application.Organization_MailingAddress_Country.trim(),
+      WomanOwned: yesNo(application.Designations_WomenOwnedBusiness),
+      VeteranOwned: yesNo(application.Designations_VeteranOwnedBusiness),
+      MinorityOwned: yesNo(application.Designations_MinorityOwnedBusiness),
+      DisabilityOwned: yesNo(
+        application.Designations_DisabledVeteranOwnedBusiness
+      ),
+      Comment: application.Designations_SmallBusiness
+        ? `${application.Designations_SmallBusiness} as a small business.`
+        : '',
     },
     Project: {
       StatusCode: 1,
-      ProjectDescription: 'Describe negative impacts from COVID-19',
+      ProjectDescription: application.OrganizationDetails_CovidImpact.trim(),
     },
     Product: {
       DevelopmentOfficer: '',
       ServicingOfficerId: null,
-      AppReceivedDate: '/Date(1583125200000)/',
+      AppReceivedDate: formatDate(application.Entry_DateSubmitted),
       Amount: {
-        Value: 100000,
+        Value: application.LoanAmountRequested,
         ExtensionData: null,
       },
       nol_total_NOL_benefit: null,
       nol_total_RD_benefit: null,
       benefit_allocation_factor: null,
       nol_prior_years_tax_credits_sold: null,
-      ProductStatusId: '{892EF915-56F7-E511-80DE-005056AD31F5}',
-      ProductSubStatusId: '{6261A645-D875-E611-80D5-005056ADEF6F}',
+      ProductStatusId: '{892EF915-56F7-E511-80DE-005056AD31F5}', // TODO
+      ProductSubStatusId: '{6261A645-D875-E611-80D5-005056ADEF6F}', // TODO
       ProductTypeId: '{32F439A1-5670-EA11-A811-001DD8018831}',
-      LocatedInCommercialLocation: 'Yes',
-      ProductDescription:
-        'Please provide a description of the business, including: the industry that the business falls within, the company background, and a description of the product or service the company offers.',
+      LocatedInCommercialLocation:
+        application.OrganizationDetails_PhysicalCommercialLocation,
+      ProductDescription: application.OrganizationDetails_Description.trim(),
     },
     Underwriting: {
-      salutation: 'Mr.',
-      firstName: 'Covid5Loan',
+      salutation: '',
+      firstName: application.ContactInformation_AuthorizedRepresentative_Name_First.trim(),
       middleName: '',
-      lastName: 'Covid5Loan',
+      lastName: application.ContactInformation_AuthorizedRepresentative_Name_Last.trim(),
       suffix: '',
-      jobTitle: '',
-      address1: '36 West State Street',
-      address2: '',
-      city: 'Trenton',
-      zipcode: '08608',
-      telephone: '7322136046',
+      jobTitle: application.ContactInformation_AuthorizedRepresentative_Title.trim(),
+      address1: application.Organization_PhysicalAddress_Line1.trim(),
+      address2: application.Organization_PhysicalAddress_Line2.trim(),
+      city: application.Organization_PhysicalAddress_City.trim(),
+      zipcode: application.Organization_Geography_ZipCodeFirst5.trim(),
+      telephone: application.ContactInformation_AuthorizedRepresentative_Phone,
       telephoneExt: '',
-      email: 'Covid5Loan@eda.com',
-      organizationName: 'Covid5Loan',
-      knownAs: '',
-      ein: '822977799',
-      naicsCode: '423430',
-      ownershipStructure: 'Limited Liability Corporation',
+      email: application.ContactInformation_AuthorizedRepresentative_Email.trim(),
+      organizationName: application.Organization_OrganizationName.trim(),
+      knownAs: application.Organization_DoingBusinessAsDBA.trim(),
+      ein: application.Organization_EIN.replace(/\D/g, ''),
+      naicsCode: application.NAICSCode,
+      ownershipStructure: ownershipStructure(
+        application.Organization_EntityType
+      ),
       applicantBackground: '',
       headquarterState: '',
       headquarterCountry: '',
