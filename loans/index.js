@@ -219,11 +219,11 @@ function main() {
     .sort((a, b) => a.Entry_DateSubmitted - b.Entry_DateSubmitted)
     .slice(options.skip, options.count && options.count + (options.skip || 0));
 
-  const useOfFundSheet = XLSX.utils.sheet_to_json(
+  const useOfFundsSheet = XLSX.utils.sheet_to_json(
     workbook.Sheets['ProposedUseOfLoanProceeds'],
     { defval: null }
   );
-console.log(useOfFundSheet);
+
   const n = sheet.length;
   const cum = sheet
     .map(application => application.LoanAmountRequested)
@@ -231,7 +231,7 @@ console.log(useOfFundSheet);
 
   const data = sheet.map(application => {
     try {
-      return generateObject(decorate(application));
+      return generateObject(decorate(application), useOfFundsSheet);
     } catch (e) {
       errors.push(application, e);
     }
@@ -588,7 +588,7 @@ function ownershipStructure(input) {
   return result;
 }
 
-function generateObject(application) {
+function generateObject(application, useOfFundsSheet) {
   return {
     Account: {
       Name: application.Organization_OrganizationName.trim(),
@@ -709,21 +709,83 @@ function generateObject(application) {
         ExtensionData: null,
       },
       otherCost1: {
-        Value: 10000, // TODO
+        Value: useOfFundsSheet
+          .filter(
+            r =>
+              r.LoanApplication_Id === application.LoanApplication_Id &&
+              r.UseCategories_Category === 'Payroll'
+          )
+          .map(r => r.UseDetails_Amount)
+          .reduce((a, b) => a + b, 0),
         ExtensionData: null,
       },
       otherCost2: {
-        Value: 20000, // TODO
+        Value: useOfFundsSheet
+          .filter(
+            r =>
+              r.LoanApplication_Id === application.LoanApplication_Id &&
+              (r.UseCategories_Category === 'Rent' ||
+                r.UseCategories_Category === 'Mortgage')
+          )
+          .map(r => r.UseDetails_Amount)
+          .reduce((a, b) => a + b, 0),
         ExtensionData: null,
       },
       otherCost3: {
-        Value: 70000, // TODO
+        Value: useOfFundsSheet
+          .filter(
+            r =>
+              r.LoanApplication_Id === application.LoanApplication_Id &&
+              !(
+                r.UseCategories_Category === 'Payroll' ||
+                r.UseCategories_Category === 'Rent' ||
+                r.UseCategories_Category === 'Mortgage'
+              )
+          )
+          .map(r => r.UseDetails_Amount)
+          .reduce((a, b) => a + b, 0),
         ExtensionData: null,
       },
-      otherCost1Description: 'Payroll: 10000', // TODO
-      otherCost2Description: 'Rent: 5000 & Mortgage: 15000', // TODO
-      otherCost3Description:
-        'Taxes: 20,000, Utilites: 10,000, Inventory: 10,000, Other Cost: 30,000', // TODO
+      otherCost1Description: `Payroll: $${useOfFundsSheet
+        .filter(
+          r =>
+            r.LoanApplication_Id === application.LoanApplication_Id &&
+            r.UseCategories_Category === 'Payroll'
+        )
+        .map(r => r.UseDetails_Amount)
+        .reduce((a, b) => a + b, 0)
+        .toLocaleString()}`,
+      otherCost2Description: useOfFundsSheet
+        .filter(
+          r =>
+            r.LoanApplication_Id === application.LoanApplication_Id &&
+            (r.UseCategories_Category === 'Rent' ||
+              r.UseCategories_Category === 'Mortgage')
+        )
+        .map(
+          r =>
+            `${
+              r.UseCategories_Category
+            }: $${r.UseDetails_Amount.toLocaleString()}`
+        )
+        .join(', '),
+      otherCost3Description: useOfFundsSheet
+        .filter(
+          r =>
+            r.LoanApplication_Id === application.LoanApplication_Id &&
+            !(
+              r.UseCategories_Category === 'Payroll' ||
+              r.UseCategories_Category === 'Rent' ||
+              r.UseCategories_Category === 'Mortgage'
+            )
+        )
+        .map(
+          r =>
+            `${
+              r.UseCategories_Category
+            }: $${r.UseDetails_Amount.toLocaleString()}`
+        )
+        .join(', '),
       counselFirmName: '',
       counselFirstName: '',
       counselLastName: '',
