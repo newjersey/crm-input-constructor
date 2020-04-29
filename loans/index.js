@@ -593,6 +593,29 @@ function ownershipStructure(input) {
   return result;
 }
 
+function useOfFundsValue(application, useOfFundsSheet, filterFun) {
+  return useOfFundsSheet
+    .filter(
+      r =>
+        r.LoanApplication_Id === application.LoanApplication_Id && filterFun(r)
+    )
+    .map(r => r.UseDetails_Amount)
+    .reduce((a, b) => a + b, 0);
+}
+
+function useOfFundsDescription(application, useOfFundsSheet, filterFun) {
+  return useOfFundsSheet
+    .filter(
+      r =>
+        r.LoanApplication_Id === application.LoanApplication_Id && filterFun(r)
+    )
+    .map(
+      r =>
+        `${r.UseCategories_Category}: $${r.UseDetails_Amount.toLocaleString()}`
+    )
+    .join(', ');
+}
+
 function generateObject(application, useOfFundsSheet) {
   return {
     Account: {
@@ -717,83 +740,58 @@ function generateObject(application, useOfFundsSheet) {
         ExtensionData: null,
       },
       otherCost1: {
-        Value: useOfFundsSheet
-          .filter(
-            r =>
-              r.LoanApplication_Id === application.LoanApplication_Id &&
-              r.UseCategories_Category === 'Payroll'
-          )
-          .map(r => r.UseDetails_Amount)
-          .reduce((a, b) => a + b, 0),
+        Value: useOfFundsValue(
+          application,
+          useOfFundsSheet,
+          r => r.UseCategories_Category === 'Payroll'
+        ),
         ExtensionData: null,
       },
       otherCost2: {
-        Value: useOfFundsSheet
-          .filter(
-            r =>
-              r.LoanApplication_Id === application.LoanApplication_Id &&
-              (r.UseCategories_Category === 'Rent' ||
-                r.UseCategories_Category === 'Mortgage')
-          )
-          .map(r => r.UseDetails_Amount)
-          .reduce((a, b) => a + b, 0),
+        Value: useOfFundsValue(
+          application,
+          useOfFundsSheet,
+          r =>
+            r.UseCategories_Category === 'Rent' ||
+            r.UseCategories_Category === 'Mortgage'
+        ),
         ExtensionData: null,
       },
       otherCost3: {
-        Value: useOfFundsSheet
-          .filter(
-            r =>
-              r.LoanApplication_Id === application.LoanApplication_Id &&
-              !(
-                r.UseCategories_Category === 'Payroll' ||
-                r.UseCategories_Category === 'Rent' ||
-                r.UseCategories_Category === 'Mortgage'
-              )
-          )
-          .map(r => r.UseDetails_Amount)
-          .reduce((a, b) => a + b, 0),
-        ExtensionData: null,
-      },
-      otherCost1Description: `Payroll: $${useOfFundsSheet
-        .filter(
+        Value: useOfFundsValue(
+          application,
+          useOfFundsSheet,
           r =>
-            r.LoanApplication_Id === application.LoanApplication_Id &&
-            r.UseCategories_Category === 'Payroll'
-        )
-        .map(r => r.UseDetails_Amount)
-        .reduce((a, b) => a + b, 0)
-        .toLocaleString()}`,
-      otherCost2Description: useOfFundsSheet
-        .filter(
-          r =>
-            r.LoanApplication_Id === application.LoanApplication_Id &&
-            (r.UseCategories_Category === 'Rent' ||
-              r.UseCategories_Category === 'Mortgage')
-        )
-        .map(
-          r =>
-            `${
-              r.UseCategories_Category
-            }: $${r.UseDetails_Amount.toLocaleString()}`
-        )
-        .join(', '),
-      otherCost3Description: useOfFundsSheet
-        .filter(
-          r =>
-            r.LoanApplication_Id === application.LoanApplication_Id &&
             !(
               r.UseCategories_Category === 'Payroll' ||
               r.UseCategories_Category === 'Rent' ||
               r.UseCategories_Category === 'Mortgage'
             )
-        )
-        .map(
-          r =>
-            `${
-              r.UseCategories_Category
-            }: $${r.UseDetails_Amount.toLocaleString()}`
-        )
-        .join(', '),
+        ),
+        ExtensionData: null,
+      },
+      otherCost1Description: useOfFundsDescription(
+        application,
+        useOfFundsSheet,
+        r => r.UseCategories_Category === 'Payroll'
+      ),
+      otherCost2Description: useOfFundsDescription(
+        application,
+        useOfFundsSheet,
+        r =>
+          r.UseCategories_Category === 'Rent' ||
+          r.UseCategories_Category === 'Mortgage'
+      ),
+      otherCost3Description: useOfFundsDescription(
+        application,
+        useOfFundsSheet,
+        r =>
+          !(
+            r.UseCategories_Category === 'Payroll' ||
+            r.UseCategories_Category === 'Rent' ||
+            r.UseCategories_Category === 'Mortgage'
+          )
+      ),
       counselFirmName: '',
       counselFirstName: '',
       counselLastName: '',
