@@ -601,10 +601,13 @@ function generateObject(application, useOfFundsSheet) {
       Email: application.ContactInformation_AuthorizedRepresentative_Email.trim(),
       Telephone: application.ContactInformation_AuthorizedRepresentative_Phone.trim(),
       WebSiteURL: application.Organization_Website.trim(),
-      YearEstablished: date(
-        application.OrganizationDetails_DateEstablished
-      ).getFullYear(),
-      AnnualRevenue: application.OrganizationDetails_AnnualRevenues,
+      YearEstablished: date(application.OrganizationDetails_DateEstablished)
+        .getFullYear()
+        .toString(),
+      AnnualRevenue: {
+        Value: application.OrganizationDetails_AnnualRevenues,
+        ExtensionData: null,
+      },
       TaxClearanceComments: 'Cleared', // TODO
       ACHNonCompliance: '',
       address2Line1: application.Organization_MailingAddress_Line1.trim(),
@@ -612,7 +615,7 @@ function generateObject(application, useOfFundsSheet) {
       address2City: application.Organization_MailingAddress_City.trim(),
       address2Zip: application.Organization_MailingAddress_PostalCode.trim(),
       address2State: usStateCode(application.Organization_MailingAddress_State),
-      address2County: '', // TODO
+      address2County: '',
       address2Country: application.Organization_MailingAddress_Country.trim(),
       WomanOwned: yesNo(application.Designations_WomenOwnedBusiness),
       VeteranOwned: yesNo(application.Designations_VeteranOwnedBusiness),
@@ -668,7 +671,7 @@ function generateObject(application, useOfFundsSheet) {
       ownershipStructure: ownershipStructure(
         application.Organization_EntityType
       ),
-      applicantBackground: `${application.Organization_EntityType} in ${application.Business_Services}: ${application.NAICSCodeInfo_Industry_Label}`,
+      applicantBackground: `${application.Organization_EntityType}: ${application.NAICSCodeInfo_Industry_Label}`,
       headquarterState: usStateCode(
         application.Organization_PhysicalAddress_State
       ),
@@ -876,18 +879,18 @@ function generateObject(application, useOfFundsSheet) {
       isStartup: false,
       address1Line1: application.Organization_PhysicalAddress_Line1.trim(),
       address1Line2: application.Organization_PhysicalAddress_Line2.trim(),
-      address1City: application.Organization_PhysicalAddress_City.trim(),
+      address1City: application.NormalizedCity.trim(),
       address1Zip: application.Organization_Geography_ZipCodeFirst5.trim(),
       address1State: usStateCode(
         application.Organization_PhysicalAddress_State
       ),
-      address1County: '', // TODO
-      address1Municipality: '', // TODO
+      address1County: application.NormalizedCounty.trim(),
+      address1Municipality: application.NormalizedMunicipality.trim(),
       address1Country: application.Organization_PhysicalAddress_Country,
       block: '',
       lot: '',
-      congressionalDistrict: '', // TODO
-      legislativeDistrict: '', // TODO
+      congressionalDistrict: application.NormalizedCongDist.trim(),
+      legislativeDistrict: application.NormalizedLegDist.trim(),
       censusTract: '',
       Comments: 'Not Home-Based Business',
     },
