@@ -268,9 +268,15 @@ function bool(yesNo) {
   switch (yesNo) {
     case 'Yes':
     case 'TRUE':
+    case 'True':
+    case 'true':
+    case true:
       return true;
     case 'No':
     case 'FALSE':
+    case 'False':
+    case 'false':
+    case false:
       return false;
     default:
       throw new Error(`Cannot convert to boolean: ${yesNo}`);
@@ -292,7 +298,7 @@ function taxClearance(status) {
 
 // given a string of fractional days since 01/01/1900, return milliseconds only for the day part (not time)
 function formatDate(excelFloat) {
-  const _date = date(excelFloat);
+  const _date = excelFloat instanceof Date ? excelFloat : date(excelFloat);
 
   _date.setHours(0, 0, 0, 0);
 
@@ -314,8 +320,12 @@ function manualReviewReasons(application) {
   const findings = [];
   const FINDING_DEFINITIONS = [
     {
-      trigger: a => a.TaxationStatus !== 'Y',
-      language: `Taxation status is "${taxClearance(application.TaxationStatus)}".`,
+      trigger: a => a.TaxationStatus === 'N',
+      language: `Taxation status is not clear.`,
+    },
+    {
+      trigger: a => a.TaxationStatus === 'X' && bool(a.KnownToDOL),
+      language: `EIN is unknown to Taxation but known to DOL.`,
     },
     {
       trigger: a => a.OrganizationDetails_AnnualRevenues > 5000000,
@@ -327,13 +337,10 @@ function manualReviewReasons(application) {
     },
     {
       trigger: a =>
-        isAfter(
-          date(application.OrganizationDetails_DateEstablished),
-          MAX_DATE
-        ),
+        isAfter(date(a.OrganizationDetails_DateEstablished), MAX_DATE),
       language: `Founded after ${MAX_DATE.toLocaleDateString()}: ${date(
-        application.OrganizationDetails_DateEstablished.toLocaleDateString()
-      )}.`,
+        application.OrganizationDetails_DateEstablished
+      ).toLocaleDateString()}.`,
     },
     {
       trigger: a => bool(a.DuplicateEIN),
@@ -352,14 +359,13 @@ function manualReviewReasons(application) {
       language: `Business is self-reported to not have a physical commercial location.`,
     },
     {
-      trigger: a => !bool(a.KnownToDOL),
-      language: 'EIN is unknown to DOL.',
+      trigger: a => !bool(a.KnownToDOL) && a.TaxationStatus !== 'X',
+      language: 'EIN is unknown to DOL but known to Taxation.',
     },
     {
-      trigger: a => a.TaxationBusinessNameConfidence < 50,
-      language: `Business name ("${
-        application.Organization_OrganizationName.trim()
-      }"${
+      trigger: a =>
+        a.TaxationStatus !== 'X' && a.TaxationBusinessNameConfidence < 50,
+      language: `Business name ("${application.Organization_OrganizationName.trim()}"${
         application.Organization_DoingBusinessAsDBA.trim()
           ? ' DBA "' + application.Organization_DoingBusinessAsDBA.trim() + '"'
           : ''
@@ -395,7 +401,7 @@ function manualReviewReasons(application) {
   ];
 
   FINDING_DEFINITIONS.forEach(obj => {
-    if (bool(application[obj.trigger])) {
+    if (obj.trigger(application)) {
       findings.push(obj.language);
     }
   });
@@ -437,7 +443,7 @@ function immediateDeclineReasons(application) {
     },
     {
       trigger: a => !bool(a.KnownToDOL) && a.TaxationStatus === 'X',
-      language: `EIN is missing from both DOL and Taxation.`,
+      language: `EIN is unknown to both DOL and Taxation.`,
     },
     {
       trigger: a => bool(a.DOLNoGoUI),
@@ -451,7 +457,7 @@ function immediateDeclineReasons(application) {
   ];
 
   FINDING_DEFINITIONS.forEach(obj => {
-    if (bool(application[obj.trigger])) {
+    if (obj.trigger(application)) {
       findings.push(obj.language);
     }
   });
@@ -613,7 +619,10 @@ function useOfFundsDescription(application, useOfFundsSheet, filterFun) {
 function generateObject(application, useOfFundsSheet) {
   return {
     Account: {
-      Name: application.TaxationBusinessName.trim(),
+      Name: (
+        application.TaxationBusinessName ||
+        application.Organization_OrganizationName
+      ).trim(),
       DoingBusinessAs: application.Organization_DoingBusinessAsDBA.trim(),
       Email: application.ContactInformation_AuthorizedRepresentative_Email.trim(),
       Telephone: application.ContactInformation_AuthorizedRepresentative_Phone.trim(),
@@ -676,12 +685,15 @@ function generateObject(application, useOfFundsSheet) {
       jobTitle: application.ContactInformation_AuthorizedRepresentative_Title.trim(),
       address1: application.Organization_PhysicalAddress_Line1.trim(),
       address2: application.Organization_PhysicalAddress_Line2.trim(),
-      city: application.Organization_PhysicalAddress_City.trim(),
+      city: application.NormalizedCity,
       zipcode: application.Organization_Geography_ZipCodeFirst5.trim(),
       telephone: application.ContactInformation_AuthorizedRepresentative_Phone,
       telephoneExt: '',
       email: application.ContactInformation_AuthorizedRepresentative_Email.trim(),
-      organizationName: application.TaxationBusinessName.trim(),
+      organizationName: (
+        application.TaxationBusinessName ||
+        application.Organization_OrganizationName
+      ).trim(),
       knownAs: application.Organization_DoingBusinessAsDBA.trim(),
       ein: application.Organization_EIN.replace(/\D/g, ''),
       naicsCode: application.NAICSCode,
@@ -896,7 +908,7 @@ function generateObject(application, useOfFundsSheet) {
       Status: monitoringStatus(application),
       MonitoringType: monitoringType(application),
       Findings: monitoringFindings(application),
-      CompletionDate: formatDate(application.Entry_DateSubmitted),
+      CompletionDate: status(application) === 'IMMEDIATE DECLINE' ? formatDate(new Date()) : null,
       GeneralComments: `Other Workers (1099, seasonal, PEO): ${application.OrganizationDetails_AllOtherWorkers1099SeasonalPEOEtc}`,
     },
   };
