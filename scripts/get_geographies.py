@@ -8,12 +8,12 @@ import re
 MIN=0 #26
 MAX=999999 #1300
 
-DEBUG=False
+DEBUG=True
 DEBUG_CONFIDENCE_THRESHOLD=70
 CONFIDENCE_THRESHOLD=DEBUG_CONFIDENCE_THRESHOLD
 
-INPUT_CITY_INDEX = 11
-INPUT_ZIP5_INDEX = 15
+INPUT_CITY_INDEX = 20
+INPUT_ZIP5_INDEX = 24
 OUTPUT_HEADERS = ['county', 'localname', 'incmunc', 'czip', 'legdist', 'congdist', 'target', 'njda_regio', 'is_multi', 'dca_code', 'dol_code', 'normalized_city', 'appId']
 
 # usage
@@ -46,7 +46,6 @@ with open(applications_csv, 'r') as csvfile:
         n += 1
         if not(n >= MIN and n <= MAX):
             continue
-
 
         zip5 = row[INPUT_ZIP5_INDEX].strip()
         city = row[INPUT_CITY_INDEX].strip().upper()
@@ -133,7 +132,7 @@ with open(applications_csv, 'r') as csvfile:
             if bestConfidence < DEBUG_CONFIDENCE_THRESHOLD:
                 glitchy += 1
                 print(str(glitchy) + '.')
-                print('CV19G' + row[0] + ' (' + zip5 + ')')
+                print('CV19L' + row[0] + ' (' + zip5 + ')')
                 print('  User reported: ' + row[INPUT_CITY_INDEX].strip())
                 print('  Closest match: ' + (bestRow[1] if bestRow else '(none)'))
                 print('  Confidence:    ' + str(bestConfidence) + '%')
@@ -141,6 +140,6 @@ with open(applications_csv, 'r') as csvfile:
                 print('')
         else:
             # normalized city: from ZIP file for high-confidence (fix typos), user input for low-confidence
-            normalized_city = bestRow[1] if bestRow and bestConfidence > CONFIDENCE_THRESHOLD else row[INPUT_CITY_INDEX]
+            normalized_city = bestRow[1] if bestRow and bestConfidence > CONFIDENCE_THRESHOLD else "???" #row[INPUT_CITY_INDEX]
             geo_array = [bestRow[i].strip() for i in xrange(len(bestRow))]
-            csvwriter.writerow(geo_array + [normalized_city, row[0]])
+            csvwriter.writerow(geo_array + [normalized_city.strip(), row[0]])
