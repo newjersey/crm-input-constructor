@@ -311,22 +311,29 @@ function date(excelFloat) {
   return utcToZonedTime(utcDate, 'UTC');
 }
 
+function status(application) {}
+
 function productStatusId(application) {
-  if (bool(application['IMMEDIATE DECLINE'])) {
+  if (status(application) === 'IMMEDIATE DECLINE') {
+    // Ended
     return '{359B8B3E-65F7-E511-80DE-005056AD31F5}';
   } else {
-    return '{A23854FF-59F7-E511-80DE-005056AD31F5}';
+    // In Progress
+    return '{892EF915-56F7-E511-80DE-005056AD31F5}';
   }
 }
 
 function productSubStatusId(application) {
-  if (bool(application['CLEAR'])) {
-    return '{0FE1E76F-8359-E611-80D3-005056ADEF6F}';
+  if (status(application) === 'CLEAR') {
+    // Application Submitted
+    return '{6261A645-D875-E611-80D5-005056ADEF6F}';
   }
-  if (bool(application['MANUAL REVIEW'])) {
-    return '{29E1E76F-8359-E611-80D3-005056ADEF6F}';
+  if (status(application) === 'MANUAL REVIEW') {
+    // Application
+    return '{0DE1E76F-8359-E611-80D3-005056ADEF6F}';
   }
-  if (bool(application['IMMEDIATE DECLINE'])) {
+  if (status(application) === 'IMMEDIATE DECLINE') {
+    // Declined
     return '{19E1E76F-8359-E611-80D3-005056ADEF6F}';
   }
 
@@ -334,39 +341,15 @@ function productSubStatusId(application) {
 }
 
 function monitoringStatus(application) {
-  // If Approved: Completed
-  // If Exception: In Planning
-  // If Denied: Findings"
-
-  if (bool(application['CLEAR'])) {
-    return 'Completed';
-  }
-  if (bool(application['MANUAL REVIEW'])) {
-    return 'In Planning';
-  }
-  if (bool(application['IMMEDIATE DECLINE'])) {
+  if (status(application) === 'CLEAR') {
+    return 'In Progress';
+  } else {
     return 'Findings';
   }
-
-  throw new Error('Unexpected state in monitoringStatus');
 }
 
 function monitoringType(application) {
-  // If Approved: External
-  // If Exception: Desk Review
-  // If Denied: External"
-
-  if (bool(application['CLEAR'])) {
-    return 'External';
-  }
-  if (bool(application['MANUAL REVIEW'])) {
-    return 'Desk Review';
-  }
-  if (bool(application['IMMEDIATE DECLINE'])) {
-    return 'External';
-  }
-
-  throw new Error('Unexpected state in monitoringType');
+  return 'Desk Review';
 }
 
 function monitoringFindings(application) {
@@ -619,7 +602,7 @@ function useOfFundsDescription(application, useOfFundsSheet, filterFun) {
 function generateObject(application, useOfFundsSheet) {
   return {
     Account: {
-      Name: application.Organization_OrganizationName.trim(),
+      Name: application.TaxationBusinessName.trim(),
       DoingBusinessAs: application.Organization_DoingBusinessAsDBA.trim(),
       Email: application.ContactInformation_AuthorizedRepresentative_Email.trim(),
       Telephone: application.ContactInformation_AuthorizedRepresentative_Phone.trim(),
@@ -631,7 +614,7 @@ function generateObject(application, useOfFundsSheet) {
         Value: application.OrganizationDetails_AnnualRevenues,
         ExtensionData: null,
       },
-      TaxClearanceComments: 'Cleared', // TODO
+      TaxClearanceComments: taxClearance(application.TaxationStatus),
       ACHNonCompliance: '',
       address2Line1: application.Organization_MailingAddress_Line1.trim(),
       address2Line2: application.Organization_MailingAddress_Line2.trim(),
@@ -666,8 +649,8 @@ function generateObject(application, useOfFundsSheet) {
       nol_total_RD_benefit: null,
       benefit_allocation_factor: null,
       nol_prior_years_tax_credits_sold: null,
-      ProductStatusId: '{892EF915-56F7-E511-80DE-005056AD31F5}', // TODO
-      ProductSubStatusId: '{6261A645-D875-E611-80D5-005056ADEF6F}', // TODO
+      ProductStatusId: productStatusId(application),
+      ProductSubStatusId: productSubStatusId(application),
       ProductTypeId: '{32F439A1-5670-EA11-A811-001DD8018831}',
       LocatedInCommercialLocation:
         application.OrganizationDetails_PhysicalCommercialLocation,
@@ -687,7 +670,7 @@ function generateObject(application, useOfFundsSheet) {
       telephone: application.ContactInformation_AuthorizedRepresentative_Phone,
       telephoneExt: '',
       email: application.ContactInformation_AuthorizedRepresentative_Email.trim(),
-      organizationName: application.Organization_OrganizationName.trim(),
+      organizationName: application.TaxationBusinessName.trim(),
       knownAs: application.Organization_DoingBusinessAsDBA.trim(),
       ein: application.Organization_EIN.replace(/\D/g, ''),
       naicsCode: application.NAICSCode,
@@ -899,223 +882,13 @@ function generateObject(application, useOfFundsSheet) {
       productFeeAmount: null,
     },
     Monitoring: {
-      Status: 'In Planning', // TODO
-      MonitoringType: 'Desk Review', // TODO
-      Findings: 'No Issues from Application', // TODO
+      Status: monitoringStatus(application),
+      MonitoringType: monitoringType(application),
+      Findings: monitoringFindings(application),
       CompletionDate: formatDate(application.Entry_DateSubmitted),
       GeneralComments: `Other Workers (1099, seasonal, PEO): ${application.OrganizationDetails_AllOtherWorkers1099SeasonalPEOEtc}`,
     },
   };
 }
-
-/*
-function generateObject_OLD(application) {
-  return {
-    Account: {
-      Name: application.ContactInformation_BusinessName,
-      DoingBusinessAs: application.ContactInformation_DoingBusinessAsDBA,
-      Email: application.ContactInformation_Email,
-      Telephone: application.ContactInformation_Phone,
-      WebSiteURL: application.ContactInformation_Website,
-      YearEstablished: application.Business_YearEstablished,
-      AnnualRevenue: null,
-      TaxClearanceComments: taxClearance(application['Taxation Status']),
-      ACHNonCompliance: '',
-    },
-    Project: { StatusCode: 1 },
-    Product: {
-      DevelopmentOfficer: '',
-      ServicingOfficerId: servicingOfficerId(application),
-      AppReceivedDate: formatDate(new Date(application.Entry_DateSubmitted)),
-      Amount: getAmount(application),
-      nol_total_NOL_benefit: null,
-      nol_total_RD_benefit: null,
-      benefit_allocation_factor: null,
-      nol_prior_years_tax_credits_sold: null,
-      ProductStatusId: productStatusId(application),
-      ProductSubStatusId: productSubStatusId(application),
-      ProductTypeId: '{F1D0CF74-B26E-EA11-A811-001DD8018831}',
-      LocatedInCommercialLocation:
-        application.ContactInformation_CommercialLocation,
-    },
-    Underwriting: {
-      salutation: '',
-      firstName: application.ContactInformation_ContactName_First,
-      middleName: '',
-      lastName: application.ContactInformation_ContactName_Last,
-      suffix: '',
-      jobTitle: '',
-      address1: application.ContactInformation_BusinessAddress_Line1,
-      address2: application.ContactInformation_BusinessAddress_Line2,
-      city: application.normalized_city.trim(),
-      zipcode: application.ContactInformation_ZipFirst5.padStart(5, '0'),
-      telephone: application.ContactInformation_Phone.split('x')[0].replace(
-        /\D/g,
-        ''
-      ),
-      telephoneExt: application.ContactInformation_Phone.split('x')[1] || null,
-      email: application.ContactInformation_Email,
-      organizationName: application.ContactInformation_BusinessName,
-      knownAs: application.ContactInformation_DoingBusinessAsDBA,
-      ein: application['Dashless EIN-9'],
-      naicsCode: application.NAICSCode,
-      ownershipStructure: '',
-      applicantBackground: `${application.Business_EntityType} in ${application.Business_Services}: ${application.NAICSCodeInfo_Industry_Label}`,
-      headquarterState: '',
-      headquarterCountry: '',
-      landAcquisitions: null,
-      newBldgConstruction: null,
-      acquisitionExistingBuilding: null,
-      existingBldgRvnt: null,
-      upgradeEquipment: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      newEquipment: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      usedEquipment: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      engineerArchitechFees: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      legalFees: null,
-      accountingFees: null,
-      financeFees: null,
-      roadUtilitiesConst: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      debtServiceReserve: null,
-      constructionInterest: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      refinancing: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      workingCapital: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      otherCost1: null,
-      otherCost2: null,
-      otherCost3: null,
-      otherCost1Description: null,
-      otherCost2Description: null,
-      otherCost3Description: null,
-      counselFirmName: '',
-      counselFirstName: '',
-      counselLastName: '',
-      counselStreetAddress1: '',
-      counselStreetAddress2: '',
-      counselCity: '',
-      counselState: '',
-      counselZipCode: '',
-      counselPhoneNumber: '',
-      counselEmailAddress: '',
-      accountantFirmName: '',
-      accountantFirstName: '',
-      accountantLastName: '',
-      accountantStreetAddress1: '',
-      accountantStreetAddress2: '',
-      accountantCity: '',
-      accountantState: '',
-      accountantZipCode: '',
-      accountantPhoneNumber: '',
-      accountantEmailAddress: '',
-      totalCost: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      applicationID: `CV19G${application.appId}`,
-      selectedProducts: 'Covid Small Business Emergency Assistance Grant',
-      ReceivedPreiousFundingFromEDA: '',
-      ReceivedPreiousFundingFromOtherthanEDA: '',
-      TotalFullTimeEligibleJobs: application['Rounded FTE'],
-      NJFullTimeJobsAtapplication: application.Business_FullTimeEmployeesW2,
-      PartTimeJobsAtapplication: application.Business_PartTimeEmployeesW2,
-      softCosts: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      relocationCosts: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      securityCosts: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      titleCosts: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      surveyCosts: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      marketAnalysisCosts: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      developmentImpactCosts: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      marketSiteCosts: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      demolitionCosts: null,
-      streetscapeCosts: null,
-      remediationCosts: {
-        Value: 0,
-        ExtensionData: null,
-      },
-      redemptionPremiumCosts: null,
-      installationMachineryCosts: null,
-      totalProjectCost: null,
-    },
-    Location: {
-      isRelocation: null,
-      isExpansion: null,
-      isStartup: false,
-      address1Line1: application.ContactInformation_BusinessAddress_Line1,
-      address1Line2: application.ContactInformation_BusinessAddress_Line2,
-      address1City: application.normalized_city.trim(),
-      address1Zip: application.ContactInformation_ZipFirst5.padStart(5, '0'),
-      address1State: 'NJ', // will always be NJ per input form
-      address1County: application.county.trim(),
-      address1Municipality: application.incmunc.trim(),
-      block: '',
-      lot: '',
-      congressionalDistrict: application.congdist.trim(),
-      legislativeDistrict: application.legdist.trim(),
-      censusTract: '',
-      Comments: `Home-Based Business: ${application.BusinessDetails_HomeBasedBusiness}`,
-    },
-    FeeRequest: {
-      receivedDate: null,
-      receivedAmt: null,
-      confirmationNum: '',
-      productFeeAmount: null,
-    },
-    Monitoring: {
-      Status: monitoringStatus(application),
-      MonitoringType: monitoringType(application),
-      Findings: monitoringFindings(application),
-      CompletionDate: bool(application['MANUAL REVIEW'])
-        ? null
-        : formatDate(new Date()),
-    },
-  };
-}
-*/
 
 main();
