@@ -5,9 +5,11 @@ const fs = require('fs');
 const XLSX = require('xlsx');
 const { getJsDateFromExcel } = require('excel-date-to-js');
 const { utcToZonedTime, zonedTimeToUtc } = require('date-fns-tz');
+const { isAfter } = require('date-fns');
 
 const grantEins = fs.readFileSync('loans/grant-eins.json');
 const GRANT_EINS = JSON.parse(grantEins);
+const MAX_DATE = new Date('April 13, 2019');
 const US_STATES = {
   ALABAMA: 'AL',
   AL: 'AL',
@@ -230,7 +232,7 @@ function main() {
 
   const data = sheet.map(application => {
     try {
-      return generateObject(decorate(application), useOfFundsSheet);
+      return generateObject(application, useOfFundsSheet);
     } catch (e) {
       errors.push(application, e);
     }
@@ -275,10 +277,6 @@ function bool(yesNo) {
   }
 }
 
-function decorate(application) {
-  return application;
-}
-
 function taxClearance(status) {
   switch (status) {
     case 'Y':
@@ -311,7 +309,167 @@ function date(excelFloat) {
   return utcToZonedTime(utcDate, 'UTC');
 }
 
-function status(application) {}
+// returns array (empty if no issues)
+function manualReviewReasons(application) {
+  const findings = [];
+  const FINDING_DEFINITIONS = [
+    {
+      trigger: a => a.TaxationStatus !== 'Y',
+      language: `Taxation status is "${taxClearance(application.TaxationStatus)}".`,
+    },
+    {
+      trigger: a => a.OrganizationDetails_AnnualRevenues > 5000000,
+      language: `Annual revenues exceed $5M: $"${application.OrganizationDetails_AnnualRevenues.toLocaleString()}".`,
+    },
+    {
+      trigger: a => a.Organization_EntityType.match(/^Other/),
+      language: `Ineligible Entity Type: "${application.Organization_EntityType}".`,
+    },
+    {
+      trigger: a =>
+        isAfter(
+          date(application.OrganizationDetails_DateEstablished),
+          MAX_DATE
+        ),
+      language: `Founded after ${MAX_DATE.toLocaleDateString()}: ${date(
+        application.OrganizationDetails_DateEstablished.toLocaleDateString()
+      )}.`,
+    },
+    {
+      trigger: a => bool(a.DuplicateEIN),
+      language: `EIN was found in more than one application.`,
+    },
+    {
+      trigger: a => bool(a.DuplicateAddress),
+      language: `Business address was found in more than one application.`,
+    },
+    {
+      trigger: a => bool(a.AdditionalInformation_HomeBasedBusiness),
+      language: `Business is self-reported to be a home-based business.`,
+    },
+    {
+      trigger: a => !bool(a.OrganizationDetails_PhysicalCommercialLocation),
+      language: `Business is self-reported to not have a physical commercial location.`,
+    },
+    {
+      trigger: a => !bool(a.KnownToDOL),
+      language: 'EIN is unknown to DOL.',
+    },
+    {
+      trigger: a => a.TaxationBusinessNameConfidence < 50,
+      language: `Business name ("${
+        application.Organization_OrganizationName.trim()
+      }"${
+        application.Organization_DoingBusinessAsDBA.trim()
+          ? ' DBA "' + application.Organization_DoingBusinessAsDBA.trim() + '"'
+          : ''
+      }) is dissimilar to that on file with Taxation: "${
+        application.TaxationBusinessName
+      }".`,
+    },
+    // keep these last, since they could include long text:
+    {
+      trigger: a => bool(a.LegalQuestionnaire_BackgroundQuestion1),
+      language: `Additional information provided on background question #1 (convictions): "${application.LegalQuestionnaire_BackgroundQuestionDetails1}"`,
+    },
+    {
+      trigger: a => bool(a.LegalQuestionnaire_BackgroundQuestion2),
+      language: `Additional information provided on background question #2 (denied licensure): "${application.LegalQuestionnaire_BackgroundQuestionDetails2}"`,
+    },
+    {
+      trigger: a => bool(a.LegalQuestionnaire_BackgroundQuestion3),
+      language: `Additional information provided on background question #3 (public contractor subcontract ineligibility): "${application.LegalQuestionnaire_BackgroundQuestionDetails3}"`,
+    },
+    {
+      trigger: a => bool(a.LegalQuestionnaire_BackgroundQuestion4),
+      language: `Additional information provided on background question #4 (violated the terms of a public agreement): "${application.LegalQuestionnaire_BackgroundQuestionDetails4}"`,
+    },
+    {
+      trigger: a => bool(a.LegalQuestionnaire_BackgroundQuestion5),
+      language: `Additional information provided on background question #5 (injunction, order or lien): "${application.LegalQuestionnaire_BackgroundQuestionDetails5}"`,
+    },
+    {
+      trigger: a => bool(a.LegalQuestionnaire_BackgroundQuestion6),
+      language: `Additional information provided on background question #6 (presently indicted): "${application.LegalQuestionnaire_BackgroundQuestionDetails6}"`,
+    },
+  ];
+
+  FINDING_DEFINITIONS.forEach(obj => {
+    if (bool(application[obj.trigger])) {
+      findings.push(obj.language);
+    }
+  });
+
+  return findings;
+}
+
+// returns array (empty if no issues)
+function immediateDeclineReasons(application) {
+  const findings = [];
+  const FINDING_DEFINITIONS = [
+    {
+      trigger: a => bool(a.AdditionalInformation_GamblingActivities),
+      language: `Debarment: Gambling Activities.`,
+    },
+    {
+      trigger: a => bool(a.AdditionalInformation_AdultActivities),
+      language: `Debarment: Adult Activities.`,
+    },
+    {
+      trigger: a => bool(a.AdditionalInformation_SalessActivities),
+      language: `Debarment: Sales Activities.`,
+    },
+    {
+      trigger: a => bool(a.AdditionalInformation_TransientMerchant),
+      language: `Debarment: Transient Marchant.`,
+    },
+    {
+      trigger: a => bool(a.AdditionalInformation_OutdoorStorageCompany),
+      language: `Debarment: Outdoor Storage Company.`,
+    },
+    {
+      trigger: a => bool(a.AdditionalInformation_NuisanceActivities),
+      language: `Debarment: Nuisance Activities.`,
+    },
+    {
+      trigger: a => bool(a.AdditionalInformation_IllegalActivities),
+      language: `Debarment: Illegal Activities.`,
+    },
+    {
+      trigger: a => !bool(a.KnownToDOL) && a.TaxationStatus === 'X',
+      language: `EIN is missing from both DOL and Taxation.`,
+    },
+    {
+      trigger: a => bool(a.DOLNoGoUI),
+      language: `Applicant is on the DOL UID no-go list.`,
+    },
+    {
+      trigger: a => bool(a.DOLNoGoHW),
+      language: `Applicant is on the DOL WHD no-go list.`,
+    },
+    // if not >= 1 owner w/ 600+ FICO (will have to do retroactively, due to time constraints)
+  ];
+
+  FINDING_DEFINITIONS.forEach(obj => {
+    if (bool(application[obj.trigger])) {
+      findings.push(obj.language);
+    }
+  });
+
+  return findings;
+}
+
+function status(application) {
+  if (immediateDeclineReasons(application).length) {
+    return 'IMMEDIATE DECLINE';
+  }
+
+  if (manualReviewReasons(application).length) {
+    return 'MANUAL REVIEW';
+  }
+
+  return 'CLEAR';
+}
 
 function productStatusId(application) {
   if (status(application) === 'IMMEDIATE DECLINE') {
@@ -353,157 +511,10 @@ function monitoringType(application) {
 }
 
 function monitoringFindings(application) {
-  const findings = [];
-  const FINDING_DEFINITIONS = [
-    // IMMEDIATE DECLINE
-    {
-      trigger: 'Ineligible Entity Type',
-      language: `Ineligible Entity Type: "${application.Business_EntityType}".`,
-    },
-    {
-      trigger: 'Ineligible Founding Year',
-      language: `Ineligible Founding Year: ${application.Business_YearEstablished}.`,
-    },
-    {
-      trigger: 'Home Based w/o Commercial Location',
-      language: `Applicant indicated that they both are a home-based business AND that they do not have a commercial location.`,
-    },
-    {
-      trigger: 'Ineligible NAICS and Sector',
-      language: `"Other" Sector specified and NAICS code is ineligible: ${application.NAICSCode}.`,
-    },
-    {
-      trigger: 'BusinessDetails_GamblingActivities',
-      language: `Debarment: Gambling Activities.`,
-    },
-    {
-      trigger: 'BusinessDetails_AdultActivities',
-      language: `Debarment: Adult Activities.`,
-    },
-    {
-      trigger: 'BusinessDetails_SalessActivities',
-      language: `Debarment: Sales Activities`,
-    },
-    {
-      trigger: 'BusinessDetails_TransientMerchant',
-      language: `Debarment: Transient Marchant`,
-    },
-    {
-      trigger: 'BusinessDetails_OutdoorStorageCompany',
-      language: `Debarment: Outdoor Storage Company`,
-    },
-    {
-      trigger: 'BusinessDetails_NuisanceActivities',
-      language: `Debarment: Nuisance Activities`,
-    },
-    {
-      trigger: 'BusinessDetails_IllegalActivities',
-      language: `Debarment: Illegal Activities`,
-    },
-    {
-      trigger: 'Too Few FTE',
-      language: `Too Few FTE Equivalents: ${application['Rounded FTE']} but should be at least 1.`,
-    },
-    {
-      trigger: 'Too Many FTE',
-      language: `Too Many FTE Equivalents: ${application['Rounded FTE']} but should be at most 10.`,
-    },
-    {
-      trigger: 'EIN Missing from DOL and Taxation',
-      language: `EIN is missing from both DOL and Taxation.`,
-    },
-    {
-      trigger: 'DOL UI No-Go',
-      language: `Applicant is on the DOL UI no-go list.`,
-    },
-    {
-      trigger: 'DOL WHD No-Go',
-      language: `Applicant is on the DOL WHD no-go list.`,
-    },
-    // revenues > $5M
-    // if not >= 1 owner w/ 600+ FICO
-    //
-
-    // MANUAL REVIEW
-    // taxation issue
-    {
-      trigger: 'Dup EIN',
-      language: `EIN was found in more than one application.`,
-    },
-    {
-      trigger: 'Dup Address',
-      language: `Business address was found in more than one application.`,
-    },
-    {
-      trigger: 'Home Based == Commercial Location',
-      language: `Applicant specified "${application.ContactInformation_CommercialLocation}" to having a commercial location but "${application.BusinessDetails_HomeBasedBusiness}" to being a home-based business.`,
-    },
-    {
-      trigger: 'Nonmatching NAICS and Sector (at least one eligible)',
-      language: `Specified sector ("${application.Business_Services}") does not match specified NAICS code: ${application.NAICSCode} ("${application.NAICSCodeInfo_Industry_Label}").`,
-    },
-    {
-      trigger: 'Unknown to Taxation xor DOL',
-      language: bool(application['Known to DOL'])
-        ? 'Business is on file with DOL but not Taxation.'
-        : 'Business is on file with Taxation but not DOL.',
-    },
-    {
-      trigger: 'Taxation Disagrees w/ NAICS',
-      language: `Submitted NAICS code (${application.NAICSCode}) differs with that reported by Taxation: ${application['Taxation NAICS']}.`,
-    },
-    {
-      trigger: 'Taxation Disagrees w/ Name',
-      language: `Business name ("${
-        application.ContactInformation_BusinessName
-      }"${
-        application.ContactInformation_DoingBusinessAsDBA
-          ? ' DBA "' + application.ContactInformation_DoingBusinessAsDBA + '"'
-          : ''
-      }) is dissimilar to that on file with Taxation: "${
-        application['Taxation Name']
-      }".`,
-    },
-    {
-      trigger: 'Missing WR-30',
-      language: `No WR-30 data was found for applicant.`,
-    },
-    // keep these last, since they could include long text:
-    {
-      trigger: 'AdditionalBackgroundInformation_BackgroundQuestion1',
-      language: `Additional information provided on background question #1 (convictions): "${application.AdditionalBackgroundInformation_BackgroundQuestionDetails1}"`,
-    },
-    {
-      trigger: 'AdditionalBackgroundInformation_BackgroundQuestion2',
-      language: `Additional information provided on background question #2 (denied licensure): "${application.AdditionalBackgroundInformation_BackgroundQuestionDetails2}"`,
-    },
-    {
-      trigger: 'AdditionalBackgroundInformation_BackgroundQuestion3',
-      language: `Additional information provided on background question #3 (public contractor subcontract ineligibility): "${application.AdditionalBackgroundInformation_BackgroundQuestionDetails3}"`,
-    },
-    {
-      trigger: 'AdditionalBackgroundInformation_BackgroundQuestion4',
-      language: `Additional information provided on background question #4 (violated the terms of a public agreement): "${application.AdditionalBackgroundInformation_BackgroundQuestionDetails4}"`,
-    },
-    {
-      trigger: 'AdditionalBackgroundInformation_BackgroundQuestion5',
-      language: `Additional information provided on background question #5 (injunction, order or lien): "${application.AdditionalBackgroundInformation_BackgroundQuestionDetails5}"`,
-    },
-    {
-      trigger: 'AdditionalBackgroundInformation_BackgroundQuestion6',
-      language: `Additional information provided on background question #6 (presently indicted): "${application.AdditionalBackgroundInformation_BackgroundQuestionDetails6}"`,
-    },
-  ];
-
-  function addFinding(description) {
-    findings.push(`(${findings.length + 1}) ${description}`);
-  }
-
-  FINDING_DEFINITIONS.forEach(obj => {
-    if (bool(application[obj.trigger])) {
-      addFinding(obj.language);
-    }
-  });
+  const findings = [
+    ...immediateDeclineReasons(application),
+    ...manualReviewReasons(application),
+  ].map((finding, i) => `(${i + 1}) ${finding}`);
 
   return findings.length
     ? `${findings.length} Finding${
@@ -873,7 +884,7 @@ function generateObject(application, useOfFundsSheet) {
       congressionalDistrict: application.NormalizedCongDist.trim(),
       legislativeDistrict: application.NormalizedLegDist.trim(),
       censusTract: '',
-      Comments: 'Not Home-Based Business',
+      Comments: `Home-based business: ${application.AdditionalInformation_HomeBasedBusiness}`,
     },
     FeeRequest: {
       receivedDate: null,
