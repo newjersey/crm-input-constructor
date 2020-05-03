@@ -120,7 +120,7 @@ function reasons(application) {
     { trigger: 'EIN Missing from DOL and Taxation', language: `Entity is not registered to do business in the State` },
     { trigger: 'DOL UI No-Go', language: `Entity is not in good standing with the NJ Department of Labor and Workforce Development (Unemployment Insurance Division)` },
     { trigger: 'DOL WHD No-Go', language: `Entity is not in good standing with the NJ Department of Labor and Workforce Development (Wage and Hour Division)` },
-    { trigger: 'Missing WR-30', language: `Entity did not file an Employer Report of Wages (WR-30) with the NJ Department of Labor and Workforce Development for the 4th Quarter of 2019` },
+    // { trigger: 'Missing WR-30', language: `Entity did not file an Employer Report of Wages (WR-30) with the NJ Department of Labor and Workforce Development for the 4th Quarter of 2019` },
 ];
 
   return FINDING_DEFINITIONS
