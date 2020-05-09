@@ -253,6 +253,7 @@ function appeal_url(application) {
     NAICS: application.NAICSCode,
     YearFounded: application.Business_YearEstablished,
     Expiration: format(addBusinessDays(new Date(), 3), 'yyyy-MM-dd'),
+    Email: application.ContactInformation_Email,
     Reasons: reasons(application, 'slug'),
   };
 
