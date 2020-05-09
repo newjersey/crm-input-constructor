@@ -224,9 +224,6 @@ function monitoringFindings(application) {
     { trigger: 'EIN Missing from DOL and Taxation', language: `EIN is missing from both DOL and Taxation.` },
     { trigger: 'DOL UI No-Go', language: `Applicant is on the DOL UI no-go list.` },
     { trigger: 'DOL WHD No-Go', language: `Applicant is on the DOL WHD no-go list.` },
-    // revenues > $5M
-    // if not >= 1 owner w/ 600+ FICO
-    //
 
     // MANUAL REVIEW
     // taxation issue
