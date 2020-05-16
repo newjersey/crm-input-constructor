@@ -189,7 +189,7 @@ function reasons(application, returnVal) {
       language: `Entity is considered an ineligible entity because it conducts auctions, bankruptcy sales, fire sales, “lost-our-lease,” “going-out-of-business,” or similar sales`,
     },
     {
-      slug: 'Teansient',
+      slug: 'Transient',
       trigger: 'BusinessDetails_TransientMerchant',
       language: `Entity is considered an ineligible entity because it is a transient merchant ("peddler," "popup store," or "itinerant vendor")`,
     },
