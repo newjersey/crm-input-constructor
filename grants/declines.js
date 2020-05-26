@@ -91,6 +91,8 @@ function main() {
   fs.createReadStream(options.src)
     .pipe(csv())
     .on('data', row => {
+      row.appId = row.appId || row['GrantApplication_Id'];
+
       if (
         bool(row['IMMEDIATE DECLINE']) &&
         (!options.min || parseInt(row.appId) >= parseInt(options.min)) &&
@@ -286,7 +288,7 @@ function generateObject(application) {
     business_name: businessNameWithDBA(application),
     address1: application.ContactInformation_BusinessAddress_Line1.trim().toUpperCase(),
     address2: application.ContactInformation_BusinessAddress_Line2.trim().toUpperCase(),
-    city_state_zip: `${application.normalized_city.trim()}, NJ ${application.ContactInformation_BusinessAddress_PostalCode.padStart(
+    city_state_zip: `${application.ContactInformation_BusinessAddress_City.trim()}, NJ ${application.ContactInformation_BusinessAddress_PostalCode.padStart(
       5,
       '0'
     ).trim()}`,
