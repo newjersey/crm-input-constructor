@@ -1,4 +1,6 @@
-export interface Geography {
+import { Application } from './applications';
+
+export interface GeographyData {
   readonly City: string;
   readonly County: string;
   readonly Municipality: string;
@@ -8,7 +10,7 @@ export interface Geography {
 }
 
 export interface Geographies {
-  [Geographies_Id: string]: Geography;
+  [Geographies_Id: string]: GeographyData;
 }
 
 export const geographies: Geographies = {
@@ -15765,3 +15767,13 @@ export const geographies: Geographies = {
     LegislativeDistrict: '31-33',
   },
 };
+
+interface Geography {
+  geography: GeographyData
+}
+
+export function addGeographyData<T extends Application>(application: T): T & Geography {
+  const geography: GeographyData = geographies[application.ContactInformation_Geography];
+
+  return { ...application, geography };
+}

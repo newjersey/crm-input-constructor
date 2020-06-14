@@ -1,9 +1,14 @@
 const csv = require('csv-parser');
 const fs = require('fs');
 import { Application, getApplications } from './applications';
-import { geographies } from './geographies';
+import { addDolData } from './dol';
+import { addGeographyData } from './geography';
+import { addGrantPhase1Data } from './grant-phase-1';
 import { options, printRunMessage } from './options';
+import { addSamsData } from './sams';
+import { addTaxationData } from './taxation';
 import { bool } from './util';
+import { addWR30Data } from './wr30';
 
 function main() {
   const writeStream = options.out && fs.createWriteStream(options.out);
@@ -11,10 +16,18 @@ function main() {
 
   printRunMessage();
 
-  const applications: Application[] = getApplications(options.en, options.es);
+  const applications: Application[] = getApplications(options.en, options.es)
+    .slice(options.skip, options.count && options.count + (options.skip || 0));
 
-  console.log(applications);
+  const decoratedApplications = applications
+    .map(addDolData)
+    .map(addGeographyData)
+    .map(addGrantPhase1Data)
+    .map(addSamsData)
+    .map(addTaxationData)
+    .map(addWR30Data);
 
+  console.log(decoratedApplications[0]);
 
   /*
   fs.createReadStream(options.src)
@@ -61,7 +74,6 @@ function main() {
   */
 }
 
-
 let reviewersAssigned = 0;
 function servicingOfficerId(application) {
   const RICHARD_TORO = '{834023BA-3ED6-E811-811B-1458D04E2F10}';
@@ -89,7 +101,7 @@ function servicingOfficerId(application) {
   throw new Error('Unexpected state in servicingOfficerId');
 }
 
-function taxClearance(status: "Y" | "N" | "X") {
+function taxClearance(status: 'Y' | 'N' | 'X') {
   switch (status) {
     case 'Y':
       return 'Clear';
