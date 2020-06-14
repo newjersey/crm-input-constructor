@@ -7,11 +7,13 @@
     "grants": "node grants/index.js",
     "loans": "node loans/index.js",
     "grant-declines": "node grants/declines.js",
+    "grants-2": "tsc grants-2/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/node": "^14.0.13",
     "chalk": "^4.0.0",
     "command-line-args": "^5.1.1",
     "command-line-usage": "^6.1.0",
@@ -19,6 +21,8 @@
     "date-fns": "^2.12.0",
     "date-fns-tz": "^1.0.10",
     "excel-date-to-js": "^1.0.2",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.5",
     "xlsx": "^0.15.6"
   },
   "devDependencies": {
