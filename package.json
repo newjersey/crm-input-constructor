@@ -7,12 +7,14 @@
     "grants": "node grants/index.js",
     "loans": "node loans/index.js",
     "grant-declines": "node grants/declines.js",
-    "grants-2": "tsc grants-2/index.ts",
+    "grants-2": "tsc grants-2/*.ts && node grants-2/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/command-line-args": "^5.0.0",
+    "@types/command-line-usage": "^5.0.1",
     "@types/node": "^14.0.13",
     "chalk": "^4.0.0",
     "command-line-args": "^5.1.1",
