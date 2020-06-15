@@ -23,6 +23,7 @@
     "date-fns": "^2.12.0",
     "date-fns-tz": "^1.0.10",
     "excel-date-to-js": "^1.0.2",
+    "neat-csv": "^5.2.0",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.5",
     "xlsx": "^0.15.6"

@@ -78,7 +78,7 @@ function printUsage(): void {
 
 function printStartMessage(options: Options): void {
   console.log(
-    `\nGenerating OLA Datas creation JSON for ${chalk.blue(
+    `Generating OLA Datas creation JSON for ${chalk.blue(
       options.count ? options.count : '∞'
     )} applications, skipping ${chalk.blue(options.skip || 0)}, from:\n  ${chalk.blue(
       options.en

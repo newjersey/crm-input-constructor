@@ -1,3 +1,5 @@
+const fs = require('fs');
+const neatCsv = require('neat-csv');
 import { Application } from './applications';
 import { Taxation } from './taxation';
 
@@ -41,14 +43,20 @@ interface Sams {
   readonly sams: PosssibleMatches;
 }
 
-const SAMS_EXCLUSION_RECORDS: SamsExclusionRecord[] = []; // TODO: populate
-
 function isPossibleMatch<T extends Application & Taxation>(
   application: T,
   record: SamsExclusionRecord
 ): boolean {
   // TODO -- identify matches
   return false;
+}
+
+let SAMS_EXCLUSION_RECORDS: SamsExclusionRecord[];
+
+export async function init(path: string) {
+  console.log('Loading SAMS data...');
+  const raw: string = fs.readFileSync(path);
+  SAMS_EXCLUSION_RECORDS = await neatCsv(raw);
 }
 
 export function addSamsData<T extends Application & Taxation>(application: T): T & Sams {

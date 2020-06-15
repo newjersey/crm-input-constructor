@@ -60,10 +60,12 @@ function getData(filePath: string): TaxationDataMap {
   return map;
 }
 
-console.log('Loading Taxation data...');
-const TAXATION_DATA_MAP: TaxationDataMap = getData(
-  '/Users/ross/NJEDA Grants Phase 2/First 5 hours/Taxation/EDA_PROD_OUTPUT_PROJ2_V3_061219.xlsx'
-);
+let TAXATION_DATA_MAP: TaxationDataMap;
+
+export async function init(path: string) {
+  console.log('Loading Taxation data...');
+  TAXATION_DATA_MAP = getData(path);
+}
 
 export function addTaxationData<T extends Application>(application: T): T & Taxation {
   const taxation: TaxationData = TAXATION_DATA_MAP[application.ApplicationId];

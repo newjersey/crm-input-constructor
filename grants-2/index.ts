@@ -1,17 +1,30 @@
 const csv = require('csv-parser');
 const fs = require('fs');
-import { addDolData } from './dol';
+const path = require('path');
+
+import { addDolData, init as loadDolData } from './dol';
 import { addGeographyData } from './geography';
-import { addGrantPhase1Data } from './grant-phase-1';
+import { addGrantPhase1Data, init as loadGrantPhse1Data } from './grant-phase-1';
 import { options, printRunMessage } from './options';
 import { Application, getApplications } from './applications';
-import { addSamsData } from './sams';
-import { addTaxationData } from './taxation';
+import { addSamsData, init as loadSamsData } from './sams';
+import { addTaxationData, init as loadTaxationData } from './taxation';
 import { bool } from './util';
 import { addWR30Data } from './wr30';
 
-function main() {
+const BASE_PATH = '/Users/ross/NJEDA Grants Phase 2/First 5 hours';
+
+async function main() {
   printRunMessage();
+
+  await loadGrantPhse1Data(`${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 6-13-2020 7am.xlsx`);
+  await loadSamsData(`${BASE_PATH}/SAMS/SAM_Exclusions_Public_Extract_20161.CSV`);
+  await loadTaxationData(`${BASE_PATH}/Taxation/EDA_PROD_OUTPUT_PROJ2_V3_061219.xlsx`);
+  await loadDolData(
+    `${BASE_PATH}/DOL Lists/Active-Emps-03302020.xlsx`,
+    `${BASE_PATH}/DOL Lists/No.Go.List.3.30.2020.UID.xlsx`,
+    `${BASE_PATH}/DOL Lists/No.Go.List.3.30.2020.WHD.xlsx`
+  );
 
   // allow type to be inferred from chained unions of generics extensions
   const applications = getApplications(options.en, options.es)
@@ -20,8 +33,8 @@ function main() {
     .map(addGeographyData)
     .map(addGrantPhase1Data)
     .map(addTaxationData)
-    .map(addSamsData)
-    // .map(addWR30Data);
+    .map(addSamsData);
+  // .map(addWR30Data);
 
   console.log(applications);
 

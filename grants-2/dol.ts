@@ -15,19 +15,6 @@ function getEins(filePath: string): string[] {
     .map(ein => ein.replace(einRe, '$1$2$3'));
 }
 
-console.log('Loading DOL active employers...');
-const ACTIVE_EMPLOYER_EINS: string[] = getEins(
-  '/Users/ross/NJEDA Grants Phase 2/First 5 hours/DOL Lists/Active-Emps-03302020.xlsx'
-);
-console.log('Loading DOL UID no-go list...');
-const UID_NO_GO_EINS: string[] = getEins(
-  '/Users/ross/NJEDA Grants Phase 2/First 5 hours/DOL Lists/No.Go.List.3.30.2020.UID.xlsx'
-);
-console.log('Loading DOL WHD no-go list...');
-const WHD_NO_GO_EINS: string[] = getEins(
-  '/Users/ross/NJEDA Grants Phase 2/First 5 hours/DOL Lists/No.Go.List.3.30.2020.WHD.xlsx'
-);
-
 interface DolData {
   readonly isActiveEmployer: boolean;
   readonly uidNoGo: boolean;
@@ -36,6 +23,21 @@ interface DolData {
 
 interface Dol {
   readonly dol: DolData;
+}
+
+let ACTIVE_EMPLOYER_EINS: string[];
+let UID_NO_GO_EINS: string[];
+let WHD_NO_GO_EINS: string[];
+
+export async function init(activeEmployersPath: string, uidNoGoPath: string, whdNoGoPath: string) {
+  console.log('Loading DOL active employers...');
+  ACTIVE_EMPLOYER_EINS = getEins(activeEmployersPath);
+
+  console.log('Loading DOL UID no-go list...');
+  UID_NO_GO_EINS = getEins(uidNoGoPath);
+
+  console.log('Loading DOL WHD no-go list...');
+  WHD_NO_GO_EINS = getEins(whdNoGoPath);
 }
 
 export function addDolData<T extends Application>(application: T): T & Dol {

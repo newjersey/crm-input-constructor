@@ -43,10 +43,12 @@ function getData(filePath: string): GrantPhase1DataMap {
   return map;
 }
 
-console.log('Loading grant phase 1 data...');
-const GRANT_PHASE_1_DATA_MAP: GrantPhase1DataMap = getData(
-  '/Users/ross/NJEDA Grants Phase 2/First 5 hours/Grant Phase 1/Phase 1 Statuses As Of 6-13-2020 7am.xlsx'
-);
+let GRANT_PHASE_1_DATA_MAP: GrantPhase1DataMap;
+
+export async function init(path: string) {
+  console.log('Loading grant phase 1 data...');
+  GRANT_PHASE_1_DATA_MAP = getData(path);
+}
 
 export function addGrantPhase1Data<T extends Application>(application: T): T & GrantPhase1 {
   const grantPhase1: GrantPhase1Data = GRANT_PHASE_1_DATA_MAP[application.Business_TIN];
