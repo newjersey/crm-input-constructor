@@ -31,7 +31,9 @@ function applyData<T extends Application, K>(
       return fn(application);
     } catch (e) {
       throw new Error(
-        `Error while ${message.toLowerCase().replace(/\./g, '')} to ${application.ApplicationId}: ${e.message}`
+        `Error while ${message.toLowerCase().replace(/\./g, '')} to ${application.ApplicationId}: ${
+          e.message
+        }`
       );
     }
   });
@@ -47,7 +49,10 @@ async function main() {
   await loadGrantPhse1Data(`${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 6-13-2020 7am.xlsx`);
   await loadSamsData(`${BASE_PATH}/SAMS/SAM_Exclusions_Public_Extract_20161.CSV`);
   await loadTaxationData(`${BASE_PATH}/Taxation/EDA_PROD_OUTPUT_PROJ2_V3_061219.xlsx`);
-  await loadWR30Data(`${BASE_PATH}/WR30/njeda crossmatch wage output file 6-9-2020.txt`);
+  await loadWR30Data(
+    `${BASE_PATH}/WR30/njeda crossmatch wage output file 6-9-2020.txt`,
+    `${BASE_PATH}/WR30/20200609 FEIN Not Found.txt`
+  );
   await loadDolData(
     `${BASE_PATH}/DOL Lists/Active-Emps-03302020.xlsx`,
     `${BASE_PATH}/DOL Lists/No.Go.List.3.30.2020.UID.xlsx`,
@@ -67,7 +72,8 @@ async function main() {
   const apps5 = applyData(apps4, addSamsData, 'Applying SAMS data...');
   const apps6 = applyData(apps5, addWR30Data, 'Applying WR-30 data...');
 
-  console.log(apps6);
+  console.dir(apps6, { depth: null })
+
 
   /*
   fs.createReadStream(options.src)

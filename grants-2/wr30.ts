@@ -29,17 +29,18 @@ interface WageRecord {
 }
 
 interface WR30Data {
+  readonly notFound: boolean;
   readonly wageRecords: WageRecord[];
-  //  readonly OnNotFoundList: boolean;
 }
 
 interface WR30 {
   readonly wr30: WR30Data;
 }
 
-let WR30_MAP = new Map<string, WageRecord[]>();
+const WR30_MAP = new Map<string, WageRecord[]>();
+const WR30_NOT_FOUND_EINS = new Set<string>();
 
-export async function init(path: string) {
+export async function init(path: string, notFoundPath: string) {
   console.log('Loading WR-30 data...');
   const raw: string = fs.readFileSync(path);
 
@@ -82,11 +83,20 @@ export async function init(path: string) {
 
     wageRecords.push(wageRecord);
   });
+
+  console.log('Loading WR-30 not-found data...');
+  const list: string = fs.readFileSync(notFoundPath, 'utf8');
+  list
+    .split('\n')
+    .map(line => line.substr(18, 9))
+    .filter(str => !!str)
+    .forEach(ein => WR30_NOT_FOUND_EINS.add(ein));
 }
 
 export function addWR30Data<T extends Application>(application: T): T & WR30 {
   const wr30: WR30Data = {
-    wageRecords: WR30_MAP.get(application.Business_TIN) || []
+    notFound: WR30_NOT_FOUND_EINS.has(application.Business_TIN),
+    wageRecords: WR30_MAP.get(application.Business_TIN) || [],
   };
 
   return { ...application, wr30 };
