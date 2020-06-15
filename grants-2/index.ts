@@ -11,7 +11,7 @@ import { Application, getApplications } from './applications';
 import { addSamsData, init as loadSamsData } from './sams';
 import { addTaxationData, init as loadTaxationData } from './taxation';
 import { bool } from './util';
-import { addWR30Data } from './wr30';
+import { addWR30Data, init as loadWR30Data } from './wr30';
 
 const BASE_PATH = '/Users/ross/NJEDA Grants Phase 2/First 5 hours';
 
@@ -47,6 +47,7 @@ async function main() {
   await loadGrantPhse1Data(`${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 6-13-2020 7am.xlsx`);
   await loadSamsData(`${BASE_PATH}/SAMS/SAM_Exclusions_Public_Extract_20161.CSV`);
   await loadTaxationData(`${BASE_PATH}/Taxation/EDA_PROD_OUTPUT_PROJ2_V3_061219.xlsx`);
+  await loadWR30Data(`${BASE_PATH}/WR30/njeda crossmatch wage output file 6-9-2020.txt`);
   await loadDolData(
     `${BASE_PATH}/DOL Lists/Active-Emps-03302020.xlsx`,
     `${BASE_PATH}/DOL Lists/No.Go.List.3.30.2020.UID.xlsx`,
@@ -64,11 +65,9 @@ async function main() {
   const apps3 = applyData(apps2, addGrantPhase1Data, 'Applying grant phase 1 data...');
   const apps4 = applyData(apps3, addTaxationData, 'Applying Taxation data...');
   const apps5 = applyData(apps4, addSamsData, 'Applying SAMS data...');
-  // const apps6 = applyData(apps5, addWR30Data, 'Applying WR-30 data...');
+  const apps6 = applyData(apps5, addWR30Data, 'Applying WR-30 data...');
 
-  // console.log(apps5.filter(app => app.sams.possibleMatches.length > 0));
-
-  // console.log(apps4);
+  console.log(apps6);
 
   /*
   fs.createReadStream(options.src)
