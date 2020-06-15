@@ -1,33 +1,29 @@
 const csv = require('csv-parser');
 const fs = require('fs');
-import { Application, getApplications } from './applications';
 import { addDolData } from './dol';
 import { addGeographyData } from './geography';
 import { addGrantPhase1Data } from './grant-phase-1';
 import { options, printRunMessage } from './options';
+import { Application, getApplications } from './applications';
 import { addSamsData } from './sams';
 import { addTaxationData } from './taxation';
 import { bool } from './util';
 import { addWR30Data } from './wr30';
+import { OptionList } from 'command-line-usage';
 
 function main() {
-  const writeStream = options.out && fs.createWriteStream(options.out);
-  const errors: Error[] = [];
-
   printRunMessage();
 
-  const applications: Application[] = getApplications(options.en, options.es)
-    .slice(options.skip, options.count && options.count + (options.skip || 0));
-
-  const decoratedApplications = applications
+  const applications = getApplications(options.en, options.es)
+    .slice(options.skip, options.count && options.count + (options.skip || 0))
     .map(addDolData)
     .map(addGeographyData)
-    // .map(addGrantPhase1Data)
-    // .map(addSamsData)
-    // .map(addTaxationData)
-    // .map(addWR30Data);
+    .map(addGrantPhase1Data)
+  // .map(addSamsData)
+    .map(addTaxationData);
+  // .map(addWR30Data);
 
-  console.log(decoratedApplications);
+  console.log(applications);
 
   /*
   fs.createReadStream(options.src)

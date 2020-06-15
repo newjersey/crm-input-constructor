@@ -10,7 +10,7 @@ export interface GeographyData {
 }
 
 export interface Geographies {
-  [Geographies_Id: string]: GeographyData;
+  readonly [Geographies_Id: string]: GeographyData;
 }
 
 export const geographies: Geographies = {

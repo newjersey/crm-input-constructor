@@ -11,7 +11,7 @@ interface Sams {
 export function addSamsData<T extends Application>(application: T): T & Sams {
   const sams: SamsData = {
     qux: 5,
-  }
+  };
 
   return { ...application, sams };
 }

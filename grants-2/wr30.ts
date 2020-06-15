@@ -11,7 +11,7 @@ interface WR30 {
 export function addWR30Data<T extends Application>(application: T): T & WR30 {
   const wr30: WR30Data = {
     foo: 5,
-  }
+  };
 
   return { ...application, wr30 };
 }

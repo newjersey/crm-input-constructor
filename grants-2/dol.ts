@@ -8,18 +8,25 @@ function getEins(filePath: string): string[] {
   const sheetName: string = Object.keys(workbook.Sheets)[0];
   const sheet = workbook.Sheets[sheetName];
 
-  return (<string[][]>(
-    XLSX.utils.sheet_to_json(sheet, { defval: null, header: 1 })
-  ))
+  return (<string[][]>XLSX.utils.sheet_to_json(sheet, { defval: undefined, header: 1 }))
     .flat()
     .filter(ein => ein && ein.trim())
     .map(ein => ein.trim())
     .map(ein => ein.replace(einRe, '$1$2$3'));
 }
 
-const ACTIVE_EMPLOYER_EINS: string[] = getEins('/Users/ross/NJEDA Grants Phase 2/First 5 hours/DOL Lists/Active-Emps-03302020.xlsx');
-const UID_NO_GO_EINS: string[] = getEins('/Users/ross/NJEDA Grants Phase 2/First 5 hours/DOL Lists/No.Go.List.3.30.2020.UID.xlsx');
-const WHD_NO_GO_EINS: string[] = getEins('/Users/ross/NJEDA Grants Phase 2/First 5 hours/DOL Lists/No.Go.List.3.30.2020.WHD.xlsx');
+console.log('Loading DOL active employers...');
+const ACTIVE_EMPLOYER_EINS: string[] = getEins(
+  '/Users/ross/NJEDA Grants Phase 2/First 5 hours/DOL Lists/Active-Emps-03302020.xlsx'
+);
+console.log('Loading DOL UID no-go list...');
+const UID_NO_GO_EINS: string[] = getEins(
+  '/Users/ross/NJEDA Grants Phase 2/First 5 hours/DOL Lists/No.Go.List.3.30.2020.UID.xlsx'
+);
+console.log('Loading DOL WHD no-go list...');
+const WHD_NO_GO_EINS: string[] = getEins(
+  '/Users/ross/NJEDA Grants Phase 2/First 5 hours/DOL Lists/No.Go.List.3.30.2020.WHD.xlsx'
+);
 
 interface DolData {
   readonly isActiveEmployer: boolean;

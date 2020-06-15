@@ -2,7 +2,7 @@ const chalk = require('chalk');
 const commandLineArgs = require('command-line-args');
 const commandLineUsage = require('command-line-usage');
 
-interface Options {
+export interface Options {
   readonly en: string;
   readonly es: string;
   readonly skip?: number;
@@ -39,15 +39,13 @@ const optionDefinitions: object[] = [
     name: 'out',
     alias: 'o',
     type: String,
-    description:
-      'Path to output file; suggest naming like ola_datas_100-skipping-5.json',
+    description: 'Path to output file; suggest naming like ola_datas_100-skipping-5.json',
   },
   {
     name: 'pretty',
     alias: 'p',
     type: Boolean,
-    description:
-      'Format JSON nicely on screen (does not effect JSON lines in output file).',
+    description: 'Format JSON nicely on screen (does not effect JSON lines in output file).',
   },
   {
     name: 'quiet',
@@ -71,8 +69,7 @@ function printUsage(): void {
       optionList: optionDefinitions,
     },
     {
-      content:
-        'Example: npm run grants-2 -- --en=grants/sample-en.csv --es=grants/sample-es.csv',
+      content: 'Example: npm run grants-2 -- --en=grants/sample-en.csv --es=grants/sample-es.csv',
     },
   ]);
 
@@ -81,13 +78,13 @@ function printUsage(): void {
 
 function printStartMessage(options: Options): void {
   console.log(
-    `Generating OLA Datas creation JSON for ${chalk.blue(
+    `\nGenerating OLA Datas creation JSON for ${chalk.blue(
       options.count ? options.count : '∞'
-    )} applications, skipping ${chalk.blue(
-      options.skip || 0
-    )}, from:\n  ${chalk.blue(options.en)}\n  ${chalk.blue(options.es)}${
-      options.out ? chalk.blue(' to ' + options.out) : ''
-    }${options.quiet || '\n'}`
+    )} applications, skipping ${chalk.blue(options.skip || 0)}, from:\n  ${chalk.blue(
+      options.en
+    )}\n  ${chalk.blue(options.es)}${options.out ? chalk.blue(' to ' + options.out) : ''}${
+      options.quiet || '\n'
+    }`
   );
 }
 
