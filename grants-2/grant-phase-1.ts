@@ -8,7 +8,7 @@ interface GrantPhase1 {
   readonly grantPhase1: GrantPhase1Data;
 }
 
-export function addGrantPhase1Data(application: Application): Application & GrantPhase1 {
+export function addGrantPhase1Data<T extends Application>(application: T): T & GrantPhase1 {
   const grantPhase1: GrantPhase1Data = {
     yak: 5,
   }

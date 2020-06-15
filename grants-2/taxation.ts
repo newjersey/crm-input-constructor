@@ -8,7 +8,7 @@ interface Taxation {
   readonly taxation: TaxationData;
 }
 
-export function addTaxationData(application: Application): Application & Taxation {
+export function addTaxationData<T extends Application>(application: T): T & Taxation {
   const taxation: TaxationData = {
     baz: 5,
   }

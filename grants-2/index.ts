@@ -22,10 +22,10 @@ function main() {
   const decoratedApplications = applications
     .map(addDolData)
     .map(addGeographyData)
-    .map(addGrantPhase1Data)
-    .map(addSamsData)
-    .map(addTaxationData)
-    .map(addWR30Data);
+    // .map(addGrantPhase1Data)
+    // .map(addSamsData)
+    // .map(addTaxationData)
+    // .map(addWR30Data);
 
   console.log(decoratedApplications);
 

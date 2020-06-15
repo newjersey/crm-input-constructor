@@ -8,7 +8,7 @@ interface Sams {
   readonly sams: SamsData;
 }
 
-export function addSamsData(application: Application): Application & Sams {
+export function addSamsData<T extends Application>(application: T): T & Sams {
   const sams: SamsData = {
     qux: 5,
   }
