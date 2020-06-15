@@ -25,26 +25,26 @@ interface Dol {
   readonly dol: DolData;
 }
 
-let ACTIVE_EMPLOYER_EINS: string[];
-let UID_NO_GO_EINS: string[];
-let WHD_NO_GO_EINS: string[];
+let ACTIVE_EMPLOYER_EIN_SET = new Set<string>();
+let UID_NO_GO_EIN_SET = new Set<string>();
+let WHD_NO_GO_EIN_SET = new Set<string>();
 
 export async function init(activeEmployersPath: string, uidNoGoPath: string, whdNoGoPath: string) {
   console.log('Loading DOL active employers...');
-  ACTIVE_EMPLOYER_EINS = getEins(activeEmployersPath);
+  getEins(activeEmployersPath).forEach(ein => ACTIVE_EMPLOYER_EIN_SET.add(ein));
 
   console.log('Loading DOL UID no-go list...');
-  UID_NO_GO_EINS = getEins(uidNoGoPath);
+  getEins(uidNoGoPath).forEach(ein => UID_NO_GO_EIN_SET.add(ein));
 
   console.log('Loading DOL WHD no-go list...');
-  WHD_NO_GO_EINS = getEins(whdNoGoPath);
+  getEins(whdNoGoPath).forEach(ein => WHD_NO_GO_EIN_SET.add(ein));
 }
 
 export function addDolData<T extends Application>(application: T): T & Dol {
   const dol: DolData = {
-    isActiveEmployer: ACTIVE_EMPLOYER_EINS.includes(application.Business_TIN.trim()),
-    uidNoGo: UID_NO_GO_EINS.includes(application.Business_TIN.trim()),
-    whdNoGo: WHD_NO_GO_EINS.includes(application.Business_TIN.trim()),
+    isActiveEmployer: ACTIVE_EMPLOYER_EIN_SET.has(application.Business_TIN.trim()),
+    uidNoGo: UID_NO_GO_EIN_SET.has(application.Business_TIN.trim()),
+    whdNoGo: WHD_NO_GO_EIN_SET.has(application.Business_TIN.trim()),
   };
 
   return { ...application, dol };

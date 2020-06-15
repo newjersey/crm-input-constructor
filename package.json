@@ -17,6 +17,7 @@
     "@types/command-line-usage": "^5.0.1",
     "@types/node": "^14.0.13",
     "chalk": "^4.0.0",
+    "cli-progress": "^3.8.2",
     "command-line-args": "^5.1.1",
     "command-line-usage": "^6.1.0",
     "csv-parser": "^2.3.2",

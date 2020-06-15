@@ -1,3 +1,4 @@
+const cliProgress = require('cli-progress');
 const csv = require('csv-parser');
 const fs = require('fs');
 const path = require('path');
@@ -14,6 +15,26 @@ import { addWR30Data } from './wr30';
 
 const BASE_PATH = '/Users/ross/NJEDA Grants Phase 2/First 5 hours';
 
+function applyData<T extends Application>(
+  applications: T[],
+  fn: (value: T, index?: number, array?: T[]) => T,
+  message: string,
+): T[] {
+  console.log(message);
+
+  const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+  bar.start(applications.length, 0);
+
+  const result: T[] = applications.map((application, index) => {
+    bar.update(index + 1);
+    return fn(application);
+  });
+
+  bar.stop();
+
+  return result;
+}
+
 async function main() {
   printRunMessage();
 
@@ -27,16 +48,20 @@ async function main() {
   );
 
   // allow type to be inferred from chained unions of generics extensions
-  const applications = getApplications(options.en, options.es)
-    .slice(options.skip, options.count && options.count + (options.skip || 0))
-    .map(addDolData)
-    .map(addGeographyData)
-    .map(addGrantPhase1Data)
-    .map(addTaxationData)
-    .map(addSamsData);
+  let applications = getApplications(options.en, options.es).slice(
+    options.skip,
+    options.count && options.count + (options.skip || 0)
+  );
+
+  applications = applyData(applications, addDolData, 'Applying DOL data...');
+  applications = applyData(applications, addGeographyData, 'Applying geography data...');
+  applications = applyData(applications, addGrantPhase1Data, 'Applying grant phase 1 data...');
+  applications = applyData(applications, addTaxationData, 'Applying Taxation data...');
+  applications = applyData(applications, addSamsData, 'Applying SAMS data...');
+
   // .map(addWR30Data);
 
-  console.log(applications);
+  // console.log(applications);
 
   /*
   fs.createReadStream(options.src)

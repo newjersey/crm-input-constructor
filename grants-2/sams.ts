@@ -47,7 +47,9 @@ function isPossibleMatch<T extends Application & Taxation>(
   application: T,
   record: SamsExclusionRecord
 ): boolean {
-  // TODO -- identify matches
+  if (application) {
+    return true;
+  }
   return false;
 }
 
