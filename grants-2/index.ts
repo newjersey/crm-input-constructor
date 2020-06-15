@@ -9,19 +9,19 @@ import { addSamsData } from './sams';
 import { addTaxationData } from './taxation';
 import { bool } from './util';
 import { addWR30Data } from './wr30';
-import { OptionList } from 'command-line-usage';
 
 function main() {
   printRunMessage();
 
+  // allow type to be inferred from chained unions of generics extensions
   const applications = getApplications(options.en, options.es)
     .slice(options.skip, options.count && options.count + (options.skip || 0))
     .map(addDolData)
     .map(addGeographyData)
     .map(addGrantPhase1Data)
-  // .map(addSamsData)
-    .map(addTaxationData);
-  // .map(addWR30Data);
+    .map(addTaxationData)
+    .map(addSamsData)
+    // .map(addWR30Data);
 
   console.log(applications);
 

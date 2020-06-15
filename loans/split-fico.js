@@ -34,7 +34,7 @@ function printUsage() {
       optionList: optionDefinitions,
     },
     {
-      content: 'Example: npm run loans loans/sample.xlsx -- -p',
+      content: 'Example: node loans/split-fico.js --src ~/Downloads/fico.xlsx',
     },
   ]);
 
