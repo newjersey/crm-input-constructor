@@ -15,19 +15,25 @@ import { addWR30Data } from './wr30';
 
 const BASE_PATH = '/Users/ross/NJEDA Grants Phase 2/First 5 hours';
 
-function applyData<T extends Application>(
+function applyData<T extends Application, K>(
   applications: T[],
-  fn: (value: T, index?: number, array?: T[]) => T,
-  message: string,
-): T[] {
+  fn: (application: T) => K,
+  message: string
+): K[] {
   console.log(message);
 
   const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
   bar.start(applications.length, 0);
 
-  const result: T[] = applications.map((application, index) => {
+  const result = applications.map((application: T, index: number) => {
     bar.update(index + 1);
-    return fn(application);
+    try {
+      return fn(application);
+    } catch (e) {
+      throw new Error(
+        `Error while ${message.toLowerCase().replace(/\./g, '')} to ${application.ApplicationId}: ${e.message}`
+      );
+    }
   });
 
   bar.stop();
@@ -47,21 +53,22 @@ async function main() {
     `${BASE_PATH}/DOL Lists/No.Go.List.3.30.2020.WHD.xlsx`
   );
 
-  // allow type to be inferred from chained unions of generics extensions
-  let applications = getApplications(options.en, options.es).slice(
+  // Ugly number of variables, but makes type inference pick up the chained unions of generics.
+  // I'm probably doing it wrong. Note that a map() chain here causes out-of-memory panics.
+  const apps0 = getApplications(options.en, options.es).slice(
     options.skip,
     options.count && options.count + (options.skip || 0)
   );
+  const apps1 = applyData(apps0, addDolData, 'Applying DOL data...');
+  const apps2 = applyData(apps1, addGeographyData, 'Applying geography data...');
+  const apps3 = applyData(apps2, addGrantPhase1Data, 'Applying grant phase 1 data...');
+  const apps4 = applyData(apps3, addTaxationData, 'Applying Taxation data...');
+  const apps5 = applyData(apps4, addSamsData, 'Applying SAMS data...');
+  // const apps6 = applyData(apps5, addWR30Data, 'Applying WR-30 data...');
 
-  applications = applyData(applications, addDolData, 'Applying DOL data...');
-  applications = applyData(applications, addGeographyData, 'Applying geography data...');
-  applications = applyData(applications, addGrantPhase1Data, 'Applying grant phase 1 data...');
-  applications = applyData(applications, addTaxationData, 'Applying Taxation data...');
-  applications = applyData(applications, addSamsData, 'Applying SAMS data...');
+  // console.log(apps5.filter(app => app.sams.possibleMatches.length > 0));
 
-  // .map(addWR30Data);
-
-  // console.log(applications);
+  // console.log(apps4);
 
   /*
   fs.createReadStream(options.src)

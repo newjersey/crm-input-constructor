@@ -1,5 +1,6 @@
 const fs = require('fs');
 const neatCsv = require('neat-csv');
+const stringSimilarity = require('string-similarity');
 import { Application } from './applications';
 import { Taxation } from './taxation';
 
@@ -43,14 +44,25 @@ interface Sams {
   readonly sams: PosssibleMatches;
 }
 
+function shouldFlag(a: string, b: string): boolean {
+  return (
+    !!a &&
+    !!a.trim() &&
+    !!b &&
+    !!b.trim() &&
+    stringSimilarity.compareTwoStrings(a.trim().toUpperCase(), b.trim().toUpperCase()) >= 0.85
+  );
+}
+
 function isPossibleMatch<T extends Application & Taxation>(
   application: T,
   record: SamsExclusionRecord
 ): boolean {
-  if (application) {
-    return true;
-  }
-  return false;
+  return (
+    shouldFlag(record.Name, application.ContactInformation_BusinessName) ||
+    shouldFlag(record.Name, application.ContactInformation_DoingBusinessAsDBA) ||
+    shouldFlag(record.Name, application.taxation['TAXREG Name'])
+  );
 }
 
 let SAMS_EXCLUSION_RECORDS: SamsExclusionRecord[];
