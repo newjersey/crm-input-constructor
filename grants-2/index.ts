@@ -27,7 +27,7 @@ function main() {
     .map(addTaxationData)
     .map(addWR30Data);
 
-  console.log(decoratedApplications[0]);
+  console.log(decoratedApplications);
 
   /*
   fs.createReadStream(options.src)
@@ -74,6 +74,7 @@ function main() {
   */
 }
 
+/*
 let reviewersAssigned = 0;
 function servicingOfficerId(application) {
   const RICHARD_TORO = '{834023BA-3ED6-E811-811B-1458D04E2F10}';
@@ -556,5 +557,6 @@ function generateObject(application) {
     },
   };
 }
+*/
 
 main();
