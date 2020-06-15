@@ -8,10 +8,10 @@ interface TaxationData {
   readonly TIN: string;
   readonly 'Ind Match ID': string;
   readonly 'TAXREG Name': string;
-  readonly 'NAICS Code': number;
+  readonly 'NAICS Code': number | '      ';
   readonly 'Clean Ind': 'Y' | 'N' | 'X';
-  readonly 'SSN Check Only': string;
-  readonly 'TAXREG SP or SMLLC Ind.': 'X' | '';
+  readonly 'SSN Check Only': 'X' | ' ';
+  readonly 'TAXREG SP or SMLLC Ind.': 'X' | ' ';
   readonly '2018 Part': number;
   readonly '2018 Part Amt': number;
   readonly '2019 Part': number;
@@ -30,7 +30,7 @@ interface TaxationData {
   readonly 'S&U A 20': number;
 }
 
-interface Taxation {
+export interface Taxation {
   readonly taxation: TaxationData;
 }
 
@@ -64,8 +64,6 @@ console.log('Loading Taxation data...');
 const TAXATION_DATA_MAP: TaxationDataMap = getData(
   '/Users/ross/NJEDA Grants Phase 2/First 5 hours/Taxation/EDA_PROD_OUTPUT_PROJ2_V3_061219.xlsx'
 );
-
-console.log(TAXATION_DATA_MAP);
 
 export function addTaxationData<T extends Application>(application: T): T & Taxation {
   const taxation: TaxationData = TAXATION_DATA_MAP[application.ApplicationId];
