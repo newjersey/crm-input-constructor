@@ -24,7 +24,7 @@ interface Row {
   readonly State_1: string;
 }
 
-interface PolicyMapData {
+interface PolicyMapData extends Row {
   readonly censusTract: number;
   readonly eligibilityStatus: EligibilityStatus;
 }
@@ -52,8 +52,9 @@ function getData(filePath: string): PolicyMapDataMap {
 
     const applicationID = languageSequence.replace(/(\w{2})-(\d+)/, 'CV19G$1$2');
     const policyMapData: PolicyMapData = {
+      ...row,
       censusTract,
-      eligibilityStatus
+      eligibilityStatus,
     };
 
     map.set(applicationID, policyMapData);
