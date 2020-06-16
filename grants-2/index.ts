@@ -64,6 +64,7 @@ function writeFile(path: string, content: string, overwrite: boolean): void {
 async function main() {
   printRunMessage();
 
+  // load
   await loadGrantPhse1Data(`${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 6-13-2020 7am.xlsx`);
   await loadPolicyMapDada(`${BASE_PATH}/Policy Map/Policy Map First 20768 Apps v2.xlsx`);
   await loadSamsData(`${BASE_PATH}/SAMS/SAM_Exclusions_Public_Extract_20161.CSV`);
@@ -78,6 +79,7 @@ async function main() {
     `${BASE_PATH}/DOL Lists/No.Go.List.3.30.2020.WHD.xlsx`
   );
 
+  // apply
   // Ugly number of variables, but makes type inference pick up the chained unions of generics.
   // I'm probably doing it wrong. Note that a map() chain here causes out-of-memory panics.
   const apps0 = getApplications(options.en, options.es).slice(
