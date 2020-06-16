@@ -21,7 +21,7 @@ interface DolData {
   readonly whdNoGo: boolean;
 }
 
-interface Dol {
+export interface Dol {
   readonly dol: DolData;
 }
 

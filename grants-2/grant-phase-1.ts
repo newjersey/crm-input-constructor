@@ -23,7 +23,7 @@ interface GrantPhase1DataMap {
   [Ein: string]: GrantPhase1Data;
 }
 
-interface GrantPhase1 {
+export interface GrantPhase1 {
   readonly grantPhase1?: GrantPhase1Data;
 }
 

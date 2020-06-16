@@ -15768,7 +15768,7 @@ export const geographies: Geographies = {
   },
 };
 
-interface Geography {
+export interface Geography {
   geography: GeographyData
 }
 

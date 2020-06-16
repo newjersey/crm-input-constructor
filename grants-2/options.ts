@@ -9,7 +9,8 @@ export interface Options {
   readonly count?: number;
   readonly out?: string;
   readonly pretty?: boolean;
-  readonly quiet?: boolean;
+  readonly debug?: boolean;
+  readonly force?: boolean;
 }
 
 const optionDefinitions: object[] = [
@@ -48,10 +49,16 @@ const optionDefinitions: object[] = [
     description: 'Format JSON nicely on screen (does not effect JSON lines in output file).',
   },
   {
-    name: 'quiet',
-    alias: 'q',
+    name: 'debug',
+    alias: 'd',
     type: Boolean,
-    description: 'Do not print JSON to screen.',
+    description: 'Include extra data useful ffor debugging.',
+  },
+  {
+    name: 'force',
+    alias: 'f',
+    type: Boolean,
+    description: 'Force overwrite of existing files (suggested only during development).',
   },
 ];
 
@@ -80,11 +87,9 @@ function printStartMessage(options: Options): void {
   console.log(
     `Generating OLA Datas creation JSON for ${chalk.blue(
       options.count ? options.count : '∞'
-    )} applications, skipping ${chalk.blue(options.skip || 0)}, from:\n  ${chalk.blue(
-      options.en
-    )}\n  ${chalk.blue(options.es)}${options.out ? chalk.blue(' to ' + options.out) : ''}${
-      options.quiet || '\n'
-    }`
+    )} applications, skipping ${chalk.blue(options.skip || 0)}, from:\
+    \n  ${chalk.blue(options.en)}\
+    \n  ${chalk.blue(options.es)}\n`
   );
 }
 

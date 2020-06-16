@@ -33,7 +33,7 @@ interface WR30Data {
   readonly wageRecords: WageRecord[];
 }
 
-interface WR30 {
+export interface WR30 {
   readonly wr30: WR30Data;
 }
 

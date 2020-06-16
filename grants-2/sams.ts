@@ -40,7 +40,7 @@ interface PosssibleMatches {
   readonly possibleMatches: SamsExclusionRecord[];
 }
 
-interface Sams {
+export interface Sams {
   readonly sams: PosssibleMatches;
 }
 
