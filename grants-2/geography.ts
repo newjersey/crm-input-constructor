@@ -9,7 +9,7 @@ export interface GeographyData {
   readonly LegislativeDistrict: string;
 }
 
-export interface Geographies {
+interface Geographies {
   readonly [Geographies_Id: string]: GeographyData;
 }
 
