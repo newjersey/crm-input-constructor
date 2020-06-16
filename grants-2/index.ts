@@ -8,6 +8,7 @@ import { DecoratedApplication, OlaDatas, generateOlaDatas } from './ola-datas';
 import { addDolData, init as loadDolData } from './dol';
 import { addGeographyData } from './geography';
 import { addGrantPhase1Data, init as loadGrantPhse1Data } from './grant-phase-1';
+import { addPolicyMapData, init as loadPolicyMapDada } from './policy-map';
 import { options, printRunMessage } from './options';
 import { Application, getApplications } from './applications';
 import { addSamsData, init as loadSamsData } from './sams';
@@ -64,6 +65,7 @@ async function main() {
   printRunMessage();
 
   await loadGrantPhse1Data(`${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 6-13-2020 7am.xlsx`);
+  await loadPolicyMapDada(`${BASE_PATH}/Policy Map/Policy Map First 20768 Apps v2.xlsx`);
   await loadSamsData(`${BASE_PATH}/SAMS/SAM_Exclusions_Public_Extract_20161.CSV`);
   await loadTaxationData(`${BASE_PATH}/Taxation/EDA_PROD_OUTPUT_PROJ2_V3_061219.xlsx`);
   await loadWR30Data(
@@ -85,12 +87,13 @@ async function main() {
   const apps1 = map(apps0, addDolData, '\nApplying DOL data...');
   const apps2 = map(apps1, addGeographyData, 'Applying geography data...');
   const apps3 = map(apps2, addGrantPhase1Data, 'Applying grant phase 1 data...');
-  const apps4 = map(apps3, addTaxationData, 'Applying Taxation data...');
-  const apps5 = map(apps4, addSamsData, 'Applying SAMS data...');
-  const apps6 = map(apps5, addWR30Data, 'Applying WR-30 data...');
+  const apps4 = map(apps3, addPolicyMapData, 'Applying Policy Map data...');
+  const apps5 = map(apps4, addTaxationData, 'Applying Taxation data...');
+  const apps6 = map(apps5, addSamsData, 'Applying SAMS data...');
+  const apps7 = map(apps6, addWR30Data, 'Applying WR-30 data...');
 
   // abstract
-  const decoratedApplications: DecoratedApplication[] = apps6;
+  const decoratedApplications: DecoratedApplication[] = apps7;
 
   // debug
   if (options.debug) {

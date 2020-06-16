@@ -2,6 +2,7 @@ import { Application } from './applications';
 import { Dol } from './dol';
 import { Geography } from './geography';
 import { GrantPhase1 } from './grant-phase-1';
+import { PolicyMap } from './policy-map';
 import { Sams } from './sams';
 import { Taxation } from './taxation';
 import { WR30 } from './wr30';
@@ -250,7 +251,14 @@ export interface OlaDatas {
   };
 }
 
-export type DecoratedApplication = Application & Dol & Geography & GrantPhase1 & Sams & Taxation & WR30;
+export type DecoratedApplication = Application &
+  Dol &
+  Geography &
+  GrantPhase1 &
+  PolicyMap &
+  Sams &
+  Taxation &
+  WR30;
 
 export function generateOlaDatas(application: DecoratedApplication): OlaDatas {
   const olaDatas: OlaDatas = {
