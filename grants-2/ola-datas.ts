@@ -11,6 +11,37 @@ import { EligibilityStatus as OZEligibilityStatus } from './policy-map';
 import { CleanStatus as TaxationCleanStatus } from './taxation';
 import { bool, formatDate, formatExcelDate } from './util';
 
+// try to keep Declines at top and Reviews at bottom, so they print that way when serialized in CRM;
+// also keep potentially long messages (e.g. user input) at the end, in case it goes on forever.
+const FINDING_DEFINITIONS: types.FindingDef[] = [
+  // yesNo(app.sams.possibleMatches.length > 0), // TODO: if yes, add details to findings
+  {
+    trigger: app => true,
+    messageGenerator: app => `Foo high five`,
+    severity: types.Decision.Decline,
+  },
+  {
+    trigger: app => true,
+    messageGenerator: app => `Bar bruh yeah`,
+    severity: types.Decision.Review,
+  },
+  {
+    trigger: app => true,
+    messageGenerator: app => `Baz izzle twizzle`,
+    severity: types.Decision.Review,
+  },
+  {
+    trigger: app => false,
+    messageGenerator: app => `foo`,
+    severity: types.Decision.Review,
+  },
+  {
+    trigger: app => false,
+    messageGenerator: app => `foo`,
+    severity: types.Decision.Review,
+  },
+];
+
 function yesNo(test: boolean): types.YesNo {
   return test ? 'Yes' : 'No';
 }
@@ -282,15 +313,37 @@ function getApplicantBackground(app: types.DecoratedApplication): string {
   return nonprofitType ? `Nonprofit type: ${nonprofitType}` : '';
 }
 
-// TODO: Concatenate all of the Exceptions from application and updated here
-function getFindings(app: types.DecoratedApplication): types.NullableString {
-  // yesNo(app.sams.possibleMatches.length > 0), // TODO: if yes, add details to findings
+function getFindings(app: types.DecoratedApplication): types.Finding[] {
+  const findings: types.Finding[] = FINDING_DEFINITIONS.filter(def => def.trigger(app)).map(
+    def => ({
+      message: def.messageGenerator(app),
+      severity: def.severity,
+    })
+  );
 
-  return 'bad bad bad';
+  return findings;
 }
 
-// TODO
+function getFindingsString(app: types.DecoratedApplication): types.NullableString {
+  const findings: types.Finding[] = getFindings(app);
+  const findingsString = findings
+    .map((finding, i) => `(${i + 1} - ${finding.severity}) ${finding.message}`)
+    .join('. ');
+
+  return findingsString || null;
+}
+
 function getDecision(app: types.DecoratedApplication): types.Decision {
+  const findings: types.Finding[] = getFindings(app);
+
+  if (findings.some(finding => finding.severity === types.Decision.Decline)) {
+    return types.Decision.Decline;
+  }
+
+  if (findings.some(finding => finding.severity === types.Decision.Review)) {
+    return types.Decision.Review;
+  }
+
   return types.Decision.Approve;
 }
 
@@ -452,8 +505,8 @@ function getReportedRevenueReasonableness(app: types.DecoratedApplication): type
 
   // no tax data
   if (filing === types.TaxationReportedTaxFilingValues.None) {
-    const su2019 = app.taxation["S&U A 19"] + app.taxation["S&U M 19"];
-    const su2020 = app.taxation["S&U A 20"] + app.taxation["S&U M 20"];
+    const su2019 = app.taxation['S&U A 19'] + app.taxation['S&U M 19'];
+    const su2020 = app.taxation['S&U A 20'] + app.taxation['S&U M 20'];
 
     if (su2019 && su2020) {
       return yesNo(su2020 < su2019);
@@ -767,7 +820,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
     Monitoring: {
       Status: getMonitoringStatus(app),
       MonitoringType: getMonitoringType(app),
-      Findings: getFindings(app),
+      Findings: getFindingsString(app),
       CompletionDate: getDecision(app) === types.Decision.Review ? null : formatDate(new Date()),
       GeneralComments: `Other Workers (1099, seasonal, PEO): ${app.Business_Contractors}`,
     },

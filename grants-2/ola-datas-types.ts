@@ -8,9 +8,9 @@ import { Taxation } from './taxation';
 import { WR30 } from './wr30';
 
 export enum Decision {
-  Approve,
-  Review,
-  Decline,
+  Approve = 'Approve',
+  Review = 'Review',
+  Decline = 'Decline',
 }
 
 export enum SmallBusinessStatuses {
@@ -152,6 +152,17 @@ export type DecoratedApplication = Application &
   Sams &
   Taxation &
   WR30;
+
+export interface Finding {
+  message: string;
+  severity: Decision;
+}
+
+export interface FindingDef {
+  trigger(application: DecoratedApplication): boolean;
+  messageGenerator(application: DecoratedApplication): string;
+  severity: Decision;
+}
 
 interface Amount {
   Value: NullableNumber;
