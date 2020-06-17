@@ -83,7 +83,7 @@ export enum ProgramDescriptions {
   Other = 'Other',
 }
 
-export enum ServicingOfficers {
+export enum ServicingOfficersEN {
   Alan_Finkelstein = '{B59042A9-D571-EA11-A811-001DD8018943}',
   Cynthia_Goyes = '{DD23D309-E8F0-E911-A994-001DD800951B}',
   David_Guarini = '{2EC826BD-D871-EA11-A811-001DD8018943}',
@@ -96,9 +96,21 @@ export enum ServicingOfficers {
   Michael_Candella = '{006A7AEE-3B9C-E911-A97C-001DD800951B}',
   Pamela_McGrew = '{03F90D62-DA71-EA11-A811-001DD8018943}',
   Ricardo_Hernandez = '{9176B59B-DB71-EA11-A811-001DD8018943}',
-  Richard_Toro = '{834023BA-3ED6-E811-811B-1458D04E2F10}',
   Yoletta_Duthil = '{3E7536E2-DD71-EA11-A811-001DD8018943}',
 }
+
+export enum ServicingOfficersES {
+  Cynthia_Goyes = '{DD23D309-E8F0-E911-A994-001DD800951B}',
+  Ricardo_Hernandez = '{9176B59B-DB71-EA11-A811-001DD8018943}',
+  Laura_Diaz = '{A5D4CAEE-8143-EA11-A999-001DD8009F4B}',
+}
+
+/*
+// prettier-ignore
+export enum ServicingOfficersEN { BRUCE_TEST = '{FB3F23BA-3ED6-E811-811B-1458D04E2F10}' }
+// prettier-ignore
+export enum ServicingOfficersES { BRUCE_TEST = '{FB3F23BA-3ED6-E811-811B-1458D04E2F10}' }
+ */
 
 export enum ProductStatuses {
   Ended = '{359B8B3E-65F7-E511-80DE-005056AD31F5}',
@@ -140,6 +152,7 @@ export type YesNoNA = 'Yes' | 'No' | 'NA';
 export type NullableNumber = number | null;
 export type NullableString = string | null;
 export type QuarterlyWageData = [NullableNumber, NullableString];
+export type ServicingOfficer = ServicingOfficersEN | ServicingOfficersES;
 export type TaxationReportedRevenueYear = RevenueYears | null;
 export type TaxationTuple = [TaxationReportedTaxFilingValues, TaxationReportedRevenueYear];
 // TODO: clean up any nullable into consolidated types (rather than writing "| null" in multiple places referencing the same type)
@@ -201,7 +214,7 @@ interface Project {
 
 interface Product {
   DevelopmentOfficer: '';
-  ServicingOfficerId: ServicingOfficers;
+  ServicingOfficerId: ServicingOfficer;
   AppReceivedDate: string;
   Amount: Amount;
   nol_total_NOL_benefit: null;

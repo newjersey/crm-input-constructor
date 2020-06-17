@@ -98,14 +98,41 @@ function getDesignation(app: types.DecoratedApplication, designation: number): b
   return (app.Business_Designations_Value & designation) > 0;
 }
 
-let nextServicingOfficerIndex: number = 0;
-function getNextServicingOfficer(): types.ServicingOfficers {
-  const values = Object.values(types.ServicingOfficers);
-  const value: types.ServicingOfficers = values[nextServicingOfficerIndex];
+let nextServicingOfficerIndexEN: number = 0;
+function getNextServicingOfficerEN(): types.ServicingOfficersEN {
+  const values = Object.values(types.ServicingOfficersEN);
+  const value: types.ServicingOfficersEN = values[nextServicingOfficerIndexEN];
 
-  nextServicingOfficerIndex = (nextServicingOfficerIndex + 1) % values.length;
+  nextServicingOfficerIndexEN = (nextServicingOfficerIndexEN + 1) % values.length;
 
   return value;
+}
+
+let nextServicingOfficerIndexES: number = 0;
+function getNextServicingOfficerES(): types.ServicingOfficersES {
+  const values = Object.values(types.ServicingOfficersES);
+  const value: types.ServicingOfficersES = values[nextServicingOfficerIndexES];
+
+  nextServicingOfficerIndexES = (nextServicingOfficerIndexES + 1) % values.length;
+
+  return value;
+}
+
+function getServicingOfficer(app: types.DecoratedApplication): types.ServicingOfficer {
+  // if (getDecision(app) === ) {
+
+  // }
+  // Richard_Toro = '{834023BA-3ED6-E811-811B-1458D04E2F10}',
+
+
+  switch (app.Language) {
+    case Languages.English:
+      return getNextServicingOfficerEN();
+    case Languages.Spanish:
+      return getNextServicingOfficerES();
+    default:
+      throw new Error(`Unexpected language ${app.Language} for application$ ${app.ApplicationId}`);
+  }
 }
 
 function getEligibleOpportunityZoneValue(
@@ -617,7 +644,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
     },
     Product: {
       DevelopmentOfficer: '',
-      ServicingOfficerId: getNextServicingOfficer(),
+      ServicingOfficerId: getServicingOfficer(app),
       AppReceivedDate: formatExcelDate(app.Entry_DateSubmitted),
       Amount: {
         Value: getAwardAmount(app),
