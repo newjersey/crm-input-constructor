@@ -45,12 +45,14 @@ export interface Sams {
 }
 
 function shouldFlag(a: string, b: string): boolean {
+  const TOLERANCE = 0.85;
+
   return (
     !!a &&
     !!a.trim() &&
     !!b &&
     !!b.trim() &&
-    stringSimilarity.compareTwoStrings(a.trim().toUpperCase(), b.trim().toUpperCase()) >= 0.85
+    stringSimilarity.compareTwoStrings(a.trim().toUpperCase(), b.trim().toUpperCase()) >= TOLERANCE
   );
 }
 
@@ -59,9 +61,11 @@ function isPossibleMatch<T extends Application & Taxation>(
   record: SamsExclusionRecord
 ): boolean {
   return (
-    shouldFlag(record.Name, application.ContactInformation_BusinessName) ||
-    shouldFlag(record.Name, application.ContactInformation_DoingBusinessAsDBA) ||
-    shouldFlag(record.Name, application.taxation['TAXREG Name'])
+    record.Country === 'USA' &&
+    ['NJ', 'NY', 'PA', 'CT', 'DE'].includes(record['State / Province']) &&
+    (shouldFlag(record.Name, application.ContactInformation_BusinessName) ||
+      shouldFlag(record.Name, application.ContactInformation_DoingBusinessAsDBA) ||
+      shouldFlag(record.Name, application.taxation['TAXREG Name']))
   );
 }
 
