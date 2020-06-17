@@ -24,7 +24,7 @@ interface GrantPhase1DataMap {
 }
 
 export interface GrantPhase1 {
-  readonly grantPhase1: GrantPhase1Data;
+  readonly grantPhase1?: GrantPhase1Data;
 }
 
 // assumes single-sheet workbook

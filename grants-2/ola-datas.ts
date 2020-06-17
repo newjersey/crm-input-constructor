@@ -826,7 +826,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
     },
     Covid19Impacts: {
       ApplicationLanguage: app.Language,
-      Grant1applicationID: app.ApplicationId,
+      Grant1applicationID: app.grantPhase1 && app.grantPhase1["OLA Application ID "] || null,
       ApplicationSequenceID: app.Sequence,
       OntheSAMSExclusionList: yesNo(app.sams.possibleMatches.length > 0),
       DeemedAsEssentialBusiness: yesNo(bool(app.COVID19Impact_EssentialBusiness)),

@@ -350,7 +350,7 @@ interface Monitoring {
 
 interface Covid19Impacts {
   ApplicationLanguage: string;
-  Grant1applicationID: string;
+  Grant1applicationID: NullableString;
   ApplicationSequenceID: number;
   OntheSAMSExclusionList: YesNo;
   DeemedAsEssentialBusiness: YesNo;
