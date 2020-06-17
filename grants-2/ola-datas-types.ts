@@ -105,6 +105,10 @@ export enum ServicingOfficersES {
   Laura_Diaz = '{A5D4CAEE-8143-EA11-A999-001DD8009F4B}',
 }
 
+export enum ServicingOfficersExternal {
+  Richard_Toro = '{834023BA-3ED6-E811-811B-1458D04E2F10}',
+}
+
 /*
 // prettier-ignore
 export enum ServicingOfficersEN { BRUCE_TEST = '{FB3F23BA-3ED6-E811-811B-1458D04E2F10}' }
@@ -152,7 +156,7 @@ export type YesNoNA = 'Yes' | 'No' | 'NA';
 export type NullableNumber = number | null;
 export type NullableString = string | null;
 export type QuarterlyWageData = [NullableNumber, NullableString];
-export type ServicingOfficer = ServicingOfficersEN | ServicingOfficersES;
+export type ServicingOfficer = ServicingOfficersEN | ServicingOfficersES | ServicingOfficersExternal;
 export type TaxationReportedRevenueYear = RevenueYears | null;
 export type TaxationTuple = [TaxationReportedTaxFilingValues, TaxationReportedRevenueYear];
 // TODO: clean up any nullable into consolidated types (rather than writing "| null" in multiple places referencing the same type)

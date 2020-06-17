@@ -119,11 +119,9 @@ function getNextServicingOfficerES(): types.ServicingOfficersES {
 }
 
 function getServicingOfficer(app: types.DecoratedApplication): types.ServicingOfficer {
-  // if (getDecision(app) === ) {
-
-  // }
-  // Richard_Toro = '{834023BA-3ED6-E811-811B-1458D04E2F10}',
-
+  if (getDecision(app) !== types.Decision.Review) {
+    return types.ServicingOfficersExternal.Richard_Toro;
+  }
 
   switch (app.Language) {
     case Languages.English:
