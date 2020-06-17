@@ -4,7 +4,8 @@ const csv = require('csv-parser');
 const fs = require('fs');
 const path = require('path');
 
-import { DecoratedApplication, OlaDatas, generateOlaDatas } from './ola-datas';
+import { generateOlaDatas } from './ola-datas';
+import { DecoratedApplication, OlaDatas } from './ola-datas-types';
 import { addDolData, init as loadDolData } from './dol';
 import { addGeographyData } from './geography';
 import { addGrantPhase1Data, init as loadGrantPhse1Data } from './grant-phase-1';

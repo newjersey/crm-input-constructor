@@ -1,6 +1,17 @@
 import XLSX from 'xlsx';
 import { Application } from './applications';
 
+export enum CleanStatus {
+  Clear = 'Y',
+  Not_Clear = 'N',
+  Not_Found = 'X',
+}
+
+export enum Flag {
+  True = 'X',
+  False = ' ',
+}
+
 interface TaxationData {
   readonly 'EDA  Name': string;
   readonly 'EDA DBA': string;
@@ -9,9 +20,9 @@ interface TaxationData {
   readonly 'Ind Match ID': string;
   readonly 'TAXREG Name': string;
   readonly 'NAICS Code': number | '      ';
-  readonly 'Clean Ind': 'Y' | 'N' | 'X';
-  readonly 'SSN Check Only': 'X' | ' ';
-  readonly 'TAXREG SP or SMLLC Ind.': 'X' | ' ';
+  readonly 'Clean Ind': CleanStatus;
+  readonly 'SSN Check Only': Flag;
+  readonly 'TAXREG SP or SMLLC Ind.': Flag;
   readonly '2018 Part': number;
   readonly '2018 Part Amt': number;
   readonly '2019 Part': number;

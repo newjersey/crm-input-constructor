@@ -1,7 +1,7 @@
 import XLSX from 'xlsx';
 import { Application } from './applications';
 
-enum EligibilityStatus {
+export enum EligibilityStatus {
   Eligible_Contiguous = 'Eligible (Contiguous)',
   Eligible_LIC = 'Eligible (LIC)',
   Not_Eligible = 'Not Eligible',
@@ -32,7 +32,7 @@ interface PolicyMapData extends Row {
 type PolicyMapDataMap = Map<string, PolicyMapData>;
 
 export interface PolicyMap {
-  readonly policyMap: PolicyMapData;
+  readonly policyMap?: PolicyMapData;
 }
 
 // assumes single-sheet workbook
@@ -71,13 +71,7 @@ export async function init(path: string) {
 }
 
 export function addPolicyMapData<T extends Application>(application: T): T & PolicyMap {
-  const applicationId = application.ApplicationId;
-
-  if (!POLICY_MAP_DATA_MAP.has(applicationId)) {
-    throw new Error(`Could not find Policy Map entry for application ${applicationId}`);
-  }
-
-  const policyMap: PolicyMapData = <PolicyMapData>POLICY_MAP_DATA_MAP.get(applicationId);
+  const policyMap = POLICY_MAP_DATA_MAP.get(application.ApplicationId);
 
   return { ...application, policyMap };
 }

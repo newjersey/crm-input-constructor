@@ -99,5 +99,13 @@ export function addWR30Data<T extends Application>(application: T): T & WR30 {
     wageRecords: WR30_MAP.get(application.Business_TIN) || [],
   };
 
+  if (wr30.notFound && wr30.wageRecords.length) {
+    throw new Error(`Application ${application.ApplicationId} is on the WR-30 not-found list but does have ${wr30.wageRecords.length} wage records.`);
+  }
+
+  if (!wr30.notFound && !wr30.wageRecords.length) {
+    throw new Error(`Application ${application.ApplicationId} does't have any wage records but isn't on the WR-30 not-found list.`);
+  }
+
   return { ...application, wr30 };
 }

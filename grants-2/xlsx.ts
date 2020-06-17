@@ -1,23 +1,26 @@
 const XLSX = require('xlsx');
 
-enum YesNo {
-  'Sí',
-  'Yes',
-  'No',
+export enum YesNo {
+  Sí = 'Sí',
+  Yes = 'Yes',
+  No ='No',
 }
+
 enum YesNoEmpty {
-  'Sí',
-  'Yes',
-  'No',
-  '',
+  Sí = 'Sí',
+  Yes = 'Yes',
+  No = 'No',
+  Empty = '',
 }
+
 enum EntryStatus {
   'Incomplete',
   'Submitted',
   'Reviewed',
   'Complete',
 }
-enum EntityType {
+
+export enum EntityType {
   Other = 0,
   Sole_Prop = 1,
   LLC = 2,
@@ -33,7 +36,7 @@ enum EntityType {
   Nonprofit_Other = 12,
 }
 
-enum Designations {
+export enum Designations {
   None = 0,
   Small_Business = 1,
   Minority_Owned = 2,
@@ -42,7 +45,7 @@ enum Designations {
   Disabled_Owned = 16,
 }
 
-enum Capacity {
+export enum Capacities {
   'Less than 10%' = 10,
   '25%' = 25,
   '50%' = 50,
@@ -50,13 +53,13 @@ enum Capacity {
   '100%' = 100,
 }
 
-enum DOB_Status {
+export enum DOB_Status {
   Approved = 1,
   In_Process = 2,
   Declined = 3,
 }
 
-enum DOB_Purposes {
+export enum DOB_Purposes {
   None = 0,
   Payroll = 1,
   Rent_Mortgage = 2,
@@ -122,10 +125,10 @@ export interface Row {
   readonly COVID19Impact_EssentialBusiness: YesNo;
   readonly COVID19Impact_OpenOrReopened: YesNo;
   readonly COVID19Impact_Capacity: string;
-  readonly COVID19Impact_Capacity_Value?: Capacity;
-  readonly RevenueComparison_MarchAprilMay2019: number;
+  readonly COVID19Impact_Capacity_Value?: Capacities;
+  readonly RevenueComparison_MarchAprilMay2019?: number;
   readonly RevenueComparison_MarchAprilMay2020: number;
-  readonly RevenueComparison_YearOverYearChange: number;
+  readonly RevenueComparison_YearOverYearChange?: number;
   readonly DOBAffidavit_Certification: YesNo;
   readonly DOBAffidavit_NJEDAGrant: YesNo;
   readonly DOBAffidavit_NJEDAGrantDetails_Verb: string;

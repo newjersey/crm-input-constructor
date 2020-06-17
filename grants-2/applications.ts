@@ -1,10 +1,13 @@
-import { getRows, EnRow, EsRow, Row } from './xlsx';
+import { getRows, EnRow, EsRow, Row, YesNo } from './xlsx';
+
+export { Capacities, Designations, DOB_Purposes, DOB_Status, EntityType, YesNo } from './xlsx';
 
 export enum Languages {
   English = 'English',
   Spanish = 'Spanish',
 }
 
+// TODO -- kill all readonly (replace with Readonly<T>)
 export interface Application extends Row {
   readonly ApplicationId: string;
   readonly Language: Languages;
