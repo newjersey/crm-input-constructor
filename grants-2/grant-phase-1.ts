@@ -1,12 +1,31 @@
 import XLSX from 'xlsx';
 import { Application } from './applications';
 
+
+export enum ProductStatuses {
+  Ended = 'Ended',
+  InProgress = 'In Progress',
+  Closed = 'Closed',
+  Underwriting = 'Underwriting',
+}
+
+export enum ProductSubStatuses {
+  Ended_Declined = 'Declined',
+  InProgress_ApplicationSubmitted = 'Application Submitted',
+  InProgress_ApplicationEDAReview = 'Application EDA Review',
+  InProgress_ApplicationCompanyRevision = 'Application Company Revision',
+  Closed_ComplianceMonitoring = 'Compliance Monitoring',
+  Closed_NonCompliance = 'Non Compliance',
+  Underwriting_ApprovalsinProcess = 'Approvals in Process',
+  Underwriting_IncompleteApplicationUWinProgress = 'Incomplete Application-UW in Progress',
+}
+
 interface GrantPhase1Data {
   readonly 'OLA Application ID ': string;
   readonly 'Product ID': string;
   readonly 'Product Type': string;
-  readonly 'Product Status': string;
-  readonly 'Product Sub Status': string;
+  readonly 'Product Status': ProductStatuses;
+  readonly 'Product Sub Status': ProductSubStatuses;
   readonly 'Account Name (Applicant) (Account)': string;
   readonly 'Doing Business As (Applicant) (Account)'?: string;
   readonly Amount?: number;
