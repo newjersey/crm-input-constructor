@@ -1,4 +1,5 @@
 const chalk = require('chalk');
+const numeral = require('numeral');
 
 import { isAfter } from 'date-fns';
 import * as types from './ola-datas-types';
@@ -98,7 +99,6 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     severity: types.Decision.Decline,
   },
   {
-    // unverified
     name: 'On Unemployment Not Clear List',
     trigger: app => app.dol.uidNoGo,
     messageGenerator: app => `Applicant is on the DOL UI no-go list`,
@@ -112,18 +112,10 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     severity: types.Decision.Decline,
   },
   {
-    // unverified
     name: 'FTE Greater than 25',
     trigger: app => (getQuarterlyWageData(app)[0] || 0) > 25,
     messageGenerator: app =>
       `Too Many FTE Equivalents: ${getQuarterlyWageData(app)[0]} but should be at most 25`,
-    severity: types.Decision.Decline,
-  },
-  {
-    // unverified
-    name: 'Not found with Taxation',
-    trigger: app => app.taxation['Clean Ind'] === CleanStatus.Not_Found,
-    messageGenerator: app => `Not found by Taxation`,
     severity: types.Decision.Decline,
   },
   {
@@ -133,7 +125,11 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
       !!app.grantPhase1?.['Approval Date'] &&
       (getAwardAmount(app) || 0) <= (app.grantPhase1?.Amount || 0),
     messageGenerator: app =>
-      `Business received a NJEDA Emergency Phase 1 Grant (${app.grantPhase1?.['OLA Application ID ']} for $${app.grantPhase1?.Amount}) and is not eligible for incremental funding based on WR-30 data`,
+      `Business received a NJEDA Emergency Phase 1 Grant (${
+        app.grantPhase1?.['OLA Application ID ']
+      } for ${numeral(app.grantPhase1?.Amount).format(
+        '$0,0'
+      )}) and is not eligible for incremental funding based on WR-30 data`,
     severity: types.Decision.Decline,
   },
   {
@@ -152,7 +148,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
       !!app.RevenueComparison_MarchAprilMay2019 &&
       app.RevenueComparison_MarchAprilMay2020 >= app.RevenueComparison_MarchAprilMay2019,
     messageGenerator: app =>
-      `Capacity remained at 100% and self-reported year/year revenue did not decrease from 2019 to 2020`,
+      `Capacity remained at 100% and self-reported YoY revenue did not decrease from 2019 to 2020`,
     severity: types.Decision.Decline,
   },
   {
@@ -161,9 +157,9 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
       getOwnershipStructure(app) !== types.OwnershipStructures.Nonprofit &&
       isUnknownToTaxation(app),
     messageGenerator: app =>
-      `Business is a ${getOwnershipStructure(
-        app
-      )} and did not file taxes with Taxation for 2018 or 2019`,
+      `Business is a ${getOwnershipStructure(app)} (TIN: ${
+        app.Business_TIN
+      }) and did not file taxes with Taxation for 2018 or 2019`,
     severity: types.Decision.Decline,
   },
   ////////////////////// Reviews below ////////////////////////
@@ -187,7 +183,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     severity: types.Decision.Review,
   },
   {
-    name: 'Lobbying and Policital Activities',
+    name: 'Lobbying and Political Activities',
     trigger: app => app.Business_LobbyingPolitical === 'Yes',
     messageGenerator: app => `Business engages in lobbying and/or political activities`,
     severity: types.Decision.Review,
@@ -235,9 +231,9 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     name: 'Unreasonable revenue decline',
     trigger: app => getYYRevenueDeclineReasonableness(app) === 'No',
     messageGenerator: app =>
-      `Applicant reported an unreasonably high year/year revenue decline (${
-        Math.round(<number>app.RevenueComparison_YearOverYearChange * 100)
-      }%) given business operational capacity (${getCapacityOpen(app)})`,
+      `Applicant reported an unreasonably high YoY revenue decline (${numeral(
+        <number>app.RevenueComparison_YearOverYearChange
+      ).format('0%')}) given business operational capacity (${getCapacityOpen(app)})`,
     severity: types.Decision.Review,
   },
   {
@@ -245,7 +241,11 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     trigger: app =>
       getRevenueChange(app) !== null && <number>getRevenueChange(app) + getExternalFunding(app) > 0,
     messageGenerator: app =>
-      `Business does not have an unmet need based on revenue decline and other disaster resources received`,
+      `Business does not have an unmet need based on YoY revenue change (${numeral(
+        getRevenueChange(app)
+      ).format('$0,0')}) and other disaster resources pending or received (${numeral(
+        getExternalFunding(app)
+      ).format('$0,0')})`,
     severity: types.Decision.Review,
   },
   {
@@ -255,9 +255,9 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
       getRoundedUnmetNeed(app) !== null &&
       <number>getRoundedUnmetNeed(app) < <number>getAwardAmount(app),
     messageGenerator: app =>
-      `The business has an unmet need ($${getRoundedUnmetNeed(
-        app
-      )}) less than their maximum award amount ($${getAwardAmount(app)})`,
+      `The business has an unmet need (${numeral(getRoundedUnmetNeed(app)).format(
+        '$0,0'
+      )}) less than their maximum award amount (${numeral(getAwardAmount(app)).format('$0,0')})`,
     severity: types.Decision.Review,
   },
   {
@@ -274,9 +274,9 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     trigger: app =>
       typeof salesTaxChangeRatio(app) !== 'undefined' && <number>salesTaxChangeRatio(app) > 1,
     messageGenerator: app =>
-      `Applicant's sales tax increased ${
-        (<number>salesTaxChangeRatio(app) - 1) * 100
-      }% from 2019 to 2020`,
+      `Applicant's sales tax increased ${numeral(<number>salesTaxChangeRatio(app) - 1).format(
+        '0,0[.]0%'
+      )} from 2019 to 2020`,
     severity: types.Decision.Review,
   },
   {
@@ -294,61 +294,65 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     name: 'CBT filer reports unreasonably high 2019 revenue',
     trigger: app => isSelfReportedRevenueReasonableForCbtFiler(app)[0] === false,
     messageGenerator: app =>
-      `Applicant's ${
-        isSelfReportedRevenueReasonableForCbtFiler(app)[2]
-      } Taxation reported revenue is ${
+      `Applicant's 2019 3-month actual revenues reported on application are ${numeral(
         isSelfReportedRevenueReasonableForCbtFiler(app)[1]
-      }% less than 2019 reported 3 month actuals on application`,
+      ).format('0,0%')} higher than their ${
+        isSelfReportedRevenueReasonableForCbtFiler(app)[2]
+      } revenues reported by Taxation`,
     severity: types.Decision.Review,
   },
   {
     name: 'TGI/Partnership filer reports unreasonably high 2019 revenue',
     trigger: app => isSelfReportedRevenueReasonableForPartOrTgiFiler(app)[0] === false,
     messageGenerator: app =>
-      `Applicant's 2019 self-reported actuals may not be reasonable given their ${
+      `Applicant's 2019 self-reported actuals (${numeral(
+        app.RevenueComparison_MarchAprilMay2019
+      ).format('$0,0')}) may not be reasonable given their ${
         isSelfReportedRevenueReasonableForPartOrTgiFiler(app)[2]
-      } Taxation reported net income of $${getTaxationReportedSolePropIncome(app)} `,
+      } Taxation reported net income of ${numeral(getTaxationReportedSolePropIncome(app)).format(
+        '$0,0'
+      )}`,
     severity: types.Decision.Review,
   },
   // UNVERIFIED--
   // keep these last, since they could include long text:
   {
-    name: 'Background Question #1',
+    name: 'Background Question #1 (convictions)',
     trigger: app => bool(app.AdditionalBackgroundInformation_BackgroundQuestion1),
     messageGenerator: app =>
       `Additional information provided on background question #1 (convictions): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails1}"`,
     severity: types.Decision.Review,
   },
   {
-    name: 'Background Question #2',
+    name: 'Background Question #2 (denied licensure)',
     trigger: app => bool(app.AdditionalBackgroundInformation_BackgroundQuestion2),
     messageGenerator: app =>
       `Additional information provided on background question #2 (denied licensure): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails2}"`,
     severity: types.Decision.Review,
   },
   {
-    name: 'Background Question #3',
+    name: 'Background Question #3 (public contractor subcontract ineligibility)',
     trigger: app => bool(app.AdditionalBackgroundInformation_BackgroundQuestion3),
     messageGenerator: app =>
       `Additional information provided on background question #3 (public contractor subcontract ineligibility): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails3}"`,
     severity: types.Decision.Review,
   },
   {
-    name: 'Background Question #4',
+    name: 'Background Question #4 (violated the terms of a public agreement)',
     trigger: app => bool(app.AdditionalBackgroundInformation_BackgroundQuestion4),
     messageGenerator: app =>
       `Additional information provided on background question #4 (violated the terms of a public agreement): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails4}"`,
     severity: types.Decision.Review,
   },
   {
-    name: 'Background Question #5',
+    name: 'Background Question #5 (injunction, order or lien)',
     trigger: app => bool(app.AdditionalBackgroundInformation_BackgroundQuestion5),
     messageGenerator: app =>
       `Additional information provided on background question #5 (injunction, order or lien): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails5}"`,
     severity: types.Decision.Review,
   },
   {
-    name: 'Background Question #6',
+    name: 'Background Question #6 (presently indicted)',
     trigger: app => bool(app.AdditionalBackgroundInformation_BackgroundQuestion6),
     messageGenerator: app =>
       `Additional information provided on background question #6 (presently indicted): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails6}"`,
@@ -987,6 +991,10 @@ function getYYRevenueDeclineReasonableness(app: types.DecoratedApplication): typ
   }
 }
 
+function getReasonablenessExceptions(app: types.DecoratedApplication): string {
+  return '';
+}
+
 // based on self-reported March-May YoY actual gross revenues
 function getRevenueChange(app: types.DecoratedApplication): types.NullableNumber {
   if (typeof app.RevenueComparison_MarchAprilMay2019 === 'undefined') {
@@ -1318,7 +1326,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         },
         ReportedRevenueReasonable: getReportedRevenueReasonableness(app),
         YYRevenueDeclineReasonable: getYYRevenueDeclineReasonableness(app),
-        ReasonablenessExceptions: '', // TODO?
+        ReasonablenessExceptions: getReasonablenessExceptions(app),
         DOLWR30FilingQuarter: getQuarterlyWageData(app)[1],
         WR30ReportingComments: app.wr30.notFound
           ? types.WR30ReportingComments.WR30_Not_Found

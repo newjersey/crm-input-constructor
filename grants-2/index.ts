@@ -111,27 +111,12 @@ async function main() {
   const olaDatasArray: OlaDatas[] = map(
     decoratedApplications,
     generateOlaDatas,
-    '\nGenerating OLADatas objects...'
+    'Generating OLADatas objects...'
   );
 
   // print
   if (options.pretty) {
     console.dir(olaDatasArray, { depth: null });
-  }
-
-  // write
-  if (options.out) {
-    const debug: string = `${options.out}-INPUTS.json`;
-    const overwrite: boolean = !!options.force;
-
-    console.log(
-      `\nWriting JSON files:\
-       \n  Inputs: ${chalk.blue(debug)}\
-       \n  Output: ${chalk.blue(options.out)}`
-    );
-
-    writeFile(debug, JSON.stringify(decoratedApplications), overwrite);
-    writeFile(options.out, JSON.stringify(olaDatasArray), overwrite);
   }
 
   // stats
@@ -141,12 +126,37 @@ async function main() {
     .forEach(decision => {
       stats[decision] = (stats[decision] || 0) + 1;
     });
-  console.log('\n', stats);
+  console.log('\n', stats, '\n');
+  const findings: { [finding: string]: number } = decoratedApplications
+    .map(app =>
+      getFindings(app).map(finding => `(${chalk.bold(finding.severity)}) ${finding.name}`)
+    )
+    .reduce((accum: { [finding: string]: number }, appFindings) => {
+      appFindings.forEach(finding => {
+        accum[finding] = (accum[finding] || 0) + 1;
+      });
+      return accum;
+    }, {});
+  Object.keys(findings)
+    .sort()
+    .forEach(key => {
+      console.log(`  ${chalk.yellow(findings[key].toString().padStart(5))} ${key}`);
+    });
 
-  // const findings: { [name: string]: number } = decoratedApplications.map(app =>
-  //   getFindings(app).map(finding => [`(${finding.severity}) ${finding.name}`, 1])
-  // );
-  // console.log('\nFindings', findings);
+  // write
+  if (options.out) {
+    const debug: string = `${options.out}-INPUTS.json`;
+    const overwrite: boolean = !!options.force;
+
+    console.log(
+      `\nWriting JSON files:\
+         \n  Inputs: ${chalk.blue(debug)}\
+         \n  Output: ${chalk.blue(options.out)}`
+    );
+
+    writeFile(debug, JSON.stringify(decoratedApplications), overwrite);
+    writeFile(options.out, JSON.stringify(olaDatasArray), overwrite);
+  }
 
   // done
   console.log(`\nSuccessfully generated ${olaDatasArray.length} records.`);

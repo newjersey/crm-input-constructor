@@ -160,7 +160,6 @@ export type QuarterlyWageData = [NullableNumber, NullableString];
 export type ServicingOfficer = ServicingOfficersEN | ServicingOfficersES | ServicingOfficersExternal;
 export type TaxationReportedRevenueYear = RevenueYears | null;
 export type TaxationTuple = [TaxationReportedTaxFilingValues, TaxationReportedRevenueYear];
-// TODO: clean up any nullable into consolidated types (rather than writing "| null" in multiple places referencing the same type)
 export type CapacityOpen = RemainOpenCapacities | null;
 export type DecoratedApplication = Application &
   Dol &
@@ -388,7 +387,7 @@ interface Covid19Impacts {
   TaxationReportedSolePropIncome: Amount;
   ReportedRevenueReasonable: YesNoNA;
   YYRevenueDeclineReasonable: YesNoNA;
-  ReasonablenessExceptions: '';
+  ReasonablenessExceptions: string;
   DOLWR30FilingQuarter: NullableString;
   WR30ReportingComments: WR30ReportingComments;
 }
