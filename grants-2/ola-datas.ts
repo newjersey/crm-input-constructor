@@ -272,9 +272,10 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
   {
     name: 'Sales tax increased',
     trigger: app =>
-      typeof salesTaxChangeRatio(app) !== 'undefined' && <number>salesTaxChangeRatio(app) > 1,
+      typeof getSalesTaxPercentChange(app) !== 'undefined' &&
+      <number>getSalesTaxPercentChange(app) > 0,
     messageGenerator: app =>
-      `Applicant's sales tax increased ${numeral(<number>salesTaxChangeRatio(app) - 1).format(
+      `Applicant's sales tax increased ${numeral(<number>getSalesTaxPercentChange(app)).format(
         '0,0[.]0%'
       )} from 2019 to 2020`,
     severity: types.Decision.Review,
@@ -309,7 +310,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
         app.RevenueComparison_MarchAprilMay2019
       ).format('$0,0')}) may not be reasonable given their ${
         isSelfReportedRevenueReasonableForPartOrTgiFiler(app)[2]
-      } Taxation reported net income of ${numeral(getTaxationReportedSolePropIncome(app)).format(
+      } Taxation reported net income of ${numeral(getTaxationReportedNetIncomeLoss(app)).format(
         '$0,0'
       )}`,
     severity: types.Decision.Review,
@@ -802,7 +803,7 @@ function getTaxationReportedRevenue(app: types.DecoratedApplication): types.Null
   }
 }
 
-function getTaxationReportedSolePropIncome(app: types.DecoratedApplication): types.NullableNumber {
+function getTaxationReportedNetIncomeLoss(app: types.DecoratedApplication): types.NullableNumber {
   const [filing, year]: types.TaxationTuple = getTaxationReportedTaxFilingAndYear(app);
 
   // sole prop income is only relevant to Part/TGI filers
@@ -926,7 +927,7 @@ function isSelfReportedRevenueReasonableForPartOrTgiFiler(
     return [undefined, undefined, undefined];
   }
 
-  const pastAnnualProfit: types.NullableNumber = getTaxationReportedSolePropIncome(app);
+  const pastAnnualProfit: types.NullableNumber = getTaxationReportedNetIncomeLoss(app);
 
   if (pastAnnualProfit === null) {
     throw new Error(`Expected sole prop income for application ${app.ApplicationId}`);
@@ -942,12 +943,12 @@ function isSelfReportedRevenueReasonableForPartOrTgiFiler(
   return [...isSelfReportedRevenueReasonable(app, presumedPastAnnualRevenue), year || undefined];
 }
 
-function salesTaxChangeRatio(app: types.DecoratedApplication): number | undefined {
+function getSalesTaxPercentChange(app: types.DecoratedApplication): number | undefined {
   const su2019 = app.taxation['S&U A 19'] + app.taxation['S&U M 19'];
   const su2020 = app.taxation['S&U A 20'] + app.taxation['S&U M 20'];
 
   if (su2019 && su2020) {
-    return su2020 / su2019;
+    return (su2020 - su2019) / su2019;
   }
 
   return undefined;
@@ -963,8 +964,8 @@ function getReportedRevenueReasonableness(app: types.DecoratedApplication): type
     return yesNo(<boolean>isSelfReportedRevenueReasonableForPartOrTgiFiler(app)[0]);
   }
 
-  if (typeof salesTaxChangeRatio(app) !== 'undefined') {
-    return yesNo(<number>salesTaxChangeRatio(app) <= 1);
+  if (typeof getSalesTaxPercentChange(app) !== 'undefined') {
+    return yesNo(<number>getSalesTaxPercentChange(app) <= 0);
   }
 
   return 'NA';
@@ -992,7 +993,27 @@ function getYYRevenueDeclineReasonableness(app: types.DecoratedApplication): typ
 }
 
 function getReasonablenessExceptions(app: types.DecoratedApplication): string {
-  return '';
+  const messages: string[] = [];
+  const netIncomeLoss: types.NullableNumber = getTaxationReportedNetIncomeLoss(app);
+  const salesTaxPercentChange: number | undefined = getSalesTaxPercentChange(app);
+
+  if (netIncomeLoss !== null && netIncomeLoss <= 0) {
+    messages.push(
+      'The business as reported to Taxation is operating at a loss or breakeven, therefore the business has a reasonable need.'
+    );
+  }
+
+  if (
+    getTaxationReportedTaxFilingAndYear(app)[0] == types.TaxationReportedTaxFilingValues.None &&
+    typeof salesTaxPercentChange !== 'undefined' &&
+    salesTaxPercentChange <= 0
+  ) {
+    messages.push(
+      'The applicant has reported Sales and Use Tax for 2019 and 2020, is deemed to have filed taxes, and has revenue numbers that are reasonable.'
+    );
+  }
+
+  return messages.join(' ');
 }
 
 // based on self-reported March-May YoY actual gross revenues
@@ -1321,7 +1342,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         },
         TaxationReportedTaxFiling: getTaxationReportedTaxFilingAndYear(app)[0],
         TaxationReportedSolePropIncome: {
-          Value: getTaxationReportedSolePropIncome(app),
+          Value: getTaxationReportedNetIncomeLoss(app),
           ExtensionData: null,
         },
         ReportedRevenueReasonable: getReportedRevenueReasonableness(app),
