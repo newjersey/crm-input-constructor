@@ -14,7 +14,7 @@ import {
 import { EligibilityStatus as OZEligibilityStatus } from './policy-map';
 import { CleanStatus as TaxationCleanStatus, CleanStatus } from './taxation';
 import { bool, dateFromExcel, formatDate, formatExcelDate } from './util';
-import { ProductSubStatuses, ProductStatuses } from './grant-phase-1';
+import { ProductStatuses } from './grant-phase-1';
 
 // try to keep Declines at top and Reviews at bottom, so they print that way when serialized in CRM;
 // also keep potentially long messages (e.g. user input) at the end, in case it goes on forever.
@@ -45,12 +45,14 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     severity: types.Decision.Decline,
   },
   {
+    // unverified
     name: 'Gambling',
     trigger: app => bool(app.BusinessDetails_GamblingActivities),
     messageGenerator: app => `Organization hosts gambling or gaming activities`,
     severity: types.Decision.Decline,
   },
   {
+    // unverified
     name: 'Adult',
     trigger: app =>
       app.BusinessDetails_AdultActivities !== '' && bool(app.BusinessDetails_AdultActivities),
@@ -59,6 +61,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     severity: types.Decision.Decline,
   },
   {
+    // unverified
     name: 'Auctions/Sales',
     trigger: app => bool(app.BusinessDetails_SalessActivities),
     messageGenerator: app =>
@@ -66,6 +69,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     severity: types.Decision.Decline,
   },
   {
+    // unverified
     name: 'Transient merchant',
     trigger: app => bool(app.BusinessDetails_TransientMerchant),
     messageGenerator: app =>
@@ -73,18 +77,21 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     severity: types.Decision.Decline,
   },
   {
+    // unverified
     name: 'Outdoor storage',
     trigger: app => bool(app.BusinessDetails_OutdoorStorageCompany),
     messageGenerator: app => `Organization is an outdoor storage company`,
     severity: types.Decision.Decline,
   },
   {
+    // unverified
     name: 'Nuisance',
     trigger: app => bool(app.BusinessDetails_NuisanceActivities),
     messageGenerator: app => `Organization conducts activities that may constitute a nuisance`,
     severity: types.Decision.Decline,
   },
   {
+    // unverified
     name: 'Illegal',
     trigger: app => bool(app.BusinessDetails_IllegalActivities),
     messageGenerator: app => `Organization conducts business for an illegal purpose`,
@@ -105,6 +112,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     severity: types.Decision.Decline,
   },
   {
+    // unverified
     name: 'FTE Greater than 25',
     trigger: app => (getQuarterlyWageData(app)[0] || 0) > 25,
     messageGenerator: app =>
@@ -112,6 +120,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     severity: types.Decision.Decline,
   },
   {
+    // unverified
     name: 'Not found with Taxation',
     trigger: app => app.taxation['Clean Ind'] === CleanStatus.Not_Found,
     messageGenerator: app => `Not found by Taxation`,
@@ -128,10 +137,28 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     severity: types.Decision.Decline,
   },
   {
+    // unverified
     name: 'Duplicate EIN',
     trigger: app => !!app.duplicates.byTin,
     messageGenerator: app =>
       `EIN was found in more than one application (${app.duplicates.byTin?.join(', ')})`,
+    severity: types.Decision.Decline,
+  },
+  {
+    // unverified
+    name: 'Capacity 100%, no self-reported revenue decrease',
+    trigger: app =>
+      getCapacityOpen(app) === types.RemainOpenCapacities['100%'] &&
+      !!app.RevenueComparison_MarchAprilMay2019 &&
+      app.RevenueComparison_MarchAprilMay2020 >= app.RevenueComparison_MarchAprilMay2019,
+    messageGenerator: app =>
+      `Capacity remained at 100% and self-reported year/year revenue did not decrease from 2019 to 2020.`,
+    severity: types.Decision.Decline,
+  },
+  {
+    name: '',
+    trigger: app => false,
+    messageGenerator: app => ``,
     severity: types.Decision.Decline,
   },
   {
@@ -209,6 +236,21 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
       `Business address was found in more than one application (${app.duplicates.byAddress?.join(
         ', '
       )})`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: 'Unreasonable revenue decline',
+    trigger: app => getYYRevenueDeclineReasonableness(app) === 'No',
+    messageGenerator: app =>
+      `Applicant reported an unreasonably high year/year revenue decline (${
+        Math.round(<number>app.RevenueComparison_YearOverYearChange) * 100
+      }%) given business operational capacity (${getCapacityOpen(app)}).`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: '',
+    trigger: app => false,
+    messageGenerator: app => ``,
     severity: types.Decision.Review,
   },
   {

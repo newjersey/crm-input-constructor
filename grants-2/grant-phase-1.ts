@@ -1,7 +1,6 @@
 import XLSX from 'xlsx';
 import { Application } from './applications';
 
-
 export enum ProductStatuses {
   Ended = 'Ended',
   InProgress = 'In Progress',
@@ -9,7 +8,7 @@ export enum ProductStatuses {
   Underwriting = 'Underwriting',
 }
 
-export enum ProductSubStatuses {
+enum ProductSubStatuses {
   Ended_Declined = 'Declined',
   InProgress_ApplicationSubmitted = 'Application Submitted',
   InProgress_ApplicationEDAReview = 'Application EDA Review',
