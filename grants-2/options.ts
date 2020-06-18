@@ -1,5 +1,3 @@
-import { seenAddresses, seenEins } from './duplicates';
-
 const chalk = require('chalk');
 const commandLineArgs = require('command-line-args');
 const commandLineUsage = require('command-line-usage');

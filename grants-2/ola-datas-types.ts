@@ -174,12 +174,12 @@ export type DecoratedApplication = Application &
 
 export interface Finding {
   message: string;
+  name: string,
   severity: Decision;
 }
 
 export interface FindingDef {
   trigger(application: DecoratedApplication): boolean;
-  callback?(application: DecoratedApplication): void;
   messageGenerator(application: DecoratedApplication): string;
   name: string,
   severity: Decision;

@@ -166,19 +166,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
       )} and did not file taxes with Taxation for 2018 or 2019`,
     severity: types.Decision.Decline,
   },
-  {
-    name: '',
-    trigger: app => false,
-    messageGenerator: app => ``,
-    severity: types.Decision.Decline,
-  },
-  {
-    name: '',
-    trigger: app => false,
-    messageGenerator: app => ``,
-    severity: types.Decision.Decline,
-  },
-  //////////////////////////////////////////////
+  ////////////////////// Reviews below ////////////////////////
   {
     name: 'Adult unknown',
     trigger: app => app.BusinessDetails_AdultActivities === '',
@@ -248,7 +236,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     trigger: app => getYYRevenueDeclineReasonableness(app) === 'No',
     messageGenerator: app =>
       `Applicant reported an unreasonably high year/year revenue decline (${
-        Math.round(<number>app.RevenueComparison_YearOverYearChange) * 100
+        Math.round(<number>app.RevenueComparison_YearOverYearChange * 100)
       }%) given business operational capacity (${getCapacityOpen(app)})`,
     severity: types.Decision.Review,
   },
@@ -320,12 +308,6 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
       `Applicant's 2019 self-reported actuals may not be reasonable given their ${
         isSelfReportedRevenueReasonableForPartOrTgiFiler(app)[2]
       } Taxation reported net income of $${getTaxationReportedSolePropIncome(app)} `,
-    severity: types.Decision.Review,
-  },
-  {
-    name: '',
-    trigger: app => false,
-    messageGenerator: app => ``,
     severity: types.Decision.Review,
   },
   // UNVERIFIED--
@@ -677,11 +659,12 @@ function getApplicantBackground(app: types.DecoratedApplication): string {
   return nonprofitType ? `Nonprofit type: ${nonprofitType}` : '';
 }
 
-function getFindings(app: types.DecoratedApplication): types.Finding[] {
+export function getFindings(app: types.DecoratedApplication): types.Finding[] {
   const findings: types.Finding[] = FINDING_DEFINITIONS.filter(def => def.trigger(app)).map(
     def => ({
       message: def.messageGenerator(app),
       severity: def.severity,
+      name: def.name,
     })
   );
 

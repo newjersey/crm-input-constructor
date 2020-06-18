@@ -1,12 +1,11 @@
 const chalk = require('chalk');
 const cliProgress = require('cli-progress');
-const csv = require('csv-parser');
 const fs = require('fs');
 const path = require('path');
-import { generateOlaDatas, getDecision } from './ola-datas';
+import { generateOlaDatas, getDecision, getFindings } from './ola-datas';
 import { Decision, DecoratedApplication, OlaDatas } from './ola-datas-types';
 import { addDolData, init as loadDolData } from './dol';
-import { addDuplicateData, seenAddresses, seenEins } from './duplicates';
+import { addDuplicateData } from './duplicates';
 import { addGeographyData } from './geography';
 import { addGrantPhase1Data, init as loadGrantPhse1Data } from './grant-phase-1';
 import { addPolicyMapData, init as loadPolicyMapDada } from './policy-map';
@@ -69,20 +68,6 @@ async function main() {
     return;
   }
 
-  // ensure we catch duplicates over entire population
-  if (options.skip && (!seenEins.size || !seenAddresses.size)) {
-    console.log(
-      chalk.red(
-        `Skipping applications but ${chalk.bold('seenEins')} or ${chalk.bold(
-          'seenAddresses'
-        )} set is empty. ` +
-          `Populate them with the data of the applications skipped, to ensure proper duplicate checking.`
-      )
-    );
-
-    return;
-  }
-
   // load
   await loadGrantPhse1Data(`${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 6-13-2020 7am.xlsx`);
   await loadPolicyMapDada(`${BASE_PATH}/Policy Map/Policy Map First 20768 Apps v2.xlsx`);
@@ -101,10 +86,7 @@ async function main() {
   // apply
   // Ugly number of variables, but makes type inference pick up the chained unions of generics.
   // I'm probably doing it wrong. Note that a map() chain here causes out-of-memory panics.
-  const apps0 = getApplications(options.en, options.es).slice(
-    options.skip,
-    options.count && options.count + (options.skip || 0)
-  );
+  const apps0 = getApplications(options.en, options.es);
   const apps1 = map(apps0, addDolData, '\nApplying DOL data...');
   const apps2 = map(apps1, addGeographyData, 'Applying geography data...');
   const apps3 = map(apps2, addGrantPhase1Data, 'Applying grant phase 1 data...');
@@ -114,8 +96,11 @@ async function main() {
   const apps7 = map(apps6, addWR30Data, 'Applying WR-30 data...');
   const apps8 = map(apps7, addDuplicateData, 'Applying duplicate data...');
 
-  // abstract
-  const decoratedApplications: DecoratedApplication[] = apps8;
+  // limit
+  const decoratedApplications: DecoratedApplication[] = apps8.slice(
+    options.skip,
+    options.count && options.count + (options.skip || 0)
+  );
 
   // debug
   if (options.debug) {
@@ -126,7 +111,7 @@ async function main() {
   const olaDatasArray: OlaDatas[] = map(
     decoratedApplications,
     generateOlaDatas,
-    'Generating OLADatas objects...'
+    '\nGenerating OLADatas objects...'
   );
 
   // print
@@ -157,6 +142,11 @@ async function main() {
       stats[decision] = (stats[decision] || 0) + 1;
     });
   console.log('\n', stats);
+
+  // const findings: { [name: string]: number } = decoratedApplications.map(app =>
+  //   getFindings(app).map(finding => [`(${finding.severity}) ${finding.name}`, 1])
+  // );
+  // console.log('\nFindings', findings);
 
   // done
   console.log(`\nSuccessfully generated ${olaDatasArray.length} records.`);

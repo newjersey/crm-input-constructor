@@ -7,7 +7,7 @@
     "grants": "node grants/index.js",
     "loans": "node loans/index.js",
     "grant-declines": "node grants/declines.js",
-    "grants-2": "tsc && node --expose-gc --inspect grants-2/index.js",
+    "grants-2": "tsc && node grants-2/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

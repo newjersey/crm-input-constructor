@@ -3,10 +3,8 @@ import { normalize } from './address';
 
 type ApplicationIDArray = string[];
 
-// used to keep track of duplicates -- should be pre-populated in code if running
-// the program over a population that doesn't start at the beginning
-export const seenEins = new Map<string, ApplicationIDArray>();
-export const seenAddresses = new Map<string, ApplicationIDArray>();
+const seenEins = new Map<string, ApplicationIDArray>();
+const seenAddresses = new Map<string, ApplicationIDArray>();
 
 interface DuplicateData {
   readonly byTin?: ApplicationIDArray;
@@ -35,7 +33,7 @@ export function addDuplicateData<T extends Application>(application: T): T & Dup
   const duplicates: DuplicateData = {
     byTin: seenEins.get(application.Business_TIN)?.slice(),
     byAddress: seenAddresses.get(address)?.slice(),
-    serializedAddress: address, // to help with populating seenAddresses when skipping applications
+    serializedAddress: address, // to help with debugging
   };
 
   // init collections
