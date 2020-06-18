@@ -185,7 +185,7 @@ export interface FindingDef {
 }
 
 interface Amount {
-  Value: NullableNumber;
+  Value: number;
   ExtensionData: null;
 }
 
