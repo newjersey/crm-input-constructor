@@ -303,9 +303,14 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     severity: types.Decision.Review,
   },
   {
-    name: '',
-    trigger: app => false,
-    messageGenerator: app => ``,
+    name: 'CBT filer reports unreasonably high 2019 revenue',
+    trigger: app => isSelfReportedRevenueReasonableForCbtFiler(app)[0] === false,
+    messageGenerator: app =>
+      `Applicant's ${
+        isSelfReportedRevenueReasonableForCbtFiler(app)[2]
+      } Taxation reported revenue is ${
+        isSelfReportedRevenueReasonableForCbtFiler(app)[1]
+      }% less than 2019 reported 3 month actuals on application`,
     severity: types.Decision.Review,
   },
   {
@@ -852,32 +857,46 @@ function getTaxationSalesTax2020(app: types.DecoratedApplication): types.Nullabl
   return sum;
 }
 
-function isSelfReportedRevenueReasonable(
+// how much higher is self-reported revenue compared to a known benchmark?
+function revenuePercentOverBenchmark(
   app: types.DecoratedApplication,
-  comparisonAnnual: number
-): boolean | undefined {
-  // no basis for comparison: company too new (didn't ask for 2019 data)
+  benchmarkAnnual: number
+): number | undefined {
+  // no basis for comparison: company is too new (didn't ask for 2019 data)
   if (typeof app.RevenueComparison_MarchAprilMay2019 === 'undefined') {
     return undefined;
   }
 
-  const PERCENT_TOLERANCE: number = 0.2;
   const selfReportedAnnual2019: number = app.RevenueComparison_MarchAprilMay2019 * 4;
-  const selfReportedAnnual2020: number = app.RevenueComparison_MarchAprilMay2020 * 4;
-  const comparisonAnnualUpperBound = comparisonAnnual * (1 + PERCENT_TOLERANCE);
-  const comparisonAnnualBounded = Math.min(selfReportedAnnual2019, comparisonAnnualUpperBound);
 
-  return selfReportedAnnual2020 < comparisonAnnualBounded;
+  return selfReportedAnnual2019 / benchmarkAnnual - 1;
+}
+
+function isSelfReportedRevenueReasonable(
+  app: types.DecoratedApplication,
+  benchmarkAnnual: number
+): [boolean | undefined, number | undefined] {
+  const PERCENT_TOLERANCE: number = 0.2;
+  const percentOverBenchmark: number | undefined = revenuePercentOverBenchmark(
+    app,
+    benchmarkAnnual
+  );
+
+  if (typeof percentOverBenchmark === 'undefined') {
+    return [undefined, undefined];
+  }
+
+  return [percentOverBenchmark < PERCENT_TOLERANCE, percentOverBenchmark];
 }
 
 function isSelfReportedRevenueReasonableForCbtFiler(
   app: types.DecoratedApplication
-): boolean | undefined {
+): [boolean | undefined, number | undefined, types.RevenueYears | undefined] {
   const [filing, year]: types.TaxationTuple = getTaxationReportedTaxFilingAndYear(app);
 
   // not a CBT filer
   if (filing !== types.TaxationReportedTaxFilingValues.CBT) {
-    return undefined;
+    return [undefined, undefined, undefined];
   }
 
   let taxationReportedAnnual: number;
@@ -893,12 +912,12 @@ function isSelfReportedRevenueReasonableForCbtFiler(
       throw new Error(`Unexpected CBT filing year (${year}) for application ${app.ApplicationId}`);
   }
 
-  return isSelfReportedRevenueReasonable(app, taxationReportedAnnual);
+  return [...isSelfReportedRevenueReasonable(app, taxationReportedAnnual), year];
 }
 
 function isSelfReportedRevenueReasonableForPartOrTgiFiler(
   app: types.DecoratedApplication
-): boolean | undefined {
+): [boolean | undefined, number | undefined] {
   const [filing, year]: types.TaxationTuple = getTaxationReportedTaxFilingAndYear(app);
 
   // not a Part or TGI filer
@@ -906,7 +925,7 @@ function isSelfReportedRevenueReasonableForPartOrTgiFiler(
     filing !== types.TaxationReportedTaxFilingValues.Partnership &&
     filing !== types.TaxationReportedTaxFilingValues.Sole_Prop_SMLLC
   ) {
-    return undefined;
+    return [undefined, undefined];
   }
 
   // if filing is Partnership or TGI, we get net profit (not gross revenue);
@@ -918,7 +937,7 @@ function isSelfReportedRevenueReasonableForPartOrTgiFiler(
   }
 
   if (pastAnnualProfit < 0) {
-    return true;
+    return [true, undefined];
   }
 
   const PRESUMED_PROFIT_MARGIN = 0.1;
@@ -940,12 +959,12 @@ function salesTaxChangeRatio(app: types.DecoratedApplication): number | undefine
 
 // goal: guard against 2019 over-reporting (to inflate need)
 function getReportedRevenueReasonableness(app: types.DecoratedApplication): types.YesNoNA {
-  if (typeof isSelfReportedRevenueReasonableForCbtFiler(app) !== 'undefined') {
-    return yesNo(<boolean>isSelfReportedRevenueReasonableForCbtFiler(app));
+  if (typeof isSelfReportedRevenueReasonableForCbtFiler(app)[0] !== 'undefined') {
+    return yesNo(<boolean>isSelfReportedRevenueReasonableForCbtFiler(app)[0]);
   }
 
-  if (typeof isSelfReportedRevenueReasonableForPartOrTgiFiler(app) !== 'undefined') {
-    return yesNo(<boolean>isSelfReportedRevenueReasonableForPartOrTgiFiler(app));
+  if (typeof isSelfReportedRevenueReasonableForPartOrTgiFiler(app)[0] !== 'undefined') {
+    return yesNo(<boolean>isSelfReportedRevenueReasonableForPartOrTgiFiler(app)[0]);
   }
 
   if (typeof salesTaxChangeRatio(app) !== 'undefined') {
