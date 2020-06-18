@@ -133,7 +133,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
       !!app.grantPhase1?.['Approval Date'] &&
       (getAwardAmount(app) || 0) <= (app.grantPhase1?.Amount || 0),
     messageGenerator: app =>
-      `Business received a NJEDA Emergency Phase 1 Grant (${app.grantPhase1?.['OLA Application ID ']} for $${app.grantPhase1?.Amount}) and is not eligible for incremental funding based on WR30 data`,
+      `Business received a NJEDA Emergency Phase 1 Grant (${app.grantPhase1?.['OLA Application ID ']} for $${app.grantPhase1?.Amount}) and is not eligible for incremental funding based on WR-30 data`,
     severity: types.Decision.Decline,
   },
   {
@@ -156,9 +156,19 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     severity: types.Decision.Decline,
   },
   {
-    name: '',
-    trigger: app => false,
-    messageGenerator: app => ``,
+    name: 'No Taxation record (excluding nonprofits)',
+    trigger: app =>
+      getOwnershipStructure(app) !== types.OwnershipStructures.Nonprofit &&
+      getTaxationReportedTaxFilingAndYear(app)[0] == types.TaxationReportedTaxFilingValues.None &&
+      app.taxation['Clean Ind'] === TaxationCleanStatus.Not_Found &&
+      app.taxation['S&U A 19'] === 0 &&
+      app.taxation['S&U M 19'] === 0 &&
+      app.taxation['S&U A 20'] === 0 &&
+      app.taxation['S&U M 20'] === 0,
+    messageGenerator: app =>
+      `Business is a ${getOwnershipStructure(
+        app
+      )} and did not file taxes with Taxation for 2018 or 2019`,
     severity: types.Decision.Decline,
   },
   {
@@ -267,12 +277,15 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
       )}) less than their maximum award amount ($${getAwardAmount(app)})`,
     severity: types.Decision.Review,
   },
-  // {
-  //   name: 'Missing WR30 but expect employees',
-  //   trigger: app => app.wr30.notFound && ,
-  //   messageGenerator: app => ``,
-  //   severity: types.Decision.Review,
-  // },
+  {
+    name: 'Missing WR-30 but expect employees',
+    trigger: app =>
+      app.wr30.notFound &&
+      (app.Business_W2EmployeesFullTime >= 2 || app.Business_W2EmployeesPartTime >= 3),
+    messageGenerator: app =>
+      `No WR-30 found for applicant, but applicant reported ${app.Business_W2EmployeesFullTime} full-time W2 employees and ${app.Business_W2EmployeesPartTime} part-time W2 employees`,
+    severity: types.Decision.Review,
+  },
   {
     name: 'Sales tax increased',
     trigger: app =>
@@ -576,7 +589,7 @@ function getDobPurposes(
   return purposesOfFunds.join('; ');
 }
 
-// returns a number of FTEs calculated from WR30 data (without limit) and a description
+// returns a number of FTEs calculated from WR-30 data (without limit) and a description
 // of the quarter used, e.g. [17, "Q1 2020"]
 function getQuarterlyWageData(app: types.DecoratedApplication): types.QuarterlyWageData {
   if (app.wr30.notFound) {
