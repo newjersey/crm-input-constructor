@@ -1,3 +1,6 @@
+const chalk = require('chalk');
+
+import { isAfter } from 'date-fns';
 import * as types from './ola-datas-types';
 import {
   Capacities,
@@ -6,38 +9,256 @@ import {
   DOB_Status,
   EntityType,
   YesNo as Application_YesNo,
+  Languages,
 } from './applications';
 import { EligibilityStatus as OZEligibilityStatus } from './policy-map';
-import { CleanStatus as TaxationCleanStatus } from './taxation';
-import { bool, formatDate, formatExcelDate } from './util';
+import { CleanStatus as TaxationCleanStatus, CleanStatus } from './taxation';
+import { bool, dateFromExcel, formatDate, formatExcelDate } from './util';
+import { ProductSubStatuses, ProductStatuses } from './grant-phase-1';
 
 // try to keep Declines at top and Reviews at bottom, so they print that way when serialized in CRM;
 // also keep potentially long messages (e.g. user input) at the end, in case it goes on forever.
 const FINDING_DEFINITIONS: types.FindingDef[] = [
   // yesNo(app.sams.possibleMatches.length > 0), // TODO: if yes, add details to findings
   {
-    trigger: app => true,
-    messageGenerator: app => `Foo high five`,
+    // TODO: unverified
+    name: 'Ineligible entity type',
+    trigger: app => app.Business_EntityType_Value === EntityType.Other,
+    messageGenerator: app =>
+      `Ineligible Business Entity Type: "Other (estate, municipality, etc.)"`,
     severity: types.Decision.Decline,
   },
   {
-    trigger: app => true,
-    messageGenerator: app => `Bar bruh yeah`,
-    severity: types.Decision.Review,
+    // TODO: unverified
+    name: 'Business too new',
+    trigger: app =>
+      !!app.Business_DateEstablished &&
+      isAfter(dateFromExcel(app.Business_DateEstablished), new Date(2020, 2, 15)),
+    messageGenerator: app =>
+      `Business established on ${dateFromExcel(
+        <number>app.Business_DateEstablished
+      ).toLocaleDateString()}, which is after the cutoff date of ${new Date(
+        2020,
+        2,
+        15
+      ).toLocaleDateString()}`,
+    severity: types.Decision.Decline,
   },
   {
-    trigger: app => true,
-    messageGenerator: app => `Baz izzle twizzle`,
-    severity: types.Decision.Review,
+    name: 'Gambling',
+    trigger: app => bool(app.BusinessDetails_GamblingActivities),
+    messageGenerator: app => `Organization hosts gambling or gaming activities`,
+    severity: types.Decision.Decline,
   },
   {
+    name: 'Adult',
+    trigger: app =>
+      app.BusinessDetails_AdultActivities !== '' && bool(app.BusinessDetails_AdultActivities),
+    messageGenerator: app =>
+      `Organization conducts or purveys “adult” activities, services, products or materials`,
+    severity: types.Decision.Decline,
+  },
+  {
+    name: 'Auctions/Sales',
+    trigger: app => bool(app.BusinessDetails_SalessActivities),
+    messageGenerator: app =>
+      `Organization conducts auctions, bankruptcy sales, fire sales, “lost-our-lease,” “going-out-of-business,” or similar sales`,
+    severity: types.Decision.Decline,
+  },
+  {
+    name: 'Transient merchant',
+    trigger: app => bool(app.BusinessDetails_TransientMerchant),
+    messageGenerator: app =>
+      `Organization is a transient merchant ("peddler," "popup store," or "itinerant vendor")`,
+    severity: types.Decision.Decline,
+  },
+  {
+    name: 'Outdoor storage',
+    trigger: app => bool(app.BusinessDetails_OutdoorStorageCompany),
+    messageGenerator: app => `Organization is an outdoor storage company`,
+    severity: types.Decision.Decline,
+  },
+  {
+    name: 'Nuisance',
+    trigger: app => bool(app.BusinessDetails_NuisanceActivities),
+    messageGenerator: app => `Organization conducts activities that may constitute a nuisance`,
+    severity: types.Decision.Decline,
+  },
+  {
+    name: 'Illegal',
+    trigger: app => bool(app.BusinessDetails_IllegalActivities),
+    messageGenerator: app => `Organization conducts business for an illegal purpose`,
+    severity: types.Decision.Decline,
+  },
+  {
+    // unverified
+    name: 'On Unemployment Not Clear List',
+    trigger: app => app.dol.uidNoGo,
+    messageGenerator: app => `Applicant is on the DOL UI no-go list`,
+    severity: types.Decision.Decline,
+  },
+  {
+    // unverified
+    name: 'On Wage/Hour Not Clear List',
+    trigger: app => app.dol.whdNoGo,
+    messageGenerator: app => `Applicant is on the DOL Wage/Hour no-go list`,
+    severity: types.Decision.Decline,
+  },
+  {
+    name: 'FTE Greater than 25',
+    trigger: app => (getQuarterlyWageData(app)[0] || 0) > 25,
+    messageGenerator: app =>
+      `Too Many FTE Equivalents: ${getQuarterlyWageData(app)[0]} but should be at most 25`,
+    severity: types.Decision.Decline,
+  },
+  {
+    name: 'Not found with Taxation',
+    trigger: app => app.taxation['Clean Ind'] === CleanStatus.Not_Found,
+    messageGenerator: app => `Not found by Taxation`,
+    severity: types.Decision.Decline,
+  },
+  {
+    // unverified
+    name: 'Received Phase 1 Funding',
+    trigger: app =>
+      !!app.grantPhase1?.['Approval Date'] &&
+      (getAwardAmount(app) || 0) <= (app.grantPhase1?.Amount || 0),
+    messageGenerator: app =>
+      `Business received a NJEDA Emergency Phase 1 Grant (${app.grantPhase1?.['OLA Application ID ']} for $${app.grantPhase1?.Amount}) and is not eligible for incremental funding based on WR30 data`,
+    severity: types.Decision.Decline,
+  },
+  {
+    name: 'Duplicate EIN',
+    trigger: app => !!app.duplicates.byTin,
+    messageGenerator: app =>
+      `EIN was found in more than one application (${app.duplicates.byTin?.join(', ')})`,
+    severity: types.Decision.Decline,
+  },
+  {
+    name: '',
     trigger: app => false,
-    messageGenerator: app => `foo`,
+    messageGenerator: app => ``,
+    severity: types.Decision.Decline,
+  },
+  {
+    name: '',
+    trigger: app => false,
+    messageGenerator: app => ``,
+    severity: types.Decision.Decline,
+  },
+  //////////////////////////////////////////////
+  {
+    name: 'Adult unknown',
+    trigger: app => app.BusinessDetails_AdultActivities === '',
+    messageGenerator: app =>
+      `It is unknown if the organization conducts or purveys “adult” activities, services, products or materials (question left blank on application)`,
     severity: types.Decision.Review,
   },
   {
+    name: 'Business established in 2019 or 2020',
+    trigger: app => ['2019', '2020'].includes(app.Business_YearEstablished),
+    messageGenerator: app => `Business established in ${app.Business_YearEstablished}`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: 'Religious Affiliation',
+    trigger: app => bool(app.Business_Religious),
+    messageGenerator: app => `Business has religious affiliations`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: 'Lobbying and Policital Activities',
+    trigger: app => app.Business_LobbyingPolitical === 'Yes',
+    messageGenerator: app => `Business engages in lobbying and/or political activities`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: 'NAICS Code (813)',
+    trigger: app => app.NAICSCode.startsWith('813'),
+    messageGenerator: app => `NAICS code starts with 813: ${app.NAICSCode}`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: 'On SAM exclusion list',
+    trigger: app => app.sams.possibleMatches.length > 0,
+    messageGenerator: app =>
+      `Applicant may be on the federal SAMS exclusion list: ${app.sams.possibleMatches
+        .map(match => `DUNS ${match.DUNS}`)
+        .join(', ')}`,
+    severity: types.Decision.Review,
+  },
+  {
+    // unverified
+    name: 'Phase 1 under review',
+    trigger: app => app.grantPhase1?.['Product Status'] === ProductStatuses.Underwriting,
+    messageGenerator: app =>
+      `Business is currently under review for Phase 1 Grant funding (${app.grantPhase1?.['OLA Application ID ']})`,
+    severity: types.Decision.Review,
+  },
+  {
+    // unverified
+    name: 'No Census Tract',
+    trigger: app => !app.policyMap?.censusTract,
+    messageGenerator: app => `Business address does not have a census tract`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: 'Duplicate Address',
+    trigger: app => !!app.duplicates.byAddress,
+    messageGenerator: app =>
+      `Business address was found in more than one application (${app.duplicates.byAddress?.join(
+        ', '
+      )})`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: '',
     trigger: app => false,
-    messageGenerator: app => `foo`,
+    messageGenerator: app => ``,
+    severity: types.Decision.Review,
+  },
+  // UNVERIFIED--
+  // keep these last, since they could include long text:
+  {
+    name: 'Background Question #1',
+    trigger: app => bool(app.AdditionalBackgroundInformation_BackgroundQuestion1),
+    messageGenerator: app =>
+      `Additional information provided on background question #1 (convictions): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails1}"`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: 'Background Question #2',
+    trigger: app => bool(app.AdditionalBackgroundInformation_BackgroundQuestion2),
+    messageGenerator: app =>
+      `Additional information provided on background question #2 (denied licensure): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails2}"`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: 'Background Question #3',
+    trigger: app => bool(app.AdditionalBackgroundInformation_BackgroundQuestion3),
+    messageGenerator: app =>
+      `Additional information provided on background question #3 (public contractor subcontract ineligibility): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails3}"`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: 'Background Question #4',
+    trigger: app => bool(app.AdditionalBackgroundInformation_BackgroundQuestion4),
+    messageGenerator: app =>
+      `Additional information provided on background question #4 (violated the terms of a public agreement): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails4}"`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: 'Background Question #5',
+    trigger: app => bool(app.AdditionalBackgroundInformation_BackgroundQuestion5),
+    messageGenerator: app =>
+      `Additional information provided on background question #5 (injunction, order or lien): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails5}"`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: 'Background Question #6',
+    trigger: app => bool(app.AdditionalBackgroundInformation_BackgroundQuestion6),
+    messageGenerator: app =>
+      `Additional information provided on background question #6 (presently indicted): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails6}"`,
     severity: types.Decision.Review,
   },
 ];
@@ -60,7 +281,7 @@ function getTaxClearanceComments(app: types.DecoratedApplication): types.TaxClea
       return types.TaxClearanceValues.Not_Found;
     default:
       throw new Error(
-        `Unexpected taxation clearance ${status} for application ${app.ApplicationId}`
+        `Unexpected taxation clearance ${app.taxation['Clean Ind']} for application ${app.ApplicationId}`
       );
   }
 }
@@ -277,6 +498,8 @@ function getDobPurposes(
   return purposesOfFunds.join('; ');
 }
 
+// returns a number of FTEs calculated from WR30 data (without limit) and a description
+// of the quarter used, e.g. [17, "Q1 2020"]
 function getQuarterlyWageData(app: types.DecoratedApplication): types.QuarterlyWageData {
   if (app.wr30.notFound) {
     return [null, null];
@@ -352,13 +575,13 @@ function getFindings(app: types.DecoratedApplication): types.Finding[] {
 function getFindingsString(app: types.DecoratedApplication): types.NullableString {
   const findings: types.Finding[] = getFindings(app);
   const findingsString = findings
-    .map((finding, i) => `(${i + 1} - ${finding.severity}) ${finding.message}`)
+    .map((finding, i) => `(#${i + 1}: ${finding.severity}) ${finding.message}`)
     .join('. ');
 
   return findingsString || null;
 }
 
-function getDecision(app: types.DecoratedApplication): types.Decision {
+export function getDecision(app: types.DecoratedApplication): types.Decision {
   const findings: types.Finding[] = getFindings(app);
 
   if (findings.some(finding => finding.severity === types.Decision.Decline)) {
@@ -609,426 +832,448 @@ function getYYRevenueDeclineReasonableness(app: types.DecoratedApplication): typ
 }
 
 export function generateOlaDatas(app: types.DecoratedApplication): types.OlaDatas {
-  const olaDatas: types.OlaDatas = {
-    Account: {
-      Name: app.ContactInformation_BusinessName,
-      DoingBusinessAs: app.ContactInformation_DoingBusinessAsDBA,
-      Email: app.ContactInformation_Email,
-      Telephone: app.ContactInformation_Phone,
-      WebSiteURL: app.ContactInformation_Website,
-      YearEstablished: app.Business_YearEstablished,
-      AnnualRevenue: null,
-      TaxClearanceComments: getTaxClearanceComments(app),
-      ACHNonCompliance: '',
-      address2Line1: '',
-      address2Line2: '',
-      address2City: '',
-      address2Zip: '',
-      address2State: '',
-      address2County: '',
-      address2Country: '',
-      WomanOwned: flag(getDesignation(app, Designations.Woman_Owned)),
-      VeteranOwned: flag(getDesignation(app, Designations.Veteran_Owned)),
-      MinorityOwned: flag(getDesignation(app, Designations.Minority_Owned)),
-      DisabilityOwned: flag(getDesignation(app, Designations.Disabled_Owned)),
-      Comment: getDesignation(app, Designations.Small_Business)
-        ? types.SmallBusinessStatuses.Yes
-        : types.SmallBusinessStatuses.No,
-      SSN: '',
-    },
-    Project: {
-      StatusCode: 1,
-      ProjectDescription: '',
-    },
-    Product: {
-      DevelopmentOfficer: '',
-      ServicingOfficerId: getServicingOfficer(app),
-      AppReceivedDate: formatExcelDate(app.Entry_DateSubmitted),
-      Amount: {
-        Value: getAwardAmount(app),
-        ExtensionData: null,
+  try {
+    const olaDatas: types.OlaDatas = {
+      Account: {
+        Name: app.ContactInformation_BusinessName,
+        DoingBusinessAs: app.ContactInformation_DoingBusinessAsDBA,
+        Email: app.ContactInformation_Email,
+        Telephone: app.ContactInformation_Phone,
+        WebSiteURL: app.ContactInformation_Website,
+        YearEstablished: app.Business_YearEstablished,
+        AnnualRevenue: null,
+        TaxClearanceComments: getTaxClearanceComments(app),
+        ACHNonCompliance: '',
+        address2Line1: '',
+        address2Line2: '',
+        address2City: '',
+        address2Zip: '',
+        address2State: '',
+        address2County: '',
+        address2Country: '',
+        WomanOwned: flag(getDesignation(app, Designations.Woman_Owned)),
+        VeteranOwned: flag(getDesignation(app, Designations.Veteran_Owned)),
+        MinorityOwned: flag(getDesignation(app, Designations.Minority_Owned)),
+        DisabilityOwned: flag(getDesignation(app, Designations.Disabled_Owned)),
+        Comment: getDesignation(app, Designations.Small_Business)
+          ? types.SmallBusinessStatuses.Yes
+          : types.SmallBusinessStatuses.No,
+        SSN: '',
       },
-      nol_total_NOL_benefit: null,
-      nol_total_RD_benefit: null,
-      benefit_allocation_factor: null,
-      nol_prior_years_tax_credits_sold: null,
-      ProductStatusId: getProductStatusId(app),
-      ProductSubStatusId: getProductSubStatusId(app),
-      ProductTypeId: '{BC60E150-ECA0-EA11-A811-001DD8018831}', // CVSB2GR
-      LocatedInCommercialLocation: '',
-      ProductDescription: '',
-      lender: '',
-      lenderAmount: {
-        Value: 0,
-        ExtensionData: null,
+      Project: {
+        StatusCode: 1,
+        ProjectDescription: '',
       },
-      lender_address_1: '',
-      lender_address_2: '',
-      lender_city: '',
-      lender_zipcode: '',
-      lender_email: '',
-      lender_phone: '',
-    },
-    Underwriting: {
-      salutation: '',
-      firstName: app.ContactInformation_ContactName_First,
-      middleName: '',
-      lastName: app.ContactInformation_ContactName_Last,
-      suffix: '',
-      jobTitle: '',
-      address1: app.ContactInformation_PrimaryBusinessAddress_Line1,
-      address2: app.ContactInformation_PrimaryBusinessAddress_Line2,
-      city: app.geography.City,
-      zipcode: app.geography.Zip,
-      telephone: app.ContactInformation_Phone.split(' x')[0].replace(/\D/g, ''),
-      telephoneExt: app.ContactInformation_Phone.split(' x')[1] || '',
-      email: app.ContactInformation_Email,
-      organizationName: app.ContactInformation_BusinessName,
-      knownAs: app.ContactInformation_DoingBusinessAsDBA,
-      ein: app.Business_TIN,
-      naicsCode: app.NAICSCode,
-      ownershipStructure: getOwnershipStructure(app),
-      applicantBackground: getApplicantBackground(app),
-      headquarterState: '',
-      headquarterCountry: '',
-      landAcquisitions: null,
-      newBldgConstruction: null,
-      acquisitionExistingBuilding: null,
-      existingBldgRvnt: null,
-      upgradeEquipment: {
-        Value: null,
-        ExtensionData: null,
+      Product: {
+        DevelopmentOfficer: '',
+        ServicingOfficerId: getServicingOfficer(app),
+        AppReceivedDate: formatExcelDate(app.Entry_DateSubmitted),
+        Amount: {
+          Value: getAwardAmount(app),
+          ExtensionData: null,
+        },
+        nol_total_NOL_benefit: null,
+        nol_total_RD_benefit: null,
+        benefit_allocation_factor: null,
+        nol_prior_years_tax_credits_sold: null,
+        ProductStatusId: getProductStatusId(app),
+        ProductSubStatusId: getProductSubStatusId(app),
+        ProductTypeId: '{BC60E150-ECA0-EA11-A811-001DD8018831}', // CVSB2GR
+        LocatedInCommercialLocation: '',
+        ProductDescription: '',
+        lender: '',
+        lenderAmount: {
+          Value: 0,
+          ExtensionData: null,
+        },
+        lender_address_1: '',
+        lender_address_2: '',
+        lender_city: '',
+        lender_zipcode: '',
+        lender_email: '',
+        lender_phone: '',
       },
-      newEquipment: {
-        Value: null,
-        ExtensionData: null,
+      Underwriting: {
+        salutation: '',
+        firstName: app.ContactInformation_ContactName_First,
+        middleName: '',
+        lastName: app.ContactInformation_ContactName_Last,
+        suffix: '',
+        jobTitle: '',
+        address1: app.ContactInformation_PrimaryBusinessAddress_Line1,
+        address2: app.ContactInformation_PrimaryBusinessAddress_Line2,
+        city: app.geography.City,
+        zipcode: app.geography.Zip,
+        telephone: app.ContactInformation_Phone.split(' x')[0].replace(/\D/g, ''),
+        telephoneExt: app.ContactInformation_Phone.split(' x')[1] || '',
+        email: app.ContactInformation_Email,
+        organizationName: app.ContactInformation_BusinessName,
+        knownAs: app.ContactInformation_DoingBusinessAsDBA,
+        ein: app.Business_TIN,
+        naicsCode: app.NAICSCode,
+        ownershipStructure: getOwnershipStructure(app),
+        applicantBackground: getApplicantBackground(app),
+        headquarterState: '',
+        headquarterCountry: '',
+        landAcquisitions: null,
+        newBldgConstruction: null,
+        acquisitionExistingBuilding: null,
+        existingBldgRvnt: null,
+        upgradeEquipment: {
+          Value: null,
+          ExtensionData: null,
+        },
+        newEquipment: {
+          Value: null,
+          ExtensionData: null,
+        },
+        usedEquipment: {
+          Value: null,
+          ExtensionData: null,
+        },
+        engineerArchitechFees: {
+          Value: null,
+          ExtensionData: null,
+        },
+        legalFees: null,
+        accountingFees: null,
+        financeFees: null,
+        roadUtilitiesConst: {
+          Value: null,
+          ExtensionData: null,
+        },
+        debtServiceReserve: null,
+        constructionInterest: {
+          Value: null,
+          ExtensionData: null,
+        },
+        refinancing: {
+          Value: null,
+          ExtensionData: null,
+        },
+        workingCapital: {
+          Value: null,
+          ExtensionData: null,
+        },
+        otherCost1: null,
+        otherCost2: null,
+        otherCost3: null,
+        otherCost1Description: null,
+        otherCost2Description: null,
+        otherCost3Description: null,
+        counselFirmName: '',
+        counselFirstName: '',
+        counselLastName: '',
+        counselStreetAddress1: '',
+        counselStreetAddress2: '',
+        counselCity: '',
+        counselState: '',
+        counselZipCode: '',
+        counselPhoneNumber: '',
+        counselEmailAddress: '',
+        accountantFirmName: '',
+        accountantFirstName: '',
+        accountantLastName: '',
+        accountantStreetAddress1: '',
+        accountantStreetAddress2: '',
+        accountantCity: '',
+        accountantState: '',
+        accountantZipCode: '',
+        accountantPhoneNumber: '',
+        accountantEmailAddress: '',
+        totalCost: {
+          Value: null,
+          ExtensionData: null,
+        },
+        applicationID: app.ApplicationId,
+        selectedProducts: 'Covid Small Business Emergency Assistance Grant Phase 2',
+        ReceivedPreiousFundingFromEDA: '',
+        ReceivedPreiousFundingFromOtherthanEDA: '',
+        TotalFullTimeEligibleJobs: getQuarterlyWageData(app)[0],
+        NJFullTimeJobsAtapplication: app.Business_W2EmployeesFullTime,
+        PartTimeJobsAtapplication: app.Business_W2EmployeesPartTime,
+        softCosts: {
+          Value: null,
+          ExtensionData: null,
+        },
+        relocationCosts: {
+          Value: null,
+          ExtensionData: null,
+        },
+        securityCosts: {
+          Value: null,
+          ExtensionData: null,
+        },
+        titleCosts: {
+          Value: null,
+          ExtensionData: null,
+        },
+        surveyCosts: {
+          Value: null,
+          ExtensionData: null,
+        },
+        marketAnalysisCosts: {
+          Value: null,
+          ExtensionData: null,
+        },
+        developmentImpactCosts: {
+          Value: null,
+          ExtensionData: null,
+        },
+        marketSiteCosts: {
+          Value: null,
+          ExtensionData: null,
+        },
+        demolitionCosts: null,
+        streetscapeCosts: null,
+        remediationCosts: {
+          Value: null,
+          ExtensionData: null,
+        },
+        redemptionPremiumCosts: null,
+        installationMachineryCosts: null,
+        totalProjectCost: null,
+        financeAmtApplied: {
+          Value: null,
+          ExtensionData: null,
+        },
       },
-      usedEquipment: {
-        Value: null,
-        ExtensionData: null,
+      Location: {
+        isRelocation: null,
+        isExpansion: null,
+        isStartup: null,
+        address1Line1: app.ContactInformation_PrimaryBusinessAddress_Line1,
+        address1Line2: app.ContactInformation_PrimaryBusinessAddress_Line2,
+        address1City: app.geography.City,
+        address1Zip: app.geography.Zip,
+        address1State: 'NJ',
+        address1County: app.geography.County,
+        address1Municipality: app.geography.Municipality,
+        address1Country: '',
+        block: '',
+        lot: '',
+        congressionalDistrict: app.geography.CongressionalDistrict,
+        legislativeDistrict: app.geography.LegislativeDistrict,
+        censusTract: app.policyMap?.censusTract || null,
+        Comments: `Home-Based Business: ${
+          bool(app.BusinessDetails_HomeBasedBusiness) ? 'Yes' : 'No'
+        }`,
+        EligibleOpportunityZone: getEligibleOpportunityZoneValue(app),
       },
-      engineerArchitechFees: {
-        Value: null,
-        ExtensionData: null,
+      FeeRequest: {
+        receivedDate: null,
+        receivedAmt: null,
+        confirmationNum: '',
+        productFeeAmount: null,
       },
-      legalFees: null,
-      accountingFees: null,
-      financeFees: null,
-      roadUtilitiesConst: {
-        Value: null,
-        ExtensionData: null,
+      Monitoring: {
+        Status: getMonitoringStatus(app),
+        MonitoringType: getMonitoringType(app),
+        Findings: getFindingsString(app),
+        CompletionDate: getDecision(app) === types.Decision.Review ? null : formatDate(new Date()),
+        GeneralComments: `Other Workers (1099, seasonal, PEO): ${app.Business_Contractors}`,
       },
-      debtServiceReserve: null,
-      constructionInterest: {
-        Value: null,
-        ExtensionData: null,
+      Covid19Impacts: {
+        ApplicationLanguage: app.Language,
+        Grant1applicationID: app.grantPhase1?.['OLA Application ID '] || null,
+        ApplicationSequenceID: app.Sequence,
+        OntheSAMSExclusionList: yesNo(app.sams.possibleMatches.length > 0),
+        DeemedAsEssentialBusiness: yesNo(bool(app.COVID19Impact_EssentialBusiness)),
+        RemainOpenMar2020: yesNo(bool(app.COVID19Impact_OpenOrReopened)),
+        CapacityOpen: getCapacityOpen(app),
+        ActualRevenue2019: {
+          Value: amountValue(app.RevenueComparison_MarchAprilMay2019),
+          ExtensionData: null,
+        },
+        ActualRevenue2020: {
+          Value: amountValue(app.RevenueComparison_MarchAprilMay2020),
+          ExtensionData: null,
+        },
+        UseofFunds: 'Business Interruption - Loss of Revenue',
+        TaxationReportedRevenue: {
+          Value: getTaxationReportedRevenue(app),
+          ExtensionData: null,
+        },
+        TaxationReportedRevenueYear: getTaxationReportedTaxFilingAndYear(app)[1],
+        TaxationSalesTax2019: {
+          Value: getTaxationSalesTax2019(app),
+          ExtensionData: null,
+        },
+        TaxationSalesTax2020: {
+          Value: getTaxationSalesTax2020(app),
+          ExtensionData: null,
+        },
+        TaxationReportedTaxFiling: getTaxationReportedTaxFilingAndYear(app)[0],
+        TaxationReportedSolePropIncome: {
+          Value: getTaxationReportedSolePropIncome(app),
+          ExtensionData: null,
+        },
+        ReportedRevenueReasonable: getReportedRevenueReasonableness(app),
+        YYRevenueDeclineReasonable: getYYRevenueDeclineReasonableness(app),
+        ReasonablenessExceptions: '', // TODO?
+        DOLWR30FilingQuarter: getQuarterlyWageData(app)[1],
+        WR30ReportingComments: app.wr30.notFound
+          ? types.WR30ReportingComments.WR30_Not_Found
+          : types.WR30ReportingComments.WR30_Found,
       },
-      refinancing: {
-        Value: null,
-        ExtensionData: null,
+      OtherCovid19Assistance: {
+        IsExists: yesNo(
+          bool(app.DOBAffidavit_SBAPPP) ||
+            bool(app.DOBAffidavit_SBAEIDG) ||
+            bool(app.DOBAffidavit_SBAEIDL) ||
+            bool(app.DOBAffidavit_NJEDALoan) ||
+            bool(app.DOBAffidavit_NJEDAGrant) ||
+            bool(app.DOBAffidavit_OtherStateLocal)
+        ),
       },
-      workingCapital: {
-        Value: null,
-        ExtensionData: null,
+      OtherCovid19Assistance_PPP: {
+        IsExists: yesNo(bool(app.DOBAffidavit_SBAPPP)),
+        Program: types.ProgramDescriptions.PPP,
+        Status: getDobApproval(
+          app.DOBAffidavit_SBAPPP,
+          app.DOBAffidavit_SBAPPPDetails_Status_Value
+        ),
+        ApprovalDate: getDobApprovalDate(
+          app.DOBAffidavit_SBAPPP,
+          app.DOBAffidavit_SBAPPPDetails_Status_Value,
+          app.DOBAffidavit_SBAPPPDetails_ApprovalDate
+        ),
+        ApprovedAmount: {
+          Value: getDobAmountValue(app.DOBAffidavit_SBAPPP, app.DOBAffidavit_SBAPPPDetails_Amount),
+          ExtensionData: null,
+        },
+        PurposeOfFunds: getDobPurposes(
+          app.DOBAffidavit_SBAPPP,
+          app.DOBAffidavit_SBAPPPDetails_Purposes_Value
+        ),
       },
-      otherCost1: null,
-      otherCost2: null,
-      otherCost3: null,
-      otherCost1Description: null,
-      otherCost2Description: null,
-      otherCost3Description: null,
-      counselFirmName: '',
-      counselFirstName: '',
-      counselLastName: '',
-      counselStreetAddress1: '',
-      counselStreetAddress2: '',
-      counselCity: '',
-      counselState: '',
-      counselZipCode: '',
-      counselPhoneNumber: '',
-      counselEmailAddress: '',
-      accountantFirmName: '',
-      accountantFirstName: '',
-      accountantLastName: '',
-      accountantStreetAddress1: '',
-      accountantStreetAddress2: '',
-      accountantCity: '',
-      accountantState: '',
-      accountantZipCode: '',
-      accountantPhoneNumber: '',
-      accountantEmailAddress: '',
-      totalCost: {
-        Value: null,
-        ExtensionData: null,
+      OtherCovid19Assistance_EIDG: {
+        IsExists: yesNo(bool(app.DOBAffidavit_SBAEIDG)),
+        Program: types.ProgramDescriptions.EIDG,
+        Status: getDobApproval(
+          app.DOBAffidavit_SBAEIDG,
+          app.DOBAffidavit_SBAEIDGDetails_Status_Value
+        ),
+        ApprovalDate: getDobApprovalDate(
+          app.DOBAffidavit_SBAEIDG,
+          app.DOBAffidavit_SBAEIDGDetails_Status_Value,
+          app.DOBAffidavit_SBAEIDGDetails_ApprovalDate
+        ),
+        ApprovedAmount: {
+          Value: getDobAmountValue(
+            app.DOBAffidavit_SBAEIDG,
+            app.DOBAffidavit_SBAEIDGDetails_Amount
+          ),
+          ExtensionData: null,
+        },
+        PurposeOfFunds: getDobPurposes(
+          app.DOBAffidavit_SBAEIDG,
+          app.DOBAffidavit_SBAEIDGDetails_Purposes_Value
+        ),
       },
-      applicationID: app.ApplicationId,
-      selectedProducts: 'Covid Small Business Emergency Assistance Grant Phase 2',
-      ReceivedPreiousFundingFromEDA: '',
-      ReceivedPreiousFundingFromOtherthanEDA: '',
-      TotalFullTimeEligibleJobs: getQuarterlyWageData(app)[0],
-      NJFullTimeJobsAtapplication: app.Business_W2EmployeesFullTime,
-      PartTimeJobsAtapplication: app.Business_W2EmployeesPartTime,
-      softCosts: {
-        Value: null,
-        ExtensionData: null,
+      OtherCovid19Assistance_EIDL: {
+        IsExists: yesNo(bool(app.DOBAffidavit_SBAEIDL)),
+        Program: types.ProgramDescriptions.EIDL,
+        Status: getDobApproval(
+          app.DOBAffidavit_SBAEIDL,
+          app.DOBAffidavit_SBAEIDLDetails_Status_Value
+        ),
+        ApprovalDate: getDobApprovalDate(
+          app.DOBAffidavit_SBAEIDL,
+          app.DOBAffidavit_SBAEIDLDetails_Status_Value,
+          app.DOBAffidavit_SBAEIDLDetails_ApprovalDate
+        ),
+        ApprovedAmount: {
+          Value: getDobAmountValue(
+            app.DOBAffidavit_SBAEIDL,
+            app.DOBAffidavit_SBAEIDLDetails_Amount
+          ),
+          ExtensionData: null,
+        },
+        PurposeOfFunds: getDobPurposes(
+          app.DOBAffidavit_SBAEIDL,
+          app.DOBAffidavit_SBAEIDLDetails_Purposes_Value
+        ),
       },
-      relocationCosts: {
-        Value: null,
-        ExtensionData: null,
-      },
-      securityCosts: {
-        Value: null,
-        ExtensionData: null,
-      },
-      titleCosts: {
-        Value: null,
-        ExtensionData: null,
-      },
-      surveyCosts: {
-        Value: null,
-        ExtensionData: null,
-      },
-      marketAnalysisCosts: {
-        Value: null,
-        ExtensionData: null,
-      },
-      developmentImpactCosts: {
-        Value: null,
-        ExtensionData: null,
-      },
-      marketSiteCosts: {
-        Value: null,
-        ExtensionData: null,
-      },
-      demolitionCosts: null,
-      streetscapeCosts: null,
-      remediationCosts: {
-        Value: null,
-        ExtensionData: null,
-      },
-      redemptionPremiumCosts: null,
-      installationMachineryCosts: null,
-      totalProjectCost: null,
-      financeAmtApplied: {
-        Value: null,
-        ExtensionData: null,
-      },
-    },
-    Location: {
-      isRelocation: null,
-      isExpansion: null,
-      isStartup: null,
-      address1Line1: app.ContactInformation_PrimaryBusinessAddress_Line1,
-      address1Line2: app.ContactInformation_PrimaryBusinessAddress_Line2,
-      address1City: app.geography.City,
-      address1Zip: app.geography.Zip,
-      address1State: 'NJ',
-      address1County: app.geography.County,
-      address1Municipality: app.geography.Municipality,
-      address1Country: '',
-      block: '',
-      lot: '',
-      congressionalDistrict: app.geography.CongressionalDistrict,
-      legislativeDistrict: app.geography.LegislativeDistrict,
-      censusTract: (app.policyMap && app.policyMap.censusTract) || null,
-      Comments: `Home-Based Business: ${
-        bool(app.BusinessDetails_HomeBasedBusiness) ? 'Yes' : 'No'
-      }`,
-      EligibleOpportunityZone: getEligibleOpportunityZoneValue(app),
-    },
-    FeeRequest: {
-      receivedDate: null,
-      receivedAmt: null,
-      confirmationNum: '',
-      productFeeAmount: null,
-    },
-    Monitoring: {
-      Status: getMonitoringStatus(app),
-      MonitoringType: getMonitoringType(app),
-      Findings: getFindingsString(app),
-      CompletionDate: getDecision(app) === types.Decision.Review ? null : formatDate(new Date()),
-      GeneralComments: `Other Workers (1099, seasonal, PEO): ${app.Business_Contractors}`,
-    },
-    Covid19Impacts: {
-      ApplicationLanguage: app.Language,
-      Grant1applicationID: app.grantPhase1 && app.grantPhase1["OLA Application ID "] || null,
-      ApplicationSequenceID: app.Sequence,
-      OntheSAMSExclusionList: yesNo(app.sams.possibleMatches.length > 0),
-      DeemedAsEssentialBusiness: yesNo(bool(app.COVID19Impact_EssentialBusiness)),
-      RemainOpenMar2020: yesNo(bool(app.COVID19Impact_OpenOrReopened)),
-      CapacityOpen: getCapacityOpen(app),
-      ActualRevenue2019: {
-        Value: amountValue(app.RevenueComparison_MarchAprilMay2019),
-        ExtensionData: null,
-      },
-      ActualRevenue2020: {
-        Value: amountValue(app.RevenueComparison_MarchAprilMay2020),
-        ExtensionData: null,
-      },
-      UseofFunds: 'Business Interruption - Loss of Revenue',
-      TaxationReportedRevenue: {
-        Value: getTaxationReportedRevenue(app),
-        ExtensionData: null,
-      },
-      TaxationReportedRevenueYear: getTaxationReportedTaxFilingAndYear(app)[1],
-      TaxationSalesTax2019: {
-        Value: getTaxationSalesTax2019(app),
-        ExtensionData: null,
-      },
-      TaxationSalesTax2020: {
-        Value: getTaxationSalesTax2020(app),
-        ExtensionData: null,
-      },
-      TaxationReportedTaxFiling: getTaxationReportedTaxFilingAndYear(app)[0],
-      TaxationReportedSolePropIncome: {
-        Value: getTaxationReportedSolePropIncome(app),
-        ExtensionData: null,
-      },
-      ReportedRevenueReasonable: getReportedRevenueReasonableness(app),
-      YYRevenueDeclineReasonable: getYYRevenueDeclineReasonableness(app),
-      ReasonablenessExceptions: '', // TODO?
-      DOLWR30FilingQuarter: getQuarterlyWageData(app)[1],
-      WR30ReportingComments: app.wr30.notFound
-        ? types.WR30ReportingComments.WR30_Not_Found
-        : types.WR30ReportingComments.WR30_Found,
-    },
-    OtherCovid19Assistance: {
-      IsExists: yesNo(
-        bool(app.DOBAffidavit_SBAPPP) ||
-          bool(app.DOBAffidavit_SBAEIDG) ||
-          bool(app.DOBAffidavit_SBAEIDL) ||
-          bool(app.DOBAffidavit_NJEDALoan) ||
-          bool(app.DOBAffidavit_NJEDAGrant) ||
-          bool(app.DOBAffidavit_OtherStateLocal)
-      ),
-    },
-    OtherCovid19Assistance_PPP: {
-      IsExists: yesNo(bool(app.DOBAffidavit_SBAPPP)),
-      Program: types.ProgramDescriptions.PPP,
-      Status: getDobApproval(app.DOBAffidavit_SBAPPP, app.DOBAffidavit_SBAPPPDetails_Status_Value),
-      ApprovalDate: getDobApprovalDate(
-        app.DOBAffidavit_SBAPPP,
-        app.DOBAffidavit_SBAPPPDetails_Status_Value,
-        app.DOBAffidavit_SBAPPPDetails_ApprovalDate
-      ),
-      ApprovedAmount: {
-        Value: getDobAmountValue(app.DOBAffidavit_SBAPPP, app.DOBAffidavit_SBAPPPDetails_Amount),
-        ExtensionData: null,
-      },
-      PurposeOfFunds: getDobPurposes(
-        app.DOBAffidavit_SBAPPP,
-        app.DOBAffidavit_SBAPPPDetails_Purposes_Value
-      ),
-    },
-    OtherCovid19Assistance_EIDG: {
-      IsExists: yesNo(bool(app.DOBAffidavit_SBAEIDG)),
-      Program: types.ProgramDescriptions.EIDG,
-      Status: getDobApproval(
-        app.DOBAffidavit_SBAEIDG,
-        app.DOBAffidavit_SBAEIDGDetails_Status_Value
-      ),
-      ApprovalDate: getDobApprovalDate(
-        app.DOBAffidavit_SBAEIDG,
-        app.DOBAffidavit_SBAEIDGDetails_Status_Value,
-        app.DOBAffidavit_SBAEIDGDetails_ApprovalDate
-      ),
-      ApprovedAmount: {
-        Value: getDobAmountValue(app.DOBAffidavit_SBAEIDG, app.DOBAffidavit_SBAEIDGDetails_Amount),
-        ExtensionData: null,
-      },
-      PurposeOfFunds: getDobPurposes(
-        app.DOBAffidavit_SBAEIDG,
-        app.DOBAffidavit_SBAEIDGDetails_Purposes_Value
-      ),
-    },
-    OtherCovid19Assistance_EIDL: {
-      IsExists: yesNo(bool(app.DOBAffidavit_SBAEIDL)),
-      Program: types.ProgramDescriptions.EIDL,
-      Status: getDobApproval(
-        app.DOBAffidavit_SBAEIDL,
-        app.DOBAffidavit_SBAEIDLDetails_Status_Value
-      ),
-      ApprovalDate: getDobApprovalDate(
-        app.DOBAffidavit_SBAEIDL,
-        app.DOBAffidavit_SBAEIDLDetails_Status_Value,
-        app.DOBAffidavit_SBAEIDLDetails_ApprovalDate
-      ),
-      ApprovedAmount: {
-        Value: getDobAmountValue(app.DOBAffidavit_SBAEIDL, app.DOBAffidavit_SBAEIDLDetails_Amount),
-        ExtensionData: null,
-      },
-      PurposeOfFunds: getDobPurposes(
-        app.DOBAffidavit_SBAEIDL,
-        app.DOBAffidavit_SBAEIDLDetails_Purposes_Value
-      ),
-    },
-    OtherCovid19Assistance_CVSBLO: {
-      IsExists: yesNo(bool(app.DOBAffidavit_NJEDALoan)),
-      Program: types.ProgramDescriptions.CVSBLO,
-      Status: getDobApproval(
-        app.DOBAffidavit_NJEDALoan,
-        app.DOBAffidavit_NJEDALoanDetails_Status_Value
-      ),
-      ApprovalDate: getDobApprovalDate(
-        app.DOBAffidavit_NJEDALoan,
-        app.DOBAffidavit_NJEDALoanDetails_Status_Value,
-        app.DOBAffidavit_NJEDALoanDetails_ApprovalDate
-      ),
-      ApprovedAmount: {
-        Value: getDobAmountValue(
+      OtherCovid19Assistance_CVSBLO: {
+        IsExists: yesNo(bool(app.DOBAffidavit_NJEDALoan)),
+        Program: types.ProgramDescriptions.CVSBLO,
+        Status: getDobApproval(
           app.DOBAffidavit_NJEDALoan,
-          app.DOBAffidavit_NJEDALoanDetails_Amount
+          app.DOBAffidavit_NJEDALoanDetails_Status_Value
         ),
-        ExtensionData: null,
+        ApprovalDate: getDobApprovalDate(
+          app.DOBAffidavit_NJEDALoan,
+          app.DOBAffidavit_NJEDALoanDetails_Status_Value,
+          app.DOBAffidavit_NJEDALoanDetails_ApprovalDate
+        ),
+        ApprovedAmount: {
+          Value: getDobAmountValue(
+            app.DOBAffidavit_NJEDALoan,
+            app.DOBAffidavit_NJEDALoanDetails_Amount
+          ),
+          ExtensionData: null,
+        },
+        PurposeOfFunds: getDobPurposes(
+          app.DOBAffidavit_NJEDALoan,
+          app.DOBAffidavit_NJEDALoanDetails_Purposes_Value
+        ),
       },
-      PurposeOfFunds: getDobPurposes(
-        app.DOBAffidavit_NJEDALoan,
-        app.DOBAffidavit_NJEDALoanDetails_Purposes_Value
-      ),
-    },
-    OtherCovid19Assistance_CVSBGR: {
-      IsExists: yesNo(bool(app.DOBAffidavit_NJEDAGrant)),
-      Program: types.ProgramDescriptions.CVSBGR,
-      Status: getDobApproval(
-        app.DOBAffidavit_NJEDAGrant,
-        app.DOBAffidavit_NJEDAGrantDetails_Status_Value
-      ),
-      ApprovalDate: getDobApprovalDate(
-        app.DOBAffidavit_NJEDAGrant,
-        app.DOBAffidavit_NJEDAGrantDetails_Status_Value,
-        app.DOBAffidavit_NJEDAGrantDetails_ApprovalDate
-      ),
-      ApprovedAmount: {
-        Value: getDobAmountValue(
+      OtherCovid19Assistance_CVSBGR: {
+        IsExists: yesNo(bool(app.DOBAffidavit_NJEDAGrant)),
+        Program: types.ProgramDescriptions.CVSBGR,
+        Status: getDobApproval(
           app.DOBAffidavit_NJEDAGrant,
-          app.DOBAffidavit_NJEDAGrantDetails_Amount
+          app.DOBAffidavit_NJEDAGrantDetails_Status_Value
         ),
-        ExtensionData: null,
+        ApprovalDate: getDobApprovalDate(
+          app.DOBAffidavit_NJEDAGrant,
+          app.DOBAffidavit_NJEDAGrantDetails_Status_Value,
+          app.DOBAffidavit_NJEDAGrantDetails_ApprovalDate
+        ),
+        ApprovedAmount: {
+          Value: getDobAmountValue(
+            app.DOBAffidavit_NJEDAGrant,
+            app.DOBAffidavit_NJEDAGrantDetails_Amount
+          ),
+          ExtensionData: null,
+        },
+        PurposeOfFunds: getDobPurposes(
+          app.DOBAffidavit_NJEDAGrant,
+          app.DOBAffidavit_NJEDAGrantDetails_Purposes_Value
+        ),
       },
-      PurposeOfFunds: getDobPurposes(
-        app.DOBAffidavit_NJEDAGrant,
-        app.DOBAffidavit_NJEDAGrantDetails_Purposes_Value
-      ),
-    },
-    OtherCovid19Assistance_Other: {
-      IsExists: yesNo(bool(app.DOBAffidavit_OtherStateLocal)),
-      Program: types.ProgramDescriptions.Other,
-      ProgramDescription: app.DOBAffidavit_OtherStateLocalDetails_ProgramDescriptions,
-      Status: null,
-      ApprovalDate: null,
-      ApprovedAmount: {
-        Value: getDobAmountValue(
+      OtherCovid19Assistance_Other: {
+        IsExists: yesNo(bool(app.DOBAffidavit_OtherStateLocal)),
+        Program: types.ProgramDescriptions.Other,
+        ProgramDescription: app.DOBAffidavit_OtherStateLocalDetails_ProgramDescriptions,
+        Status: null,
+        ApprovalDate: null,
+        ApprovedAmount: {
+          Value: getDobAmountValue(
+            app.DOBAffidavit_OtherStateLocal,
+            app.DOBAffidavit_OtherStateLocalDetails_TotalAmountApprovedInProcess
+          ),
+          ExtensionData: null,
+        },
+        PurposeOfFunds: getDobPurposes(
           app.DOBAffidavit_OtherStateLocal,
-          app.DOBAffidavit_OtherStateLocalDetails_TotalAmountApprovedInProcess
+          app.DOBAffidavit_OtherStateLocalDetails_Purposes_Value
         ),
-        ExtensionData: null,
       },
-      PurposeOfFunds: getDobPurposes(
-        app.DOBAffidavit_OtherStateLocal,
-        app.DOBAffidavit_OtherStateLocalDetails_Purposes_Value
-      ),
-    },
-  };
+    };
 
-  return olaDatas;
+    return olaDatas;
+  } catch (e) {
+    console.error(chalk.red('DecoratedApplication for the error below:'));
+    console.dir(app, { depth: null });
+    console.error(
+      chalk.red(
+        `Error found while generating OLA Datas for application ${app.ApplicationId} (printed above):`
+      )
+    );
+    console.dir(e, { depth: null });
+
+    throw e;
+  }
 }

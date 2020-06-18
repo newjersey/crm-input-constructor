@@ -1,3 +1,5 @@
+import { seenAddresses, seenEins } from './duplicates';
+
 const chalk = require('chalk');
 const commandLineArgs = require('command-line-args');
 const commandLineUsage = require('command-line-usage');
@@ -62,9 +64,9 @@ const optionDefinitions: object[] = [
   },
 ];
 
-const options: Options = commandLineArgs(optionDefinitions);
+export const options: Options = commandLineArgs(optionDefinitions);
 
-function printUsage(): void {
+export function printUsage(): void {
   const usage = commandLineUsage([
     {
       header: 'CRM Input Constructor',
@@ -83,7 +85,7 @@ function printUsage(): void {
   console.log(usage);
 }
 
-function printStartMessage(options: Options): void {
+export function printStartMessage(options: Options): void {
   console.log(
     `Generating OLA Datas creation JSON for ${chalk.blue(
       options.count ? options.count : '∞'
@@ -93,17 +95,6 @@ function printStartMessage(options: Options): void {
   );
 }
 
-function optionsSatisfied(options: Options): boolean {
+export function optionsSatisfied(options: Options): boolean {
   return !!options.en && !!options.es;
 }
-
-function printRunMessage() {
-  if (optionsSatisfied(options)) {
-    printStartMessage(options);
-  } else {
-    printUsage();
-    return;
-  }
-}
-
-export { options, printRunMessage };

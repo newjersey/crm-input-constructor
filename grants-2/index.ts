@@ -3,18 +3,17 @@ const cliProgress = require('cli-progress');
 const csv = require('csv-parser');
 const fs = require('fs');
 const path = require('path');
-
-import { generateOlaDatas } from './ola-datas';
-import { DecoratedApplication, OlaDatas } from './ola-datas-types';
+import { generateOlaDatas, getDecision } from './ola-datas';
+import { Decision, DecoratedApplication, OlaDatas } from './ola-datas-types';
 import { addDolData, init as loadDolData } from './dol';
+import { addDuplicateData, seenAddresses, seenEins } from './duplicates';
 import { addGeographyData } from './geography';
 import { addGrantPhase1Data, init as loadGrantPhse1Data } from './grant-phase-1';
 import { addPolicyMapData, init as loadPolicyMapDada } from './policy-map';
-import { options, printRunMessage } from './options';
+import { options, optionsSatisfied, printStartMessage, printUsage } from './options';
 import { Application, getApplications } from './applications';
 import { addSamsData, init as loadSamsData } from './sams';
 import { addTaxationData, init as loadTaxationData } from './taxation';
-import { bool } from './util';
 import { addWR30Data, init as loadWR30Data } from './wr30';
 
 const BASE_PATH = '/Users/ross/NJEDA Grants Phase 2/First 5 hours';
@@ -35,9 +34,9 @@ function map<T extends Application, K>(
       return fn(application);
     } catch (e) {
       throw new Error(
-        `Error while ${message.toLowerCase().replace(/\./g, '')} to ${application.ApplicationId}: ${
-          e.message
-        }`
+        `\nError while ${message.toLowerCase().replace(/\./g, '')} to ${
+          application.ApplicationId
+        }: ${e.message}`
       );
     }
   });
@@ -63,7 +62,26 @@ function writeFile(path: string, content: string, overwrite: boolean): void {
 }
 
 async function main() {
-  printRunMessage();
+  if (optionsSatisfied(options)) {
+    printStartMessage(options);
+  } else {
+    printUsage();
+    return;
+  }
+
+  // ensure we catch duplicates over entire population
+  if (options.skip && (!seenEins.size || !seenAddresses.size)) {
+    console.log(
+      chalk.red(
+        `Skipping applications but ${chalk.bold('seenEins')} or ${chalk.bold(
+          'seenAddresses'
+        )} set is empty. ` +
+          `Populate them with the data of the applications skipped, to ensure proper duplicate checking.`
+      )
+    );
+
+    return;
+  }
 
   // load
   await loadGrantPhse1Data(`${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 6-13-2020 7am.xlsx`);
@@ -94,9 +112,10 @@ async function main() {
   const apps5 = map(apps4, addTaxationData, 'Applying Taxation data...');
   const apps6 = map(apps5, addSamsData, 'Applying SAMS data...');
   const apps7 = map(apps6, addWR30Data, 'Applying WR-30 data...');
+  const apps8 = map(apps7, addDuplicateData, 'Applying duplicate data...');
 
   // abstract
-  const decoratedApplications: DecoratedApplication[] = apps7;
+  const decoratedApplications: DecoratedApplication[] = apps8;
 
   // debug
   if (options.debug) {
@@ -129,6 +148,15 @@ async function main() {
     writeFile(debug, JSON.stringify(decoratedApplications), overwrite);
     writeFile(options.out, JSON.stringify(olaDatasArray), overwrite);
   }
+
+  // stats
+  const stats: { [key in Decision]?: number } = {};
+  decoratedApplications
+    .map(app => getDecision(app))
+    .forEach(decision => {
+      stats[decision] = (stats[decision] || 0) + 1;
+    });
+  console.log('\n', stats);
 
   // done
   console.log(`\nSuccessfully generated ${olaDatasArray.length} records.`);

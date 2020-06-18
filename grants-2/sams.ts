@@ -48,10 +48,8 @@ function shouldFlag(a: string, b: string): boolean {
   const TOLERANCE = 0.85;
 
   return (
-    !!a &&
-    !!a.trim() &&
-    !!b &&
-    !!b.trim() &&
+    !!a?.trim() &&
+    !!b?.trim() &&
     stringSimilarity.compareTwoStrings(a.trim().toUpperCase(), b.trim().toUpperCase()) >= TOLERANCE
   );
 }
@@ -60,6 +58,7 @@ function isPossibleMatch<T extends Application & Taxation>(
   application: T,
   record: SamsExclusionRecord
 ): boolean {
+  return false;
   return (
     record.Country === 'USA' &&
     ['NJ', 'NY', 'PA', 'CT', 'DE'].includes(record['State / Province']) &&

@@ -1,9 +1,8 @@
 import { YesNo } from './applications'
-import { NullableString } from './ola-datas-types';
 
 // TODO -- make these imports?
 const { getJsDateFromExcel } = require('excel-date-to-js');
-const { utcToZonedTime, zonedTimeToUtc } = require('date-fns-tz');
+const { utcToZonedTime } = require('date-fns-tz');
 
 export function bool(yesNo: YesNo): boolean {
   switch (yesNo) {
@@ -17,7 +16,7 @@ export function bool(yesNo: YesNo): boolean {
   }
 }
 
-function dateFromExcel(excelFloat: number): Date {
+export function dateFromExcel(excelFloat: number): Date {
   const excelFloatString: string = excelFloat.toString(10);
 
   // dumb getJsDateFromExcel API wants a string for some reason

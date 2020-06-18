@@ -1,5 +1,6 @@
 import { Application } from './applications';
 import { Dol } from './dol';
+import { Duplicates } from './duplicates';
 import { Geography } from './geography';
 import { GrantPhase1 } from './grant-phase-1';
 import { PolicyMap } from './policy-map';
@@ -163,6 +164,7 @@ export type TaxationTuple = [TaxationReportedTaxFilingValues, TaxationReportedRe
 export type CapacityOpen = RemainOpenCapacities | null;
 export type DecoratedApplication = Application &
   Dol &
+  Duplicates &
   Geography &
   GrantPhase1 &
   PolicyMap &
@@ -177,7 +179,9 @@ export interface Finding {
 
 export interface FindingDef {
   trigger(application: DecoratedApplication): boolean;
+  callback?(application: DecoratedApplication): void;
   messageGenerator(application: DecoratedApplication): string;
+  name: string,
   severity: Decision;
 }
 

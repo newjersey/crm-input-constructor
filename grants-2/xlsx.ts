@@ -6,12 +6,7 @@ export enum YesNo {
   No ='No',
 }
 
-enum YesNoEmpty {
-  Sí = 'Sí',
-  Yes = 'Yes',
-  No = 'No',
-  Empty = '',
-}
+type YesNoEmpty = YesNo | '';
 
 enum EntryStatus {
   'Incomplete',
@@ -116,7 +111,7 @@ export interface Row {
   readonly NAICSCodeVerification_ConfirmNAICSCode: YesNo;
   readonly BusinessDetails_HomeBasedBusiness: YesNo;
   readonly BusinessDetails_GamblingActivities: YesNo;
-  readonly BusinessDetails_AdultActivities: YesNo;
+  readonly BusinessDetails_AdultActivities: YesNoEmpty; // for some reason, this is empty on a few applications
   readonly BusinessDetails_SalessActivities: YesNo;
   readonly BusinessDetails_TransientMerchant: YesNo;
   readonly BusinessDetails_OutdoorStorageCompany: YesNo;
