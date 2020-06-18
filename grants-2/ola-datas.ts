@@ -314,6 +314,15 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     severity: types.Decision.Review,
   },
   {
+    name: 'TGI/Partnership filer reports unreasonably high 2019 revenue',
+    trigger: app => isSelfReportedRevenueReasonableForPartOrTgiFiler(app)[0] === false,
+    messageGenerator: app =>
+      `Applicant's 2019 self-reported actuals may not be reasonable given their ${
+        isSelfReportedRevenueReasonableForPartOrTgiFiler(app)[2]
+      } Taxation reported net income of $${getTaxationReportedSolePropIncome(app)} `,
+    severity: types.Decision.Review,
+  },
+  {
     name: '',
     trigger: app => false,
     messageGenerator: app => ``,
@@ -917,7 +926,7 @@ function isSelfReportedRevenueReasonableForCbtFiler(
 
 function isSelfReportedRevenueReasonableForPartOrTgiFiler(
   app: types.DecoratedApplication
-): [boolean | undefined, number | undefined] {
+): [boolean | undefined, number | undefined, types.RevenueYears | undefined] {
   const [filing, year]: types.TaxationTuple = getTaxationReportedTaxFilingAndYear(app);
 
   // not a Part or TGI filer
@@ -925,7 +934,7 @@ function isSelfReportedRevenueReasonableForPartOrTgiFiler(
     filing !== types.TaxationReportedTaxFilingValues.Partnership &&
     filing !== types.TaxationReportedTaxFilingValues.Sole_Prop_SMLLC
   ) {
-    return [undefined, undefined];
+    return [undefined, undefined, undefined];
   }
 
   // if filing is Partnership or TGI, we get net profit (not gross revenue);
@@ -937,13 +946,13 @@ function isSelfReportedRevenueReasonableForPartOrTgiFiler(
   }
 
   if (pastAnnualProfit < 0) {
-    return [true, undefined];
+    return [true, undefined, year || undefined];
   }
 
   const PRESUMED_PROFIT_MARGIN = 0.1;
   const presumedPastAnnualRevenue = pastAnnualProfit / PRESUMED_PROFIT_MARGIN;
 
-  return isSelfReportedRevenueReasonable(app, presumedPastAnnualRevenue);
+  return [...isSelfReportedRevenueReasonable(app, presumedPastAnnualRevenue), year || undefined];
 }
 
 function salesTaxChangeRatio(app: types.DecoratedApplication): number | undefined {

@@ -36,7 +36,7 @@ const optionDefinitions: object[] = [
     name: 'count',
     alias: 'n',
     type: Number,
-    description: 'Total number of applications to include (default ∞).',
+    description: 'Total number of applications to include (default: all).',
   },
   {
     name: 'out',
@@ -88,7 +88,7 @@ export function printUsage(): void {
 export function printStartMessage(options: Options): void {
   console.log(
     `Generating OLA Datas creation JSON for ${chalk.blue(
-      options.count ? options.count : '∞'
+      options.count ? options.count : 'all'
     )} applications, skipping ${chalk.blue(options.skip || 0)}, from:\
     \n  ${chalk.blue(options.en)}\
     \n  ${chalk.blue(options.es)}\n`
