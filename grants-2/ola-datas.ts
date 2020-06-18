@@ -274,6 +274,22 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
   //   severity: types.Decision.Review,
   // },
   {
+    name: 'Sales tax increased',
+    trigger: app =>
+      typeof salesTaxChangeRatio(app) !== 'undefined' && <number>salesTaxChangeRatio(app) > 1,
+    messageGenerator: app =>
+      `Applicant's sales tax increased ${
+        (<number>salesTaxChangeRatio(app) - 1) * 100
+      }% from 2019 to 2020`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: '',
+    trigger: app => false,
+    messageGenerator: app => ``,
+    severity: types.Decision.Review,
+  },
+  {
     name: '',
     trigger: app => false,
     messageGenerator: app => ``,
@@ -877,14 +893,12 @@ function isSelfReportedRevenueReasonableForPartOrTgiFiler(
   return isSelfReportedRevenueReasonable(app, presumedPastAnnualRevenue);
 }
 
-function isSelfReportedCapacityReasonableGivenSalesTaxFilinngs(
-  app: types.DecoratedApplication
-): boolean | undefined {
+function salesTaxChangeRatio(app: types.DecoratedApplication): number | undefined {
   const su2019 = app.taxation['S&U A 19'] + app.taxation['S&U M 19'];
   const su2020 = app.taxation['S&U A 20'] + app.taxation['S&U M 20'];
 
   if (su2019 && su2020) {
-    return su2020 < su2019;
+    return su2020 / su2019;
   }
 
   return undefined;
@@ -900,8 +914,8 @@ function getReportedRevenueReasonableness(app: types.DecoratedApplication): type
     return yesNo(<boolean>isSelfReportedRevenueReasonableForPartOrTgiFiler(app));
   }
 
-  if (typeof isSelfReportedCapacityReasonableGivenSalesTaxFilinngs(app) !== 'undefined') {
-    return yesNo(<boolean>isSelfReportedCapacityReasonableGivenSalesTaxFilinngs(app));
+  if (typeof salesTaxChangeRatio(app) !== 'undefined') {
+    return yesNo(<number>salesTaxChangeRatio(app) <= 1);
   }
 
   return 'NA';
