@@ -128,7 +128,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
   },
   {
     // unverified
-    name: 'Received Phase 1 Funding',
+    name: 'Received Phase 1 Funding >= Phase 2 eligible size',
     trigger: app =>
       !!app.grantPhase1?.['Approval Date'] &&
       (getAwardAmount(app) || 0) <= (app.grantPhase1?.Amount || 0),
@@ -152,7 +152,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
       !!app.RevenueComparison_MarchAprilMay2019 &&
       app.RevenueComparison_MarchAprilMay2020 >= app.RevenueComparison_MarchAprilMay2019,
     messageGenerator: app =>
-      `Capacity remained at 100% and self-reported year/year revenue did not decrease from 2019 to 2020.`,
+      `Capacity remained at 100% and self-reported year/year revenue did not decrease from 2019 to 2020`,
     severity: types.Decision.Decline,
   },
   {
@@ -244,15 +244,35 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     messageGenerator: app =>
       `Applicant reported an unreasonably high year/year revenue decline (${
         Math.round(<number>app.RevenueComparison_YearOverYearChange) * 100
-      }%) given business operational capacity (${getCapacityOpen(app)}).`,
+      }%) given business operational capacity (${getCapacityOpen(app)})`,
     severity: types.Decision.Review,
   },
   {
-    name: '',
-    trigger: app => false,
-    messageGenerator: app => ``,
+    name: 'Other sources Approved or Pending Greater than Revenue Loss',
+    trigger: app =>
+      getRevenueChange(app) !== null && <number>getRevenueChange(app) + getExternalFunding(app) > 0,
+    messageGenerator: app =>
+      `Business does not have an unmet need based on revenue decline and other disaster resources received`,
     severity: types.Decision.Review,
   },
+  {
+    name: 'Unmet Need is Less Max Award Size',
+    trigger: app =>
+      getAwardAmount(app) !== null &&
+      getRoundedUnmetNeed(app) !== null &&
+      <number>getRoundedUnmetNeed(app) < <number>getAwardAmount(app),
+    messageGenerator: app =>
+      `The business has an unmet need ($${getRoundedUnmetNeed(
+        app
+      )}) less than their maximum award amount ($${getAwardAmount(app)})`,
+    severity: types.Decision.Review,
+  },
+  // {
+  //   name: 'Missing WR30 but expect employees',
+  //   trigger: app => app.wr30.notFound && ,
+  //   messageGenerator: app => ``,
+  //   severity: types.Decision.Review,
+  // },
   {
     name: '',
     trigger: app => false,
@@ -568,6 +588,7 @@ function getQuarterlyWageData(app: types.DecoratedApplication): types.QuarterlyW
   return [roundedFtes, quarterYear];
 }
 
+// not adjusted for external funding or size of need
 function getAwardAmount(app: types.DecoratedApplication): types.NullableNumber {
   const AWARD_AMOUNT_PER_ELIGIBLE_FTE: number = 1000;
   const MIN_AWARD_SIZE: number = 1000;
@@ -781,55 +802,64 @@ function getTaxationSalesTax2020(app: types.DecoratedApplication): types.Nullabl
   return sum;
 }
 
-// goal: guard against 2019 over-reporting (to inflate need)
-function getReportedRevenueReasonableness(app: types.DecoratedApplication): types.YesNoNA {
+function isSelfReportedRevenueReasonable(
+  app: types.DecoratedApplication,
+  comparisonAnnual: number
+): boolean | undefined {
+  // no basis for comparison: company too new (didn't ask for 2019 data)
   if (typeof app.RevenueComparison_MarchAprilMay2019 === 'undefined') {
-    // TODO: flag for review
-    return 'NA';
+    return undefined;
   }
 
   const PERCENT_TOLERANCE: number = 0.2;
   const selfReportedAnnual2019: number = app.RevenueComparison_MarchAprilMay2019 * 4;
   const selfReportedAnnual2020: number = app.RevenueComparison_MarchAprilMay2020 * 4;
+  const comparisonAnnualUpperBound = comparisonAnnual * (1 + PERCENT_TOLERANCE);
+  const comparisonAnnualBounded = Math.min(selfReportedAnnual2019, comparisonAnnualUpperBound);
+
+  return selfReportedAnnual2020 < comparisonAnnualBounded;
+}
+
+function isSelfReportedRevenueReasonableForCbtFiler(
+  app: types.DecoratedApplication
+): boolean | undefined {
   const [filing, year]: types.TaxationTuple = getTaxationReportedTaxFilingAndYear(app);
 
-  // no tax data
-  if (filing === types.TaxationReportedTaxFilingValues.None) {
-    const su2019 = app.taxation['S&U A 19'] + app.taxation['S&U M 19'];
-    const su2020 = app.taxation['S&U A 20'] + app.taxation['S&U M 20'];
-
-    if (su2019 && su2020) {
-      return yesNo(su2020 < su2019);
-    } else {
-      // TODO: flag for review
-      return 'NA';
-    }
+  // not a CBT filer
+  if (filing !== types.TaxationReportedTaxFilingValues.CBT) {
+    return undefined;
   }
 
-  // we have revenue; ensure there's a need when bounding by it within our tolerance
-  if (filing === types.TaxationReportedTaxFilingValues.CBT) {
-    let taxationReportedAnnual: number;
+  let taxationReportedAnnual: number;
 
-    switch (year) {
-      case types.RevenueYears._2019:
-        taxationReportedAnnual = app.taxation['2019 CBT Amt'];
-        break;
-      case types.RevenueYears._2018:
-        taxationReportedAnnual = app.taxation['2018 CBT Amt'];
-        break;
-      default:
-        throw new Error(
-          `Unexpected CBT filing year (${year}) for application ${app.ApplicationId}`
-        );
-    }
-
-    const pastAnnualUpperBound = taxationReportedAnnual * (1 + PERCENT_TOLERANCE);
-    const pastAnnualBounded = Math.min(selfReportedAnnual2019, pastAnnualUpperBound);
-
-    return yesNo(selfReportedAnnual2020 < pastAnnualBounded);
+  switch (year) {
+    case types.RevenueYears._2019:
+      taxationReportedAnnual = app.taxation['2019 CBT Amt'];
+      break;
+    case types.RevenueYears._2018:
+      taxationReportedAnnual = app.taxation['2018 CBT Amt'];
+      break;
+    default:
+      throw new Error(`Unexpected CBT filing year (${year}) for application ${app.ApplicationId}`);
   }
 
-  // filing must be Partnership or TGI, both of which give us net profit (not gross revenue);
+  return isSelfReportedRevenueReasonable(app, taxationReportedAnnual);
+}
+
+function isSelfReportedRevenueReasonableForPartOrTgiFiler(
+  app: types.DecoratedApplication
+): boolean | undefined {
+  const [filing, year]: types.TaxationTuple = getTaxationReportedTaxFilingAndYear(app);
+
+  // not a Part or TGI filer
+  if (
+    filing !== types.TaxationReportedTaxFilingValues.Partnership &&
+    filing !== types.TaxationReportedTaxFilingValues.Sole_Prop_SMLLC
+  ) {
+    return undefined;
+  }
+
+  // if filing is Partnership or TGI, we get net profit (not gross revenue);
   // we extrapolate a gross revenue given an assumed profit margin and bound by it as above.
   const pastAnnualProfit: types.NullableNumber = getTaxationReportedSolePropIncome(app);
 
@@ -838,18 +868,43 @@ function getReportedRevenueReasonableness(app: types.DecoratedApplication): type
   }
 
   if (pastAnnualProfit < 0) {
-    return 'Yes';
+    return true;
   }
 
   const PRESUMED_PROFIT_MARGIN = 0.1;
   const presumedPastAnnualRevenue = pastAnnualProfit / PRESUMED_PROFIT_MARGIN;
-  const presumedPastAnnualRevenueUpperBound = presumedPastAnnualRevenue * (1 + PERCENT_TOLERANCE);
-  const presumedpastAnnualRevenueBounded = Math.min(
-    selfReportedAnnual2019,
-    presumedPastAnnualRevenueUpperBound
-  );
 
-  return yesNo(selfReportedAnnual2020 < presumedpastAnnualRevenueBounded);
+  return isSelfReportedRevenueReasonable(app, presumedPastAnnualRevenue);
+}
+
+function isSelfReportedCapacityReasonableGivenSalesTaxFilinngs(
+  app: types.DecoratedApplication
+): boolean | undefined {
+  const su2019 = app.taxation['S&U A 19'] + app.taxation['S&U M 19'];
+  const su2020 = app.taxation['S&U A 20'] + app.taxation['S&U M 20'];
+
+  if (su2019 && su2020) {
+    return su2020 < su2019;
+  }
+
+  return undefined;
+}
+
+// goal: guard against 2019 over-reporting (to inflate need)
+function getReportedRevenueReasonableness(app: types.DecoratedApplication): types.YesNoNA {
+  if (typeof isSelfReportedRevenueReasonableForCbtFiler(app) !== 'undefined') {
+    return yesNo(<boolean>isSelfReportedRevenueReasonableForCbtFiler(app));
+  }
+
+  if (typeof isSelfReportedRevenueReasonableForPartOrTgiFiler(app) !== 'undefined') {
+    return yesNo(<boolean>isSelfReportedRevenueReasonableForPartOrTgiFiler(app));
+  }
+
+  if (typeof isSelfReportedCapacityReasonableGivenSalesTaxFilinngs(app) !== 'undefined') {
+    return yesNo(<boolean>isSelfReportedCapacityReasonableGivenSalesTaxFilinngs(app));
+  }
+
+  return 'NA';
 }
 
 // goal: guard against 2020 under-reporting (to inflate need)
@@ -871,6 +926,58 @@ function getYYRevenueDeclineReasonableness(app: types.DecoratedApplication): typ
     case null:
       return 'Yes';
   }
+}
+
+// based on self-reported March-May YoY actual gross revenues
+function getRevenueChange(app: types.DecoratedApplication): types.NullableNumber {
+  if (typeof app.RevenueComparison_MarchAprilMay2019 === 'undefined') {
+    return null;
+  }
+
+  return app.RevenueComparison_MarchAprilMay2020 - app.RevenueComparison_MarchAprilMay2019;
+}
+
+// negative revenue change, rounded to 1000
+function getRoundedUnmetNeed(app: types.DecoratedApplication): types.NullableNumber {
+  const revChange: types.NullableNumber = getRevenueChange(app);
+
+  if (revChange === null) {
+    return null;
+  }
+
+  return Math.round(-revChange / 1000) * 1000;
+}
+
+// sum of approved or pending
+function getExternalFunding(app: types.DecoratedApplication): number {
+  const consider = (statusValue?: DOB_Status) =>
+    statusValue && [DOB_Status.Approved, DOB_Status.In_Process].includes(statusValue);
+
+  return (
+    ((bool(app.DOBAffidavit_SBAPPP) &&
+      consider(app.DOBAffidavit_SBAPPPDetails_Status_Value) &&
+      app.DOBAffidavit_SBAPPPDetails_Amount) ||
+      0) +
+    ((bool(app.DOBAffidavit_SBAEIDG) &&
+      consider(app.DOBAffidavit_SBAEIDGDetails_Status_Value) &&
+      app.DOBAffidavit_SBAEIDGDetails_Amount) ||
+      0) +
+    ((bool(app.DOBAffidavit_SBAEIDL) &&
+      consider(app.DOBAffidavit_SBAEIDLDetails_Status_Value) &&
+      app.DOBAffidavit_SBAEIDLDetails_Amount) ||
+      0) +
+    ((bool(app.DOBAffidavit_NJEDAGrant) &&
+      consider(app.DOBAffidavit_NJEDAGrantDetails_Status_Value) &&
+      app.DOBAffidavit_NJEDAGrantDetails_Amount) ||
+      0) +
+    ((bool(app.DOBAffidavit_NJEDALoan) &&
+      consider(app.DOBAffidavit_NJEDALoanDetails_Status_Value) &&
+      app.DOBAffidavit_NJEDALoanDetails_Amount) ||
+      0) +
+    ((bool(app.DOBAffidavit_OtherStateLocal) &&
+      app.DOBAffidavit_OtherStateLocalDetails_TotalAmountApprovedInProcess) ||
+      0)
+  );
 }
 
 export function generateOlaDatas(app: types.DecoratedApplication): types.OlaDatas {
