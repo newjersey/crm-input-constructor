@@ -83,24 +83,30 @@ async function main() {
     `${BASE_PATH}/DOL Lists/No.Go.List.3.30.2020.WHD.xlsx`
   );
 
-  // apply
+  // apply data
   // Ugly number of variables, but makes type inference pick up the chained unions of generics.
   // I'm probably doing it wrong. Note that a map() chain here causes out-of-memory panics.
-  const apps0 = getApplications(options.en, options.es);
-  const apps1 = map(apps0, addDolData, '\nApplying DOL data...');
-  const apps2 = map(apps1, addGeographyData, 'Applying geography data...');
-  const apps3 = map(apps2, addGrantPhase1Data, 'Applying grant phase 1 data...');
-  const apps4 = map(apps3, addPolicyMapData, 'Applying Policy Map data...');
-  const apps5 = map(apps4, addTaxationData, 'Applying Taxation data...');
-  const apps6 = map(apps5, addSamsData, 'Applying SAMS data...');
-  const apps7 = map(apps6, addWR30Data, 'Applying WR-30 data...');
-  const apps8 = map(apps7, addDuplicateData, 'Applying duplicate data...');
+  const apps0 = getApplications(options.en, options.es).slice(
+    0,
+    options.count && options.count + (options.skip || 0)
+  );
 
-  // limit
-  const decoratedApplications: DecoratedApplication[] = apps8.slice(
+  // Need 0 through the last application desired for duplicate checking. Don't need those skipped, thereafter.
+  const apps1 = map(apps0, addDuplicateData, '\nApplying duplicate data...').slice(
     options.skip,
     options.count && options.count + (options.skip || 0)
   );
+
+  const apps2 = map(apps1, addDolData, 'Applying DOL data...');
+  const apps3 = map(apps2, addGeographyData, 'Applying geography data...');
+  const apps4 = map(apps3, addGrantPhase1Data, 'Applying grant phase 1 data...');
+  const apps5 = map(apps4, addPolicyMapData, 'Applying Policy Map data...');
+  const apps6 = map(apps5, addTaxationData, 'Applying Taxation data...');
+  const apps7 = map(apps6, addSamsData, 'Applying SAMS data...');
+  const apps8 = map(apps7, addWR30Data, 'Applying WR-30 data...');
+
+  // indirection
+  const decoratedApplications: DecoratedApplication[] = apps8;
 
   // debug
   if (options.debug) {
