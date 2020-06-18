@@ -159,7 +159,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     messageGenerator: app =>
       `Business is a ${getOwnershipStructure(app)} (TIN: ${
         app.Business_TIN
-      }) and did not file taxes with Taxation for 2018 or 2019`,
+      }) that is not registered with Taxation, did not file taxes with Taxation for 2018 or 2019, and did not file sales/usage taxes with Taxation in 2019 or 2020.`,
     severity: types.Decision.Decline,
   },
   ////////////////////// Reviews below ////////////////////////
@@ -287,7 +287,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     messageGenerator: app =>
       `Business is a ${getNonprofitType(app)} ${getOwnershipStructure(
         app
-      )} and did not file taxes with Taxation for 2018 or 2019`,
+      )} that is not registered with Taxation, did not file taxes with Taxation for 2018 or 2019, and did not file sales/usage taxes with Taxation in 2019 or 2020`,
     severity: types.Decision.Review,
   },
   {
@@ -911,6 +911,8 @@ function isSelfReportedRevenueReasonableForCbtFiler(
   return [...isSelfReportedRevenueReasonable(app, taxationReportedAnnual), year];
 }
 
+// if filing is Partnership or TGI, we get net profit (not gross revenue); we extrapolate a presumed
+// gross revenue given an assumed profit margin, and proceed with comparison the same as with revenue.
 function isSelfReportedRevenueReasonableForPartOrTgiFiler(
   app: types.DecoratedApplication
 ): [boolean | undefined, number | undefined, types.RevenueYears | undefined] {
@@ -924,15 +926,13 @@ function isSelfReportedRevenueReasonableForPartOrTgiFiler(
     return [undefined, undefined, undefined];
   }
 
-  // if filing is Partnership or TGI, we get net profit (not gross revenue);
-  // we extrapolate a gross revenue given an assumed profit margin and bound by it as above.
   const pastAnnualProfit: types.NullableNumber = getTaxationReportedSolePropIncome(app);
 
   if (pastAnnualProfit === null) {
     throw new Error(`Expected sole prop income for application ${app.ApplicationId}`);
   }
 
-  if (pastAnnualProfit < 0) {
+  if (pastAnnualProfit <= 0) {
     return [true, undefined, year || undefined];
   }
 
