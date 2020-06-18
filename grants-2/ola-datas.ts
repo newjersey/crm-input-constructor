@@ -159,12 +159,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     name: 'No Taxation record (excluding nonprofits)',
     trigger: app =>
       getOwnershipStructure(app) !== types.OwnershipStructures.Nonprofit &&
-      getTaxationReportedTaxFilingAndYear(app)[0] == types.TaxationReportedTaxFilingValues.None &&
-      app.taxation['Clean Ind'] === TaxationCleanStatus.Not_Found &&
-      app.taxation['S&U A 19'] === 0 &&
-      app.taxation['S&U M 19'] === 0 &&
-      app.taxation['S&U A 20'] === 0 &&
-      app.taxation['S&U M 20'] === 0,
+      isUnknownToTaxation(app),
     messageGenerator: app =>
       `Business is a ${getOwnershipStructure(
         app
@@ -294,6 +289,17 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
       `Applicant's sales tax increased ${
         (<number>salesTaxChangeRatio(app) - 1) * 100
       }% from 2019 to 2020`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: 'No Taxation record (nonprofits)',
+    trigger: app =>
+      getOwnershipStructure(app) === types.OwnershipStructures.Nonprofit &&
+      isUnknownToTaxation(app),
+    messageGenerator: app =>
+      `Business is a ${getNonprofitType(app)} ${getOwnershipStructure(
+        app
+      )} and did not file taxes with Taxation for 2018 or 2019`,
     severity: types.Decision.Review,
   },
   {
@@ -632,23 +638,27 @@ function getAwardAmount(app: types.DecoratedApplication): types.NullableNumber {
   return amountValue(awardAmount);
 }
 
-function getApplicantBackground(app: types.DecoratedApplication): string {
-  let nonprofitType: types.NullableString = null;
-
+function getNonprofitType(app: types.DecoratedApplication): types.NullableString {
   switch (app.Business_EntityType_Value) {
     case EntityType.Nonprofit_501c3:
-      nonprofitType = '501(c)(3)';
+      return '501(c)(3)';
     case EntityType.Nonprofit_501c4:
-      nonprofitType = '501(c)(4)';
+      return '501(c)(4)';
     case EntityType.Nonprofit_501c6:
-      nonprofitType = '501(c)(6)';
+      return '501(c)(6)';
     case EntityType.Nonprofit_501c7:
-      nonprofitType = '501(c)(7)';
+      return '501(c)(7)';
     case EntityType.Nonprofit_501c19:
-      nonprofitType = '501(c)(19)';
+      return '501(c)(19)';
     case EntityType.Nonprofit_Other:
-      nonprofitType = `"${app.Business_NonprofitClassification}"`;
+      return `"${app.Business_NonprofitClassification}"`;
+    default:
+      return null;
   }
+}
+
+function getApplicantBackground(app: types.DecoratedApplication): string {
+  let nonprofitType: types.NullableString = getNonprofitType(app);
 
   return nonprofitType ? `Nonprofit type: ${nonprofitType}` : '';
 }
@@ -814,6 +824,17 @@ function getTaxationReportedSolePropIncome(app: types.DecoratedApplication): typ
     default:
       throw new Error(`Unexpected tax filing year ${year} for application ${app.ApplicationId}`);
   }
+}
+
+function isUnknownToTaxation(app: types.DecoratedApplication): boolean {
+  return (
+    getTaxationReportedTaxFilingAndYear(app)[0] == types.TaxationReportedTaxFilingValues.None &&
+    app.taxation['Clean Ind'] === TaxationCleanStatus.Not_Found &&
+    app.taxation['S&U A 19'] === 0 &&
+    app.taxation['S&U M 19'] === 0 &&
+    app.taxation['S&U A 20'] === 0 &&
+    app.taxation['S&U M 20'] === 0
+  );
 }
 
 function getTaxationSalesTax2019(app: types.DecoratedApplication): types.NullableNumber {
