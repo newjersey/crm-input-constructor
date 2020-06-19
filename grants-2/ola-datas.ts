@@ -1061,6 +1061,7 @@ function getExternalFunding(app: types.DecoratedApplication): number {
     statusValue && [DOB_Status.Approved, DOB_Status.In_Process].includes(statusValue);
 
   return (
+    // self-reported values
     ((bool(app.DOBAffidavit_SBAPPP) &&
       consider(app.DOBAffidavit_SBAPPPDetails_Status_Value) &&
       app.DOBAffidavit_SBAPPPDetails_Amount) ||
@@ -1069,22 +1070,12 @@ function getExternalFunding(app: types.DecoratedApplication): number {
       consider(app.DOBAffidavit_SBAEIDGDetails_Status_Value) &&
       app.DOBAffidavit_SBAEIDGDetails_Amount) ||
       0) +
-    // No longer taking EIDL into account in this calculation.
-    // ((bool(app.DOBAffidavit_SBAEIDL) &&
-    //   consider(app.DOBAffidavit_SBAEIDLDetails_Status_Value) &&
-    //   app.DOBAffidavit_SBAEIDLDetails_Amount) ||
-    //   0) +
-    ((bool(app.DOBAffidavit_NJEDAGrant) &&
-      consider(app.DOBAffidavit_NJEDAGrantDetails_Status_Value) &&
-      app.DOBAffidavit_NJEDAGrantDetails_Amount) ||
-      0) +
-    ((bool(app.DOBAffidavit_NJEDALoan) &&
-      consider(app.DOBAffidavit_NJEDALoanDetails_Status_Value) &&
-      app.DOBAffidavit_NJEDALoanDetails_Amount) ||
-      0) +
     ((bool(app.DOBAffidavit_OtherStateLocal) &&
       app.DOBAffidavit_OtherStateLocalDetails_TotalAmountApprovedInProcess) ||
-      0)
+      0) +
+    // authoratative values
+    (app.grantPhase1?.Amount || 0) +
+    (app.nonDeclinedEdaLoan?.Amount || 0)
   );
 }
 
@@ -1304,6 +1295,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
       },
       OtherCovid19Assistance_PPP: {
         IsExists: yesNo(bool(app.DOBAffidavit_SBAPPP)),
+        PartofUnMetCalculation: flag(bool(app.DOBAffidavit_SBAPPP)),
         Program: types.ProgramDescriptions.PPP,
         ProgramDescription: null,
         Status: getDobApproval(
@@ -1325,6 +1317,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
       },
       OtherCovid19Assistance_EIDG: {
         IsExists: yesNo(bool(app.DOBAffidavit_SBAEIDG)),
+        PartofUnMetCalculation: flag(bool(app.DOBAffidavit_SBAEIDG)),
         Program: types.ProgramDescriptions.EIDG,
         ProgramDescription: null,
         Status: getDobApproval(
@@ -1346,6 +1339,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
       },
       OtherCovid19Assistance_EIDL: {
         IsExists: yesNo(bool(app.DOBAffidavit_SBAEIDL)),
+        PartofUnMetCalculation: flag(false),
         Program: types.ProgramDescriptions.EIDL,
         ProgramDescription: null,
         Status: getDobApproval(
@@ -1367,6 +1361,11 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
       },
       OtherCovid19Assistance_CVSBLO: {
         IsExists: yesNo(bool(app.DOBAffidavit_NJEDALoan) || !!app.nonDeclinedEdaLoan),
+        PartofUnMetCalculation: !!app.nonDeclinedEdaLoan
+          ? 'Yes'
+          : bool(app.DOBAffidavit_NJEDALoan)
+          ? 'No'
+          : null,
         Program: types.ProgramDescriptions.CVSBLO,
         ProgramDescription: app.nonDeclinedEdaLoan
           ? `Non-declined EDA Loan size on record is ${numeral(
@@ -1394,6 +1393,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
       },
       OtherCovid19Assistance_CVSBGR: {
         IsExists: yesNo(bool(app.DOBAffidavit_NJEDAGrant) || !!app.grantPhase1?.['Approval Date']),
+        PartofUnMetCalculation: flag(bool(app.DOBAffidavit_NJEDAGrant)),
         Program: types.ProgramDescriptions.CVSBGR,
         ProgramDescription: app.grantPhase1?.['Approval Date']
           ? `Approved EDA Grant Phase 1 size on record is ${numeral(app.grantPhase1.Amount).format(
@@ -1419,6 +1419,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
       },
       OtherCovid19Assistance_Other: {
         IsExists: yesNo(bool(app.DOBAffidavit_OtherStateLocal)),
+        PartofUnMetCalculation: flag(bool(app.DOBAffidavit_OtherStateLocal)),
         Program: types.ProgramDescriptions.Other,
         ProgramDescription: app.DOBAffidavit_OtherStateLocalDetails_ProgramDescriptions,
         Status: null,

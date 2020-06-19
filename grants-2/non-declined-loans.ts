@@ -6,7 +6,7 @@ interface LoanData {
   readonly 'Product ID': string;
   readonly 'Account Name (Applicant) (Account)': string;
   readonly 'Doing Business As (Applicant) (Account)': string;
-  readonly Amount: string;
+  readonly Amount: number;
 }
 
 interface Row extends LoanData {

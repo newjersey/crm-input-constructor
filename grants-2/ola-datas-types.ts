@@ -400,6 +400,7 @@ interface OtherCovid19Assistance {
 
 interface OtherCovid19AssistanceProgram {
   IsExists: YesNo;
+  PartofUnMetCalculation: YesNo | null;
   Status: ProgramApprovals | null;
   ApprovalDate: NullableString;
   ApprovedAmount: Value;
