@@ -3,6 +3,7 @@ import { Dol } from './dol';
 import { Duplicates } from './duplicates';
 import { Geography } from './geography';
 import { GrantPhase1 } from './grant-phase-1';
+import { NonDeclinedEdaLoan } from './non-declined-loans';
 import { PolicyMap } from './policy-map';
 import { Sams } from './sams';
 import { Taxation } from './taxation';
@@ -164,6 +165,7 @@ export type DecoratedApplication = Application &
   Duplicates &
   Geography &
   GrantPhase1 &
+  NonDeclinedEdaLoan &
   PolicyMap &
   Sams &
   Taxation &

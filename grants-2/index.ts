@@ -8,6 +8,7 @@ import { addDolData, init as loadDolData } from './dol';
 import { addDuplicateData } from './duplicates';
 import { addGeographyData } from './geography';
 import { addGrantPhase1Data, init as loadGrantPhse1Data } from './grant-phase-1';
+import { addNonDeclinedEdaLoanData, init as loanNonDeclinedEdaLoanData } from './non-declined-loans';
 import { addPolicyMapData, init as loadPolicyMapDada } from './policy-map';
 import { options, optionsSatisfied, printStartMessage, printUsage } from './options';
 import { Application, getApplications } from './applications';
@@ -70,6 +71,7 @@ async function main() {
 
   // load
   await loadGrantPhse1Data(`${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 6-13-2020 7am.xlsx`);
+  await loanNonDeclinedEdaLoanData(`${BASE_PATH}/Non-Declined Loans/NJEDA Covid Phase 1 Loan Portfolio As Of 6-29-2020.xlsx`);
   await loadPolicyMapDada(`${BASE_PATH}/Policy Map/Policy Map First 20768 Apps v2.xlsx`);
   await loadSamsData(`${BASE_PATH}/SAMS/SAM_Exclusions_Public_Extract_20161.CSV`);
   await loadTaxationData(`${BASE_PATH}/Taxation/EDA_PROD_OUTPUT_PROJ2_V3_061219.xlsx`);
@@ -100,13 +102,14 @@ async function main() {
   const apps2 = map(apps1, addDolData, 'Applying DOL data...');
   const apps3 = map(apps2, addGeographyData, 'Applying geography data...');
   const apps4 = map(apps3, addGrantPhase1Data, 'Applying grant phase 1 data...');
-  const apps5 = map(apps4, addPolicyMapData, 'Applying Policy Map data...');
-  const apps6 = map(apps5, addTaxationData, 'Applying Taxation data...');
-  const apps7 = map(apps6, addSamsData, 'Applying SAMS data...');
-  const apps8 = map(apps7, addWR30Data, 'Applying WR-30 data...');
+  const apps5 = map(apps4, addNonDeclinedEdaLoanData, 'Applying non-declined EDA Loan data...');
+  const apps6 = map(apps5, addPolicyMapData, 'Applying Policy Map data...');
+  const apps7 = map(apps6, addTaxationData, 'Applying Taxation data...');
+  const apps8 = map(apps7, addSamsData, 'Applying SAMS data...');
+  const apps9 = map(apps8, addWR30Data, 'Applying WR-30 data...');
 
   // indirection
-  const decoratedApplications: DecoratedApplication[] = apps8;
+  const decoratedApplications: DecoratedApplication[] = apps9;
 
   // debug
   if (options.debug) {
