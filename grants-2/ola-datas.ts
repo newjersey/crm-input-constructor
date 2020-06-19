@@ -1296,7 +1296,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         IsExists: yesNo(
           bool(app.DOBAffidavit_SBAPPP) ||
             bool(app.DOBAffidavit_SBAEIDG) ||
-            // bool(app.DOBAffidavit_SBAEIDL) || // No longer taking this into account.
+            bool(app.DOBAffidavit_SBAEIDL) ||
             bool(app.DOBAffidavit_NJEDALoan) ||
             bool(app.DOBAffidavit_NJEDAGrant) ||
             bool(app.DOBAffidavit_OtherStateLocal)
