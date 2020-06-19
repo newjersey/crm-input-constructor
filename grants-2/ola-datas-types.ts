@@ -149,7 +149,7 @@ export enum RevenueYears {
   _2019 = '2019',
 }
 
-export type Flag = 'Yes' | '';
+export type Flag = 'Yes' | null;
 export type YesNo = 'Yes' | 'No';
 export type YesNoNA = 'Yes' | 'No' | 'N/A';
 export type NullableNumber = number | null;

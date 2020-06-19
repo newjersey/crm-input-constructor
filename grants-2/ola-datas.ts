@@ -376,7 +376,7 @@ function yesNo(test: boolean): types.YesNo {
 }
 
 function flag(test: boolean): types.Flag {
-  return test ? 'Yes' : '';
+  return test ? 'Yes' : null;
 }
 
 function getTaxClearanceComments(app: types.DecoratedApplication): types.TaxClearanceValues {
