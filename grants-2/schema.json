@@ -1,0 +1,581 @@
+{
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "Account": {
+                "type": "object",
+                "properties": {
+                    "Name": {
+                        "type": "string"
+                    },
+                    "DoingBusinessAs": {
+                        "type": "string"
+                    },
+                    "Email": {
+                        "type": "string"
+                    },
+                    "Telephone": {
+                        "type": "string"
+                    },
+                    "WebSiteURL": {
+                        "type": "string"
+                    },
+                    "YearEstablished": {
+                        "type": "string"
+                    },
+                    "AnnualRevenue": {},
+                    "TaxClearanceComments": {
+                        "type": "string"
+                    },
+                    "ACHNonCompliance": {
+                        "type": "string"
+                    },
+                    "address2Line1": {
+                        "type": "string"
+                    },
+                    "address2Line2": {
+                        "type": "string"
+                    },
+                    "address2City": {
+                        "type": "string"
+                    },
+                    "address2Zip": {
+                        "type": "string"
+                    },
+                    "address2State": {
+                        "type": "string"
+                    },
+                    "address2County": {
+                        "type": "string"
+                    },
+                    "address2Country": {
+                        "type": "string"
+                    },
+                    "WomanOwned": {
+                        "type": "string"
+                    },
+                    "VeteranOwned": {
+                        "type": "string"
+                    },
+                    "MinorityOwned": {
+                        "type": "string"
+                    },
+                    "DisabilityOwned": {
+                        "type": "string"
+                    },
+                    "Comment": {
+                        "type": "string"
+                    },
+                    "SSN": {
+                        "type": "string"
+                    }
+                }
+            },
+            "Project": {
+                "type": "object",
+                "properties": {
+                    "StatusCode": {
+                        "type": "integer"
+                    },
+                    "ProjectDescription": {
+                        "type": "string"
+                    }
+                }
+            },
+            "Product": {
+                "type": "object",
+                "properties": {
+                    "DevelopmentOfficer": {
+                        "type": "string"
+                    },
+                    "ServicingOfficerId": {
+                        "type": "string"
+                    },
+                    "AppReceivedDate": {
+                        "type": "string"
+                    },
+                    "Amount": {
+                        "type": "object",
+                        "properties": {
+                            "Value": {
+                                "type": "integer"
+                            },
+                            "ExtensionData": {}
+                        }
+                    },
+                    "nol_total_NOL_benefit": {},
+                    "nol_total_RD_benefit": {},
+                    "benefit_allocation_factor": {},
+                    "nol_prior_years_tax_credits_sold": {},
+                    "ProductStatusId": {
+                        "type": "string"
+                    },
+                    "ProductSubStatusId": {
+                        "type": "string"
+                    },
+                    "ProductTypeId": {
+                        "type": "string"
+                    },
+                    "LocatedInCommercialLocation": {
+                        "type": "string"
+                    },
+                    "ProductDescription": {
+                        "type": "string"
+                    },
+                    "lender": {
+                        "type": "string"
+                    },
+                    "lenderAmount": {},
+                    "lender_address_1": {
+                        "type": "string"
+                    },
+                    "lender_address_2": {
+                        "type": "string"
+                    },
+                    "lender_city": {
+                        "type": "string"
+                    },
+                    "lender_zipcode": {
+                        "type": "string"
+                    },
+                    "lender_email": {
+                        "type": "string"
+                    },
+                    "lender_phone": {
+                        "type": "string"
+                    }
+                }
+            },
+            "Underwriting": {
+                "type": "object",
+                "properties": {
+                    "salutation": {
+                        "type": "string"
+                    },
+                    "firstName": {
+                        "type": "string"
+                    },
+                    "middleName": {
+                        "type": "string"
+                    },
+                    "lastName": {
+                        "type": "string"
+                    },
+                    "suffix": {
+                        "type": "string"
+                    },
+                    "jobTitle": {
+                        "type": "string"
+                    },
+                    "address1": {
+                        "type": "string"
+                    },
+                    "address2": {
+                        "type": "string"
+                    },
+                    "city": {
+                        "type": "string"
+                    },
+                    "zipcode": {
+                        "type": "string"
+                    },
+                    "telephone": {
+                        "type": "string"
+                    },
+                    "telephoneExt": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "organizationName": {
+                        "type": "string"
+                    },
+                    "knownAs": {
+                        "type": "string"
+                    },
+                    "ein": {
+                        "type": "string"
+                    },
+                    "naicsCode": {
+                        "type": "string"
+                    },
+                    "ownershipStructure": {
+                        "type": "string"
+                    },
+                    "applicantBackground": {
+                        "type": "string"
+                    },
+                    "headquarterState": {
+                        "type": "string"
+                    },
+                    "headquarterCountry": {
+                        "type": "string"
+                    },
+                    "landAcquisitions": {},
+                    "newBldgConstruction": {},
+                    "acquisitionExistingBuilding": {},
+                    "existingBldgRvnt": {},
+                    "upgradeEquipment": {},
+                    "newEquipment": {},
+                    "usedEquipment": {},
+                    "engineerArchitechFees": {},
+                    "legalFees": {},
+                    "accountingFees": {},
+                    "financeFees": {},
+                    "roadUtilitiesConst": {},
+                    "debtServiceReserve": {},
+                    "constructionInterest": {},
+                    "refinancing": {},
+                    "workingCapital": {},
+                    "otherCost1": {},
+                    "otherCost2": {},
+                    "otherCost3": {},
+                    "otherCost1Description": {},
+                    "otherCost2Description": {},
+                    "otherCost3Description": {},
+                    "counselFirmName": {
+                        "type": "string"
+                    },
+                    "counselFirstName": {
+                        "type": "string"
+                    },
+                    "counselLastName": {
+                        "type": "string"
+                    },
+                    "counselStreetAddress1": {
+                        "type": "string"
+                    },
+                    "counselStreetAddress2": {
+                        "type": "string"
+                    },
+                    "counselCity": {
+                        "type": "string"
+                    },
+                    "counselState": {
+                        "type": "string"
+                    },
+                    "counselZipCode": {
+                        "type": "string"
+                    },
+                    "counselPhoneNumber": {
+                        "type": "string"
+                    },
+                    "counselEmailAddress": {
+                        "type": "string"
+                    },
+                    "accountantFirmName": {
+                        "type": "string"
+                    },
+                    "accountantFirstName": {
+                        "type": "string"
+                    },
+                    "accountantLastName": {
+                        "type": "string"
+                    },
+                    "accountantStreetAddress1": {
+                        "type": "string"
+                    },
+                    "accountantStreetAddress2": {
+                        "type": "string"
+                    },
+                    "accountantCity": {
+                        "type": "string"
+                    },
+                    "accountantState": {
+                        "type": "string"
+                    },
+                    "accountantZipCode": {
+                        "type": "string"
+                    },
+                    "accountantPhoneNumber": {
+                        "type": "string"
+                    },
+                    "accountantEmailAddress": {
+                        "type": "string"
+                    },
+                    "totalCost": {},
+                    "applicationID": {
+                        "type": "string"
+                    },
+                    "selectedProducts": {
+                        "type": "string"
+                    },
+                    "ReceivedPreiousFundingFromEDA": {
+                        "type": "string"
+                    },
+                    "ReceivedPreiousFundingFromOtherthanEDA": {
+                        "type": "string"
+                    },
+                    "TotalFullTimeEligibleJobs": {},
+                    "NJFullTimeJobsAtapplication": {
+                        "type": "integer"
+                    },
+                    "PartTimeJobsAtapplication": {
+                        "type": "integer"
+                    },
+                    "softCosts": {},
+                    "relocationCosts": {},
+                    "securityCosts": {},
+                    "titleCosts": {},
+                    "surveyCosts": {},
+                    "marketAnalysisCosts": {},
+                    "developmentImpactCosts": {},
+                    "marketSiteCosts": {},
+                    "demolitionCosts": {},
+                    "streetscapeCosts": {},
+                    "remediationCosts": {},
+                    "redemptionPremiumCosts": {},
+                    "installationMachineryCosts": {},
+                    "totalProjectCost": {},
+                    "financeAmtApplied": {}
+                }
+            },
+            "Location": {
+                "type": "object",
+                "properties": {
+                    "isRelocation": {},
+                    "isExpansion": {},
+                    "isStartup": {},
+                    "address1Line1": {
+                        "type": "string"
+                    },
+                    "address1Line2": {
+                        "type": "string"
+                    },
+                    "address1City": {
+                        "type": "string"
+                    },
+                    "address1Zip": {
+                        "type": "string"
+                    },
+                    "address1State": {
+                        "type": "string"
+                    },
+                    "address1County": {
+                        "type": "string"
+                    },
+                    "address1Municipality": {
+                        "type": "string"
+                    },
+                    "address1Country": {
+                        "type": "string"
+                    },
+                    "block": {
+                        "type": "string"
+                    },
+                    "lot": {
+                        "type": "string"
+                    },
+                    "congressionalDistrict": {
+                        "type": "string"
+                    },
+                    "legislativeDistrict": {
+                        "type": "string"
+                    },
+                    "censusTract": {},
+                    "Comments": {
+                        "type": "string"
+                    },
+                    "EligibleOpportunityZone": {
+                        "type": "string"
+                    }
+                }
+            },
+            "FeeRequest": {
+                "type": "object",
+                "properties": {
+                    "receivedDate": {},
+                    "receivedAmt": {},
+                    "confirmationNum": {
+                        "type": "string"
+                    },
+                    "productFeeAmount": {}
+                }
+            },
+            "Monitoring": {
+                "type": "object",
+                "properties": {
+                    "Status": {
+                        "type": "string"
+                    },
+                    "MonitoringType": {
+                        "type": "string"
+                    },
+                    "Findings": {},
+                    "CompletionDate": {},
+                    "GeneralComments": {
+                        "type": "string"
+                    }
+                }
+            },
+            "Covid19Impacts": {
+                "type": "object",
+                "properties": {
+                    "ApplicationLanguage": {
+                        "type": "string"
+                    },
+                    "Grant1applicationID": {},
+                    "ApplicationSequenceID": {
+                        "type": "integer"
+                    },
+                    "OntheSAMSExclusionList": {
+                        "type": "string"
+                    },
+                    "DeemedAsEssentialBusiness": {
+                        "type": "string"
+                    },
+                    "RemainOpenMar2020": {
+                        "type": "string"
+                    },
+                    "CapacityOpen": {},
+                    "ActualRevenue2019": {},
+                    "ActualRevenue2020": {},
+                    "UseofFunds": {
+                        "type": "string"
+                    },
+                    "TaxationReportedRevenue": {},
+                    "TaxationReportedRevenueYear": {},
+                    "TaxationSalesTax2019": {},
+                    "TaxationSalesTax2020": {},
+                    "TaxationReportedTaxFiling": {
+                        "type": "string"
+                    },
+                    "TaxationReportedSolePropIncome": {},
+                    "ReportedRevenueReasonable": {
+                        "type": "string"
+                    },
+                    "YYRevenueDeclineReasonable": {
+                        "type": "string"
+                    },
+                    "ReasonablenessExceptions": {
+                        "type": "string"
+                    },
+                    "DOLWR30FilingQuarter": {},
+                    "WR30ReportingComments": {
+                        "type": "string"
+                    }
+                }
+            },
+            "OtherCovid19Assistance": {
+                "type": "object",
+                "properties": {
+                    "IsExists": {
+                        "type": "string"
+                    }
+                }
+            },
+            "OtherCovid19Assistance_PPP": {
+                "type": "object",
+                "properties": {
+                    "IsExists": {
+                        "type": "string"
+                    },
+                    "Program": {
+                        "type": "string"
+                    },
+                    "Status": {},
+                    "ApprovalDate": {},
+                    "ApprovedAmount": {},
+                    "PurposeOfFunds": {}
+                }
+            },
+            "OtherCovid19Assistance_EIDG": {
+                "type": "object",
+                "properties": {
+                    "IsExists": {
+                        "type": "string"
+                    },
+                    "Program": {
+                        "type": "string"
+                    },
+                    "Status": {},
+                    "ApprovalDate": {},
+                    "ApprovedAmount": {},
+                    "PurposeOfFunds": {}
+                }
+            },
+            "OtherCovid19Assistance_EIDL": {
+                "type": "object",
+                "properties": {
+                    "IsExists": {
+                        "type": "string"
+                    },
+                    "Program": {
+                        "type": "string"
+                    },
+                    "Status": {},
+                    "ApprovalDate": {},
+                    "ApprovedAmount": {},
+                    "PurposeOfFunds": {}
+                }
+            },
+            "OtherCovid19Assistance_CVSBLO": {
+                "type": "object",
+                "properties": {
+                    "IsExists": {
+                        "type": "string"
+                    },
+                    "Program": {
+                        "type": "string"
+                    },
+                    "Status": {},
+                    "ApprovalDate": {},
+                    "ApprovedAmount": {},
+                    "PurposeOfFunds": {}
+                }
+            },
+            "OtherCovid19Assistance_CVSBGR": {
+                "type": "object",
+                "properties": {
+                    "IsExists": {
+                        "type": "string"
+                    },
+                    "Program": {
+                        "type": "string"
+                    },
+                    "Status": {},
+                    "ApprovalDate": {},
+                    "ApprovedAmount": {},
+                    "PurposeOfFunds": {}
+                }
+            },
+            "OtherCovid19Assistance_Other": {
+                "type": "object",
+                "properties": {
+                    "IsExists": {
+                        "type": "string"
+                    },
+                    "Program": {
+                        "type": "string"
+                    },
+                    "ProgramDescription": {
+                        "type": "string"
+                    },
+                    "Status": {},
+                    "ApprovalDate": {},
+                    "ApprovedAmount": {},
+                    "PurposeOfFunds": {}
+                }
+            }
+        },
+        "required": [
+            "Account",
+            "Project",
+            "Product",
+            "Underwriting",
+            "Location",
+            "FeeRequest",
+            "Monitoring",
+            "Covid19Impacts",
+            "OtherCovid19Assistance",
+            "OtherCovid19Assistance_PPP",
+            "OtherCovid19Assistance_EIDG",
+            "OtherCovid19Assistance_EIDL",
+            "OtherCovid19Assistance_CVSBLO",
+            "OtherCovid19Assistance_CVSBGR",
+            "OtherCovid19Assistance_Other"
+        ]
+    }
+}
