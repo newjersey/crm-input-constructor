@@ -325,6 +325,35 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
       )}`,
     severity: types.Decision.Review,
   },
+  {
+    name: 'Other program indicated but amount is 0 (PPP)',
+    trigger: app =>
+      bool(app.DOBAffidavit_SBAPPP) &&
+      approvedOrInProgress(app.DOBAffidavit_SBAPPPDetails_Status_Value) &&
+      !app.DOBAffidavit_SBAPPPDetails_Amount,
+    messageGenerator: app =>
+      `Applicant reported PPP funding approved or in progress but did not indicate the amount`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: 'Other program indicated but amount is 0 (EIDG)',
+    trigger: app =>
+      bool(app.DOBAffidavit_SBAEIDG) &&
+      approvedOrInProgress(app.DOBAffidavit_SBAEIDGDetails_Status_Value) &&
+      !app.DOBAffidavit_SBAEIDGDetails_Amount,
+    messageGenerator: app =>
+      `Applicant reported EIDG funding approved or in progress but did not indicate the amount`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: 'Other program indicated but amount is 0 (other stat/local)',
+    trigger: app =>
+      bool(app.DOBAffidavit_OtherStateLocal) &&
+      !app.DOBAffidavit_OtherStateLocalDetails_TotalAmountApprovedInProcess,
+    messageGenerator: app =>
+      `Applicant reported other disaster funding approved or in progress ("${app.DOBAffidavit_OtherStateLocalDetails_ProgramDescriptions}") but did not indicate the amount`,
+    severity: types.Decision.Review,
+  },
   // UNVERIFIED--
   // keep these last, since they could include long text:
   {
@@ -1055,19 +1084,23 @@ function getRoundedUnmetNeed(app: types.DecoratedApplication): types.NullableNum
   return Math.round(-revChange / 1000) * 1000;
 }
 
+function approvedOrInProgress(dobStatusValue?: DOB_Status): boolean {
+  return (
+    (dobStatusValue || false) &&
+    [DOB_Status.Approved, DOB_Status.In_Process].includes(dobStatusValue)
+  );
+}
+
 // sum of approved or pending
 function getExternalFunding(app: types.DecoratedApplication): number {
-  const consider = (statusValue?: DOB_Status) =>
-    statusValue && [DOB_Status.Approved, DOB_Status.In_Process].includes(statusValue);
-
   return (
     // self-reported values
     ((bool(app.DOBAffidavit_SBAPPP) &&
-      consider(app.DOBAffidavit_SBAPPPDetails_Status_Value) &&
+      approvedOrInProgress(app.DOBAffidavit_SBAPPPDetails_Status_Value) &&
       app.DOBAffidavit_SBAPPPDetails_Amount) ||
       0) +
     ((bool(app.DOBAffidavit_SBAEIDG) &&
-      consider(app.DOBAffidavit_SBAEIDGDetails_Status_Value) &&
+      approvedOrInProgress(app.DOBAffidavit_SBAEIDGDetails_Status_Value) &&
       app.DOBAffidavit_SBAEIDGDetails_Amount) ||
       0) +
     ((bool(app.DOBAffidavit_OtherStateLocal) &&
