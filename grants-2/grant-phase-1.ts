@@ -3,7 +3,7 @@ import { Application } from './applications';
 
 export enum ProductStatuses {
   Ended = 'Ended',
-  InProgress = 'In Progress',
+  Closing = 'Closing',
   Closed = 'Closed',
   Underwriting = 'Underwriting',
 }

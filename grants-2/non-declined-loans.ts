@@ -3,9 +3,7 @@ import { Application } from './applications';
 
 interface LoanData {
   readonly 'OLA Application ID (Underwriting) (Underwriting)': string;
-  readonly 'Product ID': string;
-  readonly 'Account Name (Applicant) (Account)': string;
-  readonly 'Doing Business As (Applicant) (Account)': string;
+  readonly 'Approval Date'?: number;
   readonly Amount: number;
 }
 

@@ -452,6 +452,26 @@ function getOwnershipStructure(app: types.DecoratedApplication): types.Ownership
   return result;
 }
 
+function getGrantPhase1Status(app: types.DecoratedApplication): types.ProgramApprovals | null {
+  if (typeof app.grantPhase1 === 'undefined') {
+    return null;
+  }
+
+  const status: ProductStatuses | undefined = app.grantPhase1['Product Status'];
+
+  switch (status) {
+    case ProductStatuses.Closed:
+    case ProductStatuses.Closing:
+      return types.ProgramApprovals.Approved;
+    case ProductStatuses.Underwriting:
+      return types.ProgramApprovals.In_Process;
+    case ProductStatuses.Ended:
+      return types.ProgramApprovals.Declined;
+    default:
+      throw new Error(`Unexpected grant phase 1 status: ${status}`);
+  }
+}
+
 function getDesignation(app: types.DecoratedApplication, designation: number): boolean {
   return (app.Business_Designations_Value & designation) > 0;
 }
@@ -1107,7 +1127,8 @@ function getExternalFunding(app: types.DecoratedApplication): number {
       app.DOBAffidavit_OtherStateLocalDetails_TotalAmountApprovedInProcess) ||
       0) +
     // authoratative values
-    (app.grantPhase1?.Amount || 0) +
+    ((app.grantPhase1?.['Product Status'] !== ProductStatuses.Ended && app.grantPhase1?.Amount) ||
+      0) +
     (app.nonDeclinedEdaLoan?.Amount || 0)
   );
 }
@@ -1321,14 +1342,14 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
           bool(app.DOBAffidavit_SBAPPP) ||
             bool(app.DOBAffidavit_SBAEIDG) ||
             bool(app.DOBAffidavit_SBAEIDL) ||
-            bool(app.DOBAffidavit_NJEDALoan) ||
-            bool(app.DOBAffidavit_NJEDAGrant) ||
+            !!app.nonDeclinedEdaLoan ||
+            !!app.grantPhase1 ||
             bool(app.DOBAffidavit_OtherStateLocal)
         ),
       },
       OtherCovid19Assistance_PPP: {
         IsExists: yesNo(bool(app.DOBAffidavit_SBAPPP)),
-        PartofUnMetCalculation: flag(bool(app.DOBAffidavit_SBAPPP)),
+        PartofUnMetCalculation: yesNo(true),
         Program: types.ProgramDescriptions.PPP,
         ProgramDescription: null,
         Status: getDobApproval(
@@ -1350,7 +1371,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
       },
       OtherCovid19Assistance_EIDG: {
         IsExists: yesNo(bool(app.DOBAffidavit_SBAEIDG)),
-        PartofUnMetCalculation: flag(bool(app.DOBAffidavit_SBAEIDG)),
+        PartofUnMetCalculation: yesNo(true),
         Program: types.ProgramDescriptions.EIDG,
         ProgramDescription: null,
         Status: getDobApproval(
@@ -1372,7 +1393,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
       },
       OtherCovid19Assistance_EIDL: {
         IsExists: yesNo(bool(app.DOBAffidavit_SBAEIDL)),
-        PartofUnMetCalculation: flag(false),
+        PartofUnMetCalculation: yesNo(false),
         Program: types.ProgramDescriptions.EIDL,
         ProgramDescription: null,
         Status: getDobApproval(
@@ -1393,66 +1414,39 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         ),
       },
       OtherCovid19Assistance_CVSBLO: {
-        IsExists: yesNo(bool(app.DOBAffidavit_NJEDALoan) || !!app.nonDeclinedEdaLoan),
-        PartofUnMetCalculation: !!app.nonDeclinedEdaLoan
-          ? 'Yes'
-          : bool(app.DOBAffidavit_NJEDALoan)
-          ? 'No'
-          : null,
+        IsExists: yesNo(!!app.nonDeclinedEdaLoan),
+        PartofUnMetCalculation: yesNo(true),
         Program: types.ProgramDescriptions.CVSBLO,
-        ProgramDescription: app.nonDeclinedEdaLoan
-          ? `Non-declined EDA Loan size on record is ${numeral(
-              app.nonDeclinedEdaLoan.Amount
-            ).format('$0,0')} (${
-              app.nonDeclinedEdaLoan['OLA Application ID (Underwriting) (Underwriting)']
-            }).`
-          : 'No non-declined EDA Loan on record.',
-        Status: getDobApproval(
-          app.DOBAffidavit_NJEDALoan,
-          app.DOBAffidavit_NJEDALoanDetails_Status_Value
-        ),
-        ApprovalDate: getDobApprovalDate(
-          app.DOBAffidavit_NJEDALoan,
-          app.DOBAffidavit_NJEDALoanDetails_Status_Value,
-          app.DOBAffidavit_NJEDALoanDetails_ApprovalDate
-        ),
-        ApprovedAmount: value(
-          getDobAmountValue(app.DOBAffidavit_NJEDALoan, app.DOBAffidavit_NJEDALoanDetails_Amount)
-        ),
-        PurposeOfFunds: getDobPurposes(
-          app.DOBAffidavit_NJEDALoan,
-          app.DOBAffidavit_NJEDALoanDetails_Purposes_Value
-        ),
+        ProgramDescription: `OLA Application ID: ${app.nonDeclinedEdaLoan?.['OLA Application ID (Underwriting) (Underwriting)']}`,
+        Status:
+          typeof app.nonDeclinedEdaLoan?.['Approval Date'] === 'undefined'
+            ? types.ProgramApprovals.In_Process
+            : types.ProgramApprovals.Approved,
+        ApprovalDate:
+          typeof app.nonDeclinedEdaLoan?.['Approval Date'] === 'undefined'
+            ? null
+            : formatExcelDate(app.nonDeclinedEdaLoan['Approval Date']),
+        ApprovedAmount: value(app.nonDeclinedEdaLoan?.Amount),
+        PurposeOfFunds: null,
       },
       OtherCovid19Assistance_CVSBGR: {
-        IsExists: yesNo(bool(app.DOBAffidavit_NJEDAGrant) || !!app.grantPhase1?.['Approval Date']),
-        PartofUnMetCalculation: flag(bool(app.DOBAffidavit_NJEDAGrant)),
+        IsExists: yesNo(!!app.grantPhase1),
+        PartofUnMetCalculation: yesNo(
+          app.grantPhase1?.['Product Status'] !== ProductStatuses.Ended
+        ),
         Program: types.ProgramDescriptions.CVSBGR,
-        ProgramDescription: app.grantPhase1?.['Approval Date']
-          ? `Approved EDA Grant Phase 1 size on record is ${numeral(app.grantPhase1.Amount).format(
-              '$0,0'
-            )}.`
-          : 'No approved EDA Grant Phase 1 on record.',
-        Status: getDobApproval(
-          app.DOBAffidavit_NJEDAGrant,
-          app.DOBAffidavit_NJEDAGrantDetails_Status_Value
-        ),
-        ApprovalDate: getDobApprovalDate(
-          app.DOBAffidavit_NJEDAGrant,
-          app.DOBAffidavit_NJEDAGrantDetails_Status_Value,
-          app.DOBAffidavit_NJEDAGrantDetails_ApprovalDate
-        ),
-        ApprovedAmount: value(
-          getDobAmountValue(app.DOBAffidavit_NJEDAGrant, app.DOBAffidavit_NJEDAGrantDetails_Amount)
-        ),
-        PurposeOfFunds: getDobPurposes(
-          app.DOBAffidavit_NJEDAGrant,
-          app.DOBAffidavit_NJEDAGrantDetails_Purposes_Value
-        ),
+        ProgramDescription: `OLA Application ID: ${app.grantPhase1?.['OLA Application ID ']}`,
+        Status: getGrantPhase1Status(app),
+        ApprovalDate:
+          typeof app.grantPhase1?.['Approval Date'] === 'undefined'
+            ? null
+            : formatExcelDate(app.grantPhase1['Approval Date']),
+        ApprovedAmount: value(app.grantPhase1?.Amount),
+        PurposeOfFunds: null,
       },
       OtherCovid19Assistance_Other: {
         IsExists: yesNo(bool(app.DOBAffidavit_OtherStateLocal)),
-        PartofUnMetCalculation: flag(bool(app.DOBAffidavit_OtherStateLocal)),
+        PartofUnMetCalculation: yesNo(true),
         Program: types.ProgramDescriptions.Other,
         ProgramDescription: app.DOBAffidavit_OtherStateLocalDetails_ProgramDescriptions,
         Status: null,

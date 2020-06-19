@@ -71,7 +71,7 @@ async function main() {
 
   // load
   await loadGrantPhse1Data(`${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 6-13-2020 7am.xlsx`);
-  await loanNonDeclinedEdaLoanData(`${BASE_PATH}/Non-Declined Loans/NJEDA Covid Phase 1 Loan Portfolio As Of 6-29-2020.xlsx`);
+  await loanNonDeclinedEdaLoanData(`${BASE_PATH}/Non-Declined Loans/Loan Data 6-19-2020 630pm.xlsx`);
   await loadPolicyMapDada(`${BASE_PATH}/Policy Map/Policy Map First 20768 Apps v2.xlsx`);
   await loadSamsData(`${BASE_PATH}/SAMS/SAM_Exclusions_Public_Extract_20161.CSV`);
   await loadTaxationData(`${BASE_PATH}/Taxation/EDA_PROD_OUTPUT_PROJ2_V3_061219.xlsx`);
