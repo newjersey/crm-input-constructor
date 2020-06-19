@@ -472,7 +472,9 @@
                     "IsExists": {
                         "type": "string"
                     },
-                    "PartofUnMetCalculation": {},
+                    "PartofUnMetCalculation": {
+                        "type": "string"
+                    },
                     "ProgramDescription": {},
                     "Program": {
                         "type": "string"
@@ -489,7 +491,9 @@
                     "IsExists": {
                         "type": "string"
                     },
-                    "PartofUnMetCalculation": {},
+                    "PartofUnMetCalculation": {
+                        "type": "string"
+                    },
                     "ProgramDescription": {},
                     "Program": {
                         "type": "string"
@@ -506,7 +510,9 @@
                     "IsExists": {
                         "type": "string"
                     },
-                    "PartofUnMetCalculation": {},
+                    "PartofUnMetCalculation": {
+                        "type": "string"
+                    },
                     "ProgramDescription": {},
                     "Program": {
                         "type": "string"
@@ -523,7 +529,9 @@
                     "IsExists": {
                         "type": "string"
                     },
-                    "PartofUnMetCalculation": {},
+                    "PartofUnMetCalculation": {
+                        "type": "string"
+                    },
                     "ProgramDescription": {},
                     "Program": {
                         "type": "string"
@@ -540,7 +548,9 @@
                     "IsExists": {
                         "type": "string"
                     },
-                    "PartofUnMetCalculation": {},
+                    "PartofUnMetCalculation": {
+                        "type": "string"
+                    },
                     "ProgramDescription": {},
                     "Program": {
                         "type": "string"
@@ -557,7 +567,9 @@
                     "IsExists": {
                         "type": "string"
                     },
-                    "PartofUnMetCalculation": {},
+                    "PartofUnMetCalculation": {
+                        "type": "string"
+                    },
                     "Program": {
                         "type": "string"
                     },
