@@ -110,12 +110,10 @@ export enum ServicingOfficersExternal {
   Richard_Toro = '{834023BA-3ED6-E811-811B-1458D04E2F10}',
 }
 
-/*
-// prettier-ignore
-export enum ServicingOfficersEN { BRUCE_TEST = '{FB3F23BA-3ED6-E811-811B-1458D04E2F10}' }
-// prettier-ignore
-export enum ServicingOfficersES { BRUCE_TEST = '{FB3F23BA-3ED6-E811-811B-1458D04E2F10}' }
- */
+// TEST values:
+// export enum ServicingOfficersEN { BRUCE_TEST = '{FB3F23BA-3ED6-E811-811B-1458D04E2F10}' }
+// export enum ServicingOfficersES { BRUCE_TEST = '{FB3F23BA-3ED6-E811-811B-1458D04E2F10}' }
+// export enum ServicingOfficersExternal { Richard_Toro = '{FB3F23BA-3ED6-E811-811B-1458D04E2F10}' }
 
 export enum ProductStatuses {
   Ended = '{359B8B3E-65F7-E511-80DE-005056AD31F5}',
@@ -153,7 +151,7 @@ export enum RevenueYears {
 
 export type Flag = 'Yes' | '';
 export type YesNo = 'Yes' | 'No';
-export type YesNoNA = 'Yes' | 'No' | 'NA';
+export type YesNoNA = 'Yes' | 'No' | 'N/A';
 export type NullableNumber = number | null;
 export type NullableString = string | null;
 export type QuarterlyWageData = [NullableNumber, NullableString];
@@ -184,10 +182,12 @@ export interface FindingDef {
   severity: Decision;
 }
 
-interface Amount {
+export interface ValueObject {
   Value: number;
   ExtensionData: null;
 }
+
+export type Value = ValueObject | null;
 
 interface Account {
   Name: string;
@@ -223,7 +223,7 @@ interface Product {
   DevelopmentOfficer: '';
   ServicingOfficerId: ServicingOfficer;
   AppReceivedDate: string;
-  Amount: Amount;
+  Amount: Value;
   nol_total_NOL_benefit: null;
   nol_total_RD_benefit: null;
   benefit_allocation_factor: null;
@@ -234,7 +234,7 @@ interface Product {
   LocatedInCommercialLocation: '';
   ProductDescription: '';
   lender: '';
-  lenderAmount: Amount;
+  lenderAmount: Value;
   lender_address_1: '';
   lender_address_2: '';
   lender_city: '';
@@ -269,18 +269,18 @@ interface Underwriting {
   newBldgConstruction: null;
   acquisitionExistingBuilding: null;
   existingBldgRvnt: null;
-  upgradeEquipment: Amount;
-  newEquipment: Amount;
-  usedEquipment: Amount;
-  engineerArchitechFees: Amount;
+  upgradeEquipment: Value;
+  newEquipment: Value;
+  usedEquipment: Value;
+  engineerArchitechFees: Value;
   legalFees: null;
   accountingFees: null;
   financeFees: null;
-  roadUtilitiesConst: Amount;
+  roadUtilitiesConst: Value;
   debtServiceReserve: null;
-  constructionInterest: Amount;
-  refinancing: Amount;
-  workingCapital: Amount;
+  constructionInterest: Value;
+  refinancing: Value;
+  workingCapital: Value;
   otherCost1: null;
   otherCost2: null;
   otherCost3: null;
@@ -307,7 +307,7 @@ interface Underwriting {
   accountantZipCode: '';
   accountantPhoneNumber: '';
   accountantEmailAddress: '';
-  totalCost: Amount;
+  totalCost: Value;
   applicationID: string;
   selectedProducts: 'Covid Small Business Emergency Assistance Grant Phase 2';
   ReceivedPreiousFundingFromEDA: '';
@@ -315,21 +315,21 @@ interface Underwriting {
   TotalFullTimeEligibleJobs: NullableNumber;
   NJFullTimeJobsAtapplication: number;
   PartTimeJobsAtapplication: number;
-  softCosts: Amount;
-  relocationCosts: Amount;
-  securityCosts: Amount;
-  titleCosts: Amount;
-  surveyCosts: Amount;
-  marketAnalysisCosts: Amount;
-  developmentImpactCosts: Amount;
-  marketSiteCosts: Amount;
+  softCosts: Value;
+  relocationCosts: Value;
+  securityCosts: Value;
+  titleCosts: Value;
+  surveyCosts: Value;
+  marketAnalysisCosts: Value;
+  developmentImpactCosts: Value;
+  marketSiteCosts: Value;
   demolitionCosts: null;
   streetscapeCosts: null;
-  remediationCosts: Amount;
+  remediationCosts: Value;
   redemptionPremiumCosts: null;
   installationMachineryCosts: null;
   totalProjectCost: null;
-  financeAmtApplied: Amount;
+  financeAmtApplied: Value;
 }
 
 interface Location {
@@ -376,15 +376,15 @@ interface Covid19Impacts {
   DeemedAsEssentialBusiness: YesNo;
   RemainOpenMar2020: YesNo;
   CapacityOpen: CapacityOpen;
-  ActualRevenue2019: Amount;
-  ActualRevenue2020: Amount;
+  ActualRevenue2019: Value;
+  ActualRevenue2020: Value;
   UseofFunds: 'Business Interruption - Loss of Revenue';
-  TaxationReportedRevenue: Amount;
+  TaxationReportedRevenue: Value;
   TaxationReportedRevenueYear: TaxationReportedRevenueYear;
-  TaxationSalesTax2019: Amount;
-  TaxationSalesTax2020: Amount;
+  TaxationSalesTax2019: Value;
+  TaxationSalesTax2020: Value;
   TaxationReportedTaxFiling: TaxationReportedTaxFilingValues;
-  TaxationReportedSolePropIncome: Amount;
+  TaxationReportedSolePropIncome: Value;
   ReportedRevenueReasonable: YesNoNA;
   YYRevenueDeclineReasonable: YesNoNA;
   ReasonablenessExceptions: string;
@@ -400,7 +400,7 @@ interface OtherCovid19AssistanceProgram {
   IsExists: YesNo;
   Status: ProgramApprovals | null;
   ApprovalDate: NullableString;
-  ApprovedAmount: Amount;
+  ApprovedAmount: Value;
   PurposeOfFunds: NullableString;
 }
 

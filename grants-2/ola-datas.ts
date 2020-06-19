@@ -159,7 +159,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     messageGenerator: app =>
       `Business is a ${getOwnershipStructure(app)} (TIN: ${
         app.Business_TIN
-      }) that is not registered with Taxation, did not file taxes with Taxation for 2018 or 2019, and did not file sales/usage taxes with Taxation in 2019 or 2020.`,
+      }) that is not registered with Taxation, did not file taxes with Taxation for 2018 or 2019, and did not file sales/usage taxes with Taxation in 2019 or 2020`,
     severity: types.Decision.Decline,
   },
   ////////////////////// Reviews below ////////////////////////
@@ -173,7 +173,10 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
   {
     name: 'Business established in 2019 or 2020',
     trigger: app => ['2019', '2020'].includes(app.Business_YearEstablished),
-    messageGenerator: app => `Business established in ${app.Business_YearEstablished}`,
+    messageGenerator: app =>
+      `Business established in ${app.Business_YearEstablished} (${dateFromExcel(
+        <number>app.Business_DateEstablished
+      ).toLocaleDateString()})`,
     severity: types.Decision.Review,
   },
   {
@@ -289,6 +292,13 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
       `Business is a ${getNonprofitType(app)} ${getOwnershipStructure(
         app
       )} that is not registered with Taxation, did not file taxes with Taxation for 2018 or 2019, and did not file sales/usage taxes with Taxation in 2019 or 2020`,
+    severity: types.Decision.Review,
+  },
+  {
+    name: 'Known to Taxation but no filings',
+    trigger: app =>
+      app.taxation['Clean Ind'] !== 'X' && getReportedRevenueReasonableness(app) === 'N/A',
+    messageGenerator: app => `Organization is recognized by Taxation, but has no Taxation filings`,
     severity: types.Decision.Review,
   },
   {
@@ -499,20 +509,29 @@ function getCapacityOpen(app: types.DecoratedApplication): types.CapacityOpen {
   }
 }
 
-function value(number?: number | null): number {
-  return number || 0;
+function value(number?: number | null): types.Value {
+  if (number === null || typeof number === 'undefined') {
+    return null;
+  }
+
+  const valueObject: types.ValueObject = {
+    Value: number,
+    ExtensionData: null,
+  };
+
+  return valueObject;
 }
 
 function getDobAmountValue(
   indicated: Application_YesNo,
   number: number | undefined
-): types.NullableNumber {
+): number | undefined {
   // program not selected (but value might be present from user changing their mind)
   if (!bool(indicated)) {
-    return null;
+    return undefined;
   }
 
-  return value(number);
+  return number;
 }
 
 function getDobApproval(
@@ -636,7 +655,7 @@ function getAwardAmount(app: types.DecoratedApplication): number {
     Math.max(MIN_AWARD_SIZE, roundedFteCount * AWARD_AMOUNT_PER_ELIGIBLE_FTE)
   );
 
-  return value(awardAmount);
+  return awardAmount;
 }
 
 function getNonprofitType(app: types.DecoratedApplication): types.NullableString {
@@ -682,7 +701,7 @@ function getFindingsString(app: types.DecoratedApplication): types.NullableStrin
     .map((finding, i) => `(#${i + 1}: ${finding.severity}) ${finding.message}`)
     .join('. ');
 
-  return findingsString || null;
+  return findingsString ? `${findingsString}.` : null;
 }
 
 export function getDecision(app: types.DecoratedApplication): types.Decision {
@@ -968,13 +987,13 @@ function getReportedRevenueReasonableness(app: types.DecoratedApplication): type
     return yesNo(<number>getSalesTaxPercentChange(app) <= 0);
   }
 
-  return 'NA';
+  return 'N/A';
 }
 
 // goal: guard against 2020 under-reporting (to inflate need)
 function getYYRevenueDeclineReasonableness(app: types.DecoratedApplication): types.YesNoNA {
   if (typeof app.RevenueComparison_YearOverYearChange === 'undefined') {
-    return 'NA';
+    return 'N/A';
   }
 
   switch (getCapacityOpen(app)) {
@@ -1050,10 +1069,11 @@ function getExternalFunding(app: types.DecoratedApplication): number {
       consider(app.DOBAffidavit_SBAEIDGDetails_Status_Value) &&
       app.DOBAffidavit_SBAEIDGDetails_Amount) ||
       0) +
-    ((bool(app.DOBAffidavit_SBAEIDL) &&
-      consider(app.DOBAffidavit_SBAEIDLDetails_Status_Value) &&
-      app.DOBAffidavit_SBAEIDLDetails_Amount) ||
-      0) +
+    // No longer taking EIDL into account in this calculation.
+    // ((bool(app.DOBAffidavit_SBAEIDL) &&
+    //   consider(app.DOBAffidavit_SBAEIDLDetails_Status_Value) &&
+    //   app.DOBAffidavit_SBAEIDLDetails_Amount) ||
+    //   0) +
     ((bool(app.DOBAffidavit_NJEDAGrant) &&
       consider(app.DOBAffidavit_NJEDAGrantDetails_Status_Value) &&
       app.DOBAffidavit_NJEDAGrantDetails_Amount) ||
@@ -1105,10 +1125,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         DevelopmentOfficer: '',
         ServicingOfficerId: getServicingOfficer(app),
         AppReceivedDate: formatExcelDate(app.Entry_DateSubmitted),
-        Amount: {
-          Value: value(getAwardAmount(app)),
-          ExtensionData: null,
-        },
+        Amount: value(getAwardAmount(app)),
         nol_total_NOL_benefit: null,
         nol_total_RD_benefit: null,
         benefit_allocation_factor: null,
@@ -1119,10 +1136,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         LocatedInCommercialLocation: '',
         ProductDescription: '',
         lender: '',
-        lenderAmount: {
-          Value: value(),
-          ExtensionData: null,
-        },
+        lenderAmount: value(),
         lender_address_1: '',
         lender_address_2: '',
         lender_city: '',
@@ -1156,42 +1170,18 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         newBldgConstruction: null,
         acquisitionExistingBuilding: null,
         existingBldgRvnt: null,
-        upgradeEquipment: {
-          Value: value(),
-          ExtensionData: null,
-        },
-        newEquipment: {
-          Value: value(),
-          ExtensionData: null,
-        },
-        usedEquipment: {
-          Value: value(),
-          ExtensionData: null,
-        },
-        engineerArchitechFees: {
-          Value: value(),
-          ExtensionData: null,
-        },
+        upgradeEquipment: value(),
+        newEquipment: value(),
+        usedEquipment: value(),
+        engineerArchitechFees: value(),
         legalFees: null,
         accountingFees: null,
         financeFees: null,
-        roadUtilitiesConst: {
-          Value: value(),
-          ExtensionData: null,
-        },
+        roadUtilitiesConst: value(),
         debtServiceReserve: null,
-        constructionInterest: {
-          Value: value(),
-          ExtensionData: null,
-        },
-        refinancing: {
-          Value: value(),
-          ExtensionData: null,
-        },
-        workingCapital: {
-          Value: value(),
-          ExtensionData: null,
-        },
+        constructionInterest: value(),
+        refinancing: value(),
+        workingCapital: value(),
         otherCost1: null,
         otherCost2: null,
         otherCost3: null,
@@ -1218,10 +1208,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         accountantZipCode: '',
         accountantPhoneNumber: '',
         accountantEmailAddress: '',
-        totalCost: {
-          Value: value(),
-          ExtensionData: null,
-        },
+        totalCost: value(),
         applicationID: app.ApplicationId,
         selectedProducts: 'Covid Small Business Emergency Assistance Grant Phase 2',
         ReceivedPreiousFundingFromEDA: '',
@@ -1229,51 +1216,21 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         TotalFullTimeEligibleJobs: getQuarterlyWageData(app)[0],
         NJFullTimeJobsAtapplication: app.Business_W2EmployeesFullTime,
         PartTimeJobsAtapplication: app.Business_W2EmployeesPartTime,
-        softCosts: {
-          Value: value(),
-          ExtensionData: null,
-        },
-        relocationCosts: {
-          Value: value(),
-          ExtensionData: null,
-        },
-        securityCosts: {
-          Value: value(),
-          ExtensionData: null,
-        },
-        titleCosts: {
-          Value: value(),
-          ExtensionData: null,
-        },
-        surveyCosts: {
-          Value: value(),
-          ExtensionData: null,
-        },
-        marketAnalysisCosts: {
-          Value: value(),
-          ExtensionData: null,
-        },
-        developmentImpactCosts: {
-          Value: value(),
-          ExtensionData: null,
-        },
-        marketSiteCosts: {
-          Value: value(),
-          ExtensionData: null,
-        },
+        softCosts: value(),
+        relocationCosts: value(),
+        securityCosts: value(),
+        titleCosts: value(),
+        surveyCosts: value(),
+        marketAnalysisCosts: value(),
+        developmentImpactCosts: value(),
+        marketSiteCosts: value(),
         demolitionCosts: null,
         streetscapeCosts: null,
-        remediationCosts: {
-          Value: value(),
-          ExtensionData: null,
-        },
+        remediationCosts: value(),
         redemptionPremiumCosts: null,
         installationMachineryCosts: null,
         totalProjectCost: null,
-        financeAmtApplied: {
-          Value: value(),
-          ExtensionData: null,
-        },
+        financeAmtApplied: value(),
       },
       Location: {
         isRelocation: null,
@@ -1318,33 +1275,15 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         DeemedAsEssentialBusiness: yesNo(bool(app.COVID19Impact_EssentialBusiness)),
         RemainOpenMar2020: yesNo(bool(app.COVID19Impact_OpenOrReopened)),
         CapacityOpen: getCapacityOpen(app),
-        ActualRevenue2019: {
-          Value: value(app.RevenueComparison_MarchAprilMay2019),
-          ExtensionData: null,
-        },
-        ActualRevenue2020: {
-          Value: value(app.RevenueComparison_MarchAprilMay2020),
-          ExtensionData: null,
-        },
+        ActualRevenue2019: value(app.RevenueComparison_MarchAprilMay2019),
+        ActualRevenue2020: value(app.RevenueComparison_MarchAprilMay2020),
         UseofFunds: 'Business Interruption - Loss of Revenue',
-        TaxationReportedRevenue: {
-          Value: value(getTaxationReportedRevenue(app)),
-          ExtensionData: null,
-        },
+        TaxationReportedRevenue: value(getTaxationReportedRevenue(app)),
         TaxationReportedRevenueYear: getTaxationReportedTaxFilingAndYear(app)[1],
-        TaxationSalesTax2019: {
-          Value: value(getTaxationSalesTax2019(app)),
-          ExtensionData: null,
-        },
-        TaxationSalesTax2020: {
-          Value: value(getTaxationSalesTax2020(app)),
-          ExtensionData: null,
-        },
+        TaxationSalesTax2019: value(getTaxationSalesTax2019(app)),
+        TaxationSalesTax2020: value(getTaxationSalesTax2020(app)),
         TaxationReportedTaxFiling: getTaxationReportedTaxFilingAndYear(app)[0],
-        TaxationReportedSolePropIncome: {
-          Value: value(getTaxationReportedNetIncomeLoss(app)),
-          ExtensionData: null,
-        },
+        TaxationReportedSolePropIncome: value(getTaxationReportedNetIncomeLoss(app)),
         ReportedRevenueReasonable: getReportedRevenueReasonableness(app),
         YYRevenueDeclineReasonable: getYYRevenueDeclineReasonableness(app),
         ReasonablenessExceptions: getReasonablenessExceptions(app),
@@ -1357,7 +1296,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         IsExists: yesNo(
           bool(app.DOBAffidavit_SBAPPP) ||
             bool(app.DOBAffidavit_SBAEIDG) ||
-            bool(app.DOBAffidavit_SBAEIDL) ||
+            // bool(app.DOBAffidavit_SBAEIDL) || // No longer taking this into account.
             bool(app.DOBAffidavit_NJEDALoan) ||
             bool(app.DOBAffidavit_NJEDAGrant) ||
             bool(app.DOBAffidavit_OtherStateLocal)
@@ -1375,10 +1314,9 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
           app.DOBAffidavit_SBAPPPDetails_Status_Value,
           app.DOBAffidavit_SBAPPPDetails_ApprovalDate
         ),
-        ApprovedAmount: {
-          Value: value(getDobAmountValue(app.DOBAffidavit_SBAPPP, app.DOBAffidavit_SBAPPPDetails_Amount)),
-          ExtensionData: null,
-        },
+        ApprovedAmount: value(
+          getDobAmountValue(app.DOBAffidavit_SBAPPP, app.DOBAffidavit_SBAPPPDetails_Amount)
+        ),
         PurposeOfFunds: getDobPurposes(
           app.DOBAffidavit_SBAPPP,
           app.DOBAffidavit_SBAPPPDetails_Purposes_Value
@@ -1396,13 +1334,9 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
           app.DOBAffidavit_SBAEIDGDetails_Status_Value,
           app.DOBAffidavit_SBAEIDGDetails_ApprovalDate
         ),
-        ApprovedAmount: {
-          Value: value(getDobAmountValue(
-            app.DOBAffidavit_SBAEIDG,
-            app.DOBAffidavit_SBAEIDGDetails_Amount
-          )),
-          ExtensionData: null,
-        },
+        ApprovedAmount: value(
+          getDobAmountValue(app.DOBAffidavit_SBAEIDG, app.DOBAffidavit_SBAEIDGDetails_Amount)
+        ),
         PurposeOfFunds: getDobPurposes(
           app.DOBAffidavit_SBAEIDG,
           app.DOBAffidavit_SBAEIDGDetails_Purposes_Value
@@ -1420,13 +1354,9 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
           app.DOBAffidavit_SBAEIDLDetails_Status_Value,
           app.DOBAffidavit_SBAEIDLDetails_ApprovalDate
         ),
-        ApprovedAmount: {
-          Value: value(getDobAmountValue(
-            app.DOBAffidavit_SBAEIDL,
-            app.DOBAffidavit_SBAEIDLDetails_Amount
-          )),
-          ExtensionData: null,
-        },
+        ApprovedAmount: value(
+          getDobAmountValue(app.DOBAffidavit_SBAEIDL, app.DOBAffidavit_SBAEIDLDetails_Amount)
+        ),
         PurposeOfFunds: getDobPurposes(
           app.DOBAffidavit_SBAEIDL,
           app.DOBAffidavit_SBAEIDLDetails_Purposes_Value
@@ -1444,13 +1374,9 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
           app.DOBAffidavit_NJEDALoanDetails_Status_Value,
           app.DOBAffidavit_NJEDALoanDetails_ApprovalDate
         ),
-        ApprovedAmount: {
-          Value: value(getDobAmountValue(
-            app.DOBAffidavit_NJEDALoan,
-            app.DOBAffidavit_NJEDALoanDetails_Amount
-          )),
-          ExtensionData: null,
-        },
+        ApprovedAmount: value(
+          getDobAmountValue(app.DOBAffidavit_NJEDALoan, app.DOBAffidavit_NJEDALoanDetails_Amount)
+        ),
         PurposeOfFunds: getDobPurposes(
           app.DOBAffidavit_NJEDALoan,
           app.DOBAffidavit_NJEDALoanDetails_Purposes_Value
@@ -1468,13 +1394,9 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
           app.DOBAffidavit_NJEDAGrantDetails_Status_Value,
           app.DOBAffidavit_NJEDAGrantDetails_ApprovalDate
         ),
-        ApprovedAmount: {
-          Value: value(getDobAmountValue(
-            app.DOBAffidavit_NJEDAGrant,
-            app.DOBAffidavit_NJEDAGrantDetails_Amount
-          )),
-          ExtensionData: null,
-        },
+        ApprovedAmount: value(
+          getDobAmountValue(app.DOBAffidavit_NJEDAGrant, app.DOBAffidavit_NJEDAGrantDetails_Amount)
+        ),
         PurposeOfFunds: getDobPurposes(
           app.DOBAffidavit_NJEDAGrant,
           app.DOBAffidavit_NJEDAGrantDetails_Purposes_Value
@@ -1486,13 +1408,12 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         ProgramDescription: app.DOBAffidavit_OtherStateLocalDetails_ProgramDescriptions,
         Status: null,
         ApprovalDate: null,
-        ApprovedAmount: {
-          Value: value(getDobAmountValue(
+        ApprovedAmount: value(
+          getDobAmountValue(
             app.DOBAffidavit_OtherStateLocal,
             app.DOBAffidavit_OtherStateLocalDetails_TotalAmountApprovedInProcess
-          )),
-          ExtensionData: null,
-        },
+          )
+        ),
         PurposeOfFunds: getDobPurposes(
           app.DOBAffidavit_OtherStateLocal,
           app.DOBAffidavit_OtherStateLocalDetails_Purposes_Value
