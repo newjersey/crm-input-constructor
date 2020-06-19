@@ -1305,6 +1305,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
       OtherCovid19Assistance_PPP: {
         IsExists: yesNo(bool(app.DOBAffidavit_SBAPPP)),
         Program: types.ProgramDescriptions.PPP,
+        ProgramDescription: null,
         Status: getDobApproval(
           app.DOBAffidavit_SBAPPP,
           app.DOBAffidavit_SBAPPPDetails_Status_Value
@@ -1325,6 +1326,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
       OtherCovid19Assistance_EIDG: {
         IsExists: yesNo(bool(app.DOBAffidavit_SBAEIDG)),
         Program: types.ProgramDescriptions.EIDG,
+        ProgramDescription: null,
         Status: getDobApproval(
           app.DOBAffidavit_SBAEIDG,
           app.DOBAffidavit_SBAEIDGDetails_Status_Value
@@ -1345,6 +1347,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
       OtherCovid19Assistance_EIDL: {
         IsExists: yesNo(bool(app.DOBAffidavit_SBAEIDL)),
         Program: types.ProgramDescriptions.EIDL,
+        ProgramDescription: null,
         Status: getDobApproval(
           app.DOBAffidavit_SBAEIDL,
           app.DOBAffidavit_SBAEIDLDetails_Status_Value
@@ -1365,6 +1368,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
       OtherCovid19Assistance_CVSBLO: {
         IsExists: yesNo(bool(app.DOBAffidavit_NJEDALoan)),
         Program: types.ProgramDescriptions.CVSBLO,
+        ProgramDescription: null,
         Status: getDobApproval(
           app.DOBAffidavit_NJEDALoan,
           app.DOBAffidavit_NJEDALoanDetails_Status_Value
@@ -1383,8 +1387,13 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         ),
       },
       OtherCovid19Assistance_CVSBGR: {
-        IsExists: yesNo(bool(app.DOBAffidavit_NJEDAGrant)),
+        IsExists: yesNo(bool(app.DOBAffidavit_NJEDAGrant) || !!app.grantPhase1?.['Approval Date']),
         Program: types.ProgramDescriptions.CVSBGR,
+        ProgramDescription: app.grantPhase1?.['Approval Date']
+          ? `Approved EDA Grant Phase 1 size on record is ${numeral(app.grantPhase1.Amount).format(
+              '$0,0'
+            )}.`
+          : 'No approved EDA Grant Phase 1 on record.',
         Status: getDobApproval(
           app.DOBAffidavit_NJEDAGrant,
           app.DOBAffidavit_NJEDAGrantDetails_Status_Value

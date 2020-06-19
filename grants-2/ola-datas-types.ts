@@ -402,6 +402,7 @@ interface OtherCovid19AssistanceProgram {
   ApprovalDate: NullableString;
   ApprovedAmount: Value;
   PurposeOfFunds: NullableString;
+  ProgramDescription: NullableString;
 }
 
 export interface OlaDatas {
@@ -431,6 +432,5 @@ export interface OlaDatas {
   };
   OtherCovid19Assistance_Other: OtherCovid19AssistanceProgram & {
     Program: ProgramDescriptions.Other;
-    ProgramDescription: string;
   };
 }
