@@ -1366,9 +1366,15 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         ),
       },
       OtherCovid19Assistance_CVSBLO: {
-        IsExists: yesNo(bool(app.DOBAffidavit_NJEDALoan)),
+        IsExists: yesNo(bool(app.DOBAffidavit_NJEDALoan) || !!app.nonDeclinedEdaLoan),
         Program: types.ProgramDescriptions.CVSBLO,
-        ProgramDescription: null,
+        ProgramDescription: app.nonDeclinedEdaLoan
+          ? `Non-declined EDA Loan size on record is ${numeral(
+              app.nonDeclinedEdaLoan.Amount
+            ).format('$0,0')} (${
+              app.nonDeclinedEdaLoan['OLA Application ID (Underwriting) (Underwriting)']
+            }).`
+          : 'No non-declined EDA Loan on record.',
         Status: getDobApproval(
           app.DOBAffidavit_NJEDALoan,
           app.DOBAffidavit_NJEDALoanDetails_Status_Value

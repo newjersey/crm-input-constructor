@@ -472,6 +472,7 @@
                     "IsExists": {
                         "type": "string"
                     },
+                    "ProgramDescription": {},
                     "Program": {
                         "type": "string"
                     },
@@ -487,6 +488,7 @@
                     "IsExists": {
                         "type": "string"
                     },
+                    "ProgramDescription": {},
                     "Program": {
                         "type": "string"
                     },
@@ -502,6 +504,7 @@
                     "IsExists": {
                         "type": "string"
                     },
+                    "ProgramDescription": {},
                     "Program": {
                         "type": "string"
                     },
@@ -517,6 +520,7 @@
                     "IsExists": {
                         "type": "string"
                     },
+                    "ProgramDescription": {},
                     "Program": {
                         "type": "string"
                     },
@@ -532,6 +536,7 @@
                     "IsExists": {
                         "type": "string"
                     },
+                    "ProgramDescription": {},
                     "Program": {
                         "type": "string"
                     },
