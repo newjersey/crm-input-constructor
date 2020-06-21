@@ -58,6 +58,7 @@ function isPossibleMatch<T extends Application & Taxation>(
   application: T,
   record: SamsExclusionRecord
 ): boolean {
+  // return false; // debug
   return (
     record.Country === 'USA' &&
     ['NJ', 'NY', 'PA', 'CT', 'DE'].includes(record['State / Province']) &&

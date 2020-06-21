@@ -1,5 +1,4 @@
 const chalk = require('chalk');
-const numeral = require('numeral');
 
 import { isAfter } from 'date-fns';
 import * as types from './ola-datas-types';
@@ -13,9 +12,27 @@ import {
   Languages,
 } from './applications';
 import { EligibilityStatus as OZEligibilityStatus } from './policy-map';
-import { CleanStatus as TaxationCleanStatus, CleanStatus } from './taxation';
-import { bool, dateFromExcel, formatDate, formatExcelDate } from './util';
+import { CleanStatus as TaxationCleanStatus } from './taxation';
+import {
+  bool,
+  dateFromExcel,
+  formatDate,
+  formatExcelDate,
+  formatDollars,
+  formatPercent,
+  isDobProgramApprovedOrInProgress,
+} from './util';
 import { ProductStatuses } from './grant-phase-1';
+import {
+  awardSize,
+  awardBasis,
+  grantPhase1AmountApproved,
+  unmetNeed,
+  discountedAwardBasis,
+  yoyDecline,
+  reducibleFunding,
+} from './award-size';
+import { getQuarterlyWageData } from './ola-datas-helpers';
 
 // try to keep Declines at top and Reviews at bottom, so they print that way when serialized in CRM;
 // also keep potentially long messages (e.g. user input) at the end, in case it goes on forever.
@@ -113,23 +130,23 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
   },
   {
     name: 'FTE Greater than 25',
-    trigger: app => (getQuarterlyWageData(app)[0] || 0) > 25,
+    trigger: app => (getQuarterlyWageData(app).fteCount || 0) > 25,
     messageGenerator: app =>
-      `Too Many FTE Equivalents: ${getQuarterlyWageData(app)[0]} but should be at most 25`,
+      `Too Many FTE Equivalents: ${getQuarterlyWageData(app).fteCount} but should be at most 25`,
     severity: types.Decision.Decline,
   },
   {
     // unverified
-    name: 'Received Phase 1 Funding >= Phase 2 eligible size',
-    trigger: app =>
-      !!app.grantPhase1?.['Approval Date'] &&
-      (getAwardAmount(app) || 0) <= (app.grantPhase1?.Amount || 0),
+    name: 'Received Phase 1 Funding >= Phase 2 Award Basis',
+    trigger: app => grantPhase1AmountApproved(app) >= awardBasis(app),
     messageGenerator: app =>
       `Business received a NJEDA Emergency Phase 1 Grant (${
         app.grantPhase1?.['OLA Application ID ']
-      } for ${numeral(app.grantPhase1?.Amount).format(
-        '$0,0'
-      )}) and is not eligible for incremental funding based on WR-30 data`,
+      } for ${formatDollars(
+        grantPhase1AmountApproved(app)
+      )}) and is not eligible for incremental funding based on WR-30 data (award basis: ${formatDollars(
+        awardBasis(app)
+      )})`,
     severity: types.Decision.Decline,
   },
   {
@@ -145,8 +162,8 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     name: 'Capacity 100%, no self-reported revenue decrease',
     trigger: app =>
       getCapacityOpen(app) === types.RemainOpenCapacities['100%'] &&
-      !!app.RevenueComparison_MarchAprilMay2019 &&
-      app.RevenueComparison_MarchAprilMay2020 >= app.RevenueComparison_MarchAprilMay2019,
+      yoyDecline(app) !== null &&
+      <number>yoyDecline(app) <= 0,
     messageGenerator: app =>
       `Capacity remained at 100% and self-reported YoY revenue did not decrease from 2019 to 2020`,
     severity: types.Decision.Decline,
@@ -234,33 +251,31 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     name: 'Unreasonable revenue decline',
     trigger: app => getYYRevenueDeclineReasonableness(app) === 'No',
     messageGenerator: app =>
-      `Applicant reported an unreasonably high YoY revenue decline (${numeral(
+      `Applicant reported an unreasonably high YoY revenue decline (${formatPercent(
         <number>app.RevenueComparison_YearOverYearChange
-      ).format('0%')}) given business operational capacity (${getCapacityOpen(app)})`,
+      )}) given business operational capacity (${getCapacityOpen(app)})`,
     severity: types.Decision.Review,
   },
   {
-    name: 'Other sources Approved or Pending Greater than Revenue Loss',
-    trigger: app =>
-      getRevenueChange(app) !== null && <number>getRevenueChange(app) + getExternalFunding(app) > 0,
+    name: 'No unmet need',
+    trigger: app => unmetNeed(app) === 0,
     messageGenerator: app =>
-      `Business does not have an unmet need based on YoY revenue change (${numeral(
-        getRevenueChange(app)
-      ).format('$0,0')}) and other disaster resources pending or received (${numeral(
-        getExternalFunding(app)
-      ).format('$0,0')})`,
+      `Business does not have an unmet need based on YoY revenue loss (${formatDollars(
+        <number>yoyDecline(app)
+      )}) and other disaster resources pending or received (${formatDollars(
+        reducibleFunding(app)
+      )})`,
     severity: types.Decision.Review,
   },
   {
-    name: 'Unmet Need is Less Max Award Size',
-    trigger: app =>
-      getAwardAmount(app) !== null &&
-      getRoundedUnmetNeed(app) !== null &&
-      <number>getRoundedUnmetNeed(app) < <number>getAwardAmount(app),
+    name: 'Unmet Need is less than Discounted Award Basis',
+    trigger: app => unmetNeed(app) !== null && <number>unmetNeed(app) < discountedAwardBasis(app),
     messageGenerator: app =>
-      `The business has an unmet need (${numeral(getRoundedUnmetNeed(app)).format(
-        '$0,0'
-      )}) less than their maximum award amount (${numeral(getAwardAmount(app)).format('$0,0')})`,
+      `The business has an unmet need of ${formatDollars(
+        <number>unmetNeed(app)
+      )}, which is less than their discounted award basis of ${formatDollars(
+        discountedAwardBasis(app)
+      )}`,
     severity: types.Decision.Review,
   },
   {
@@ -278,9 +293,9 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
       typeof getSalesTaxPercentChange(app) !== 'undefined' &&
       <number>getSalesTaxPercentChange(app) > 0,
     messageGenerator: app =>
-      `Applicant's sales tax increased ${numeral(<number>getSalesTaxPercentChange(app)).format(
-        '0,0[.]0%'
-      )} from 2019 to 2020`,
+      `Applicant's sales tax increased ${formatPercent(<number>getSalesTaxPercentChange(app), {
+        decimals: 1,
+      })} from 2019 to 2020`,
     severity: types.Decision.Review,
   },
   {
@@ -305,9 +320,9 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     name: 'CBT filer reports unreasonably high 2019 revenue',
     trigger: app => isSelfReportedRevenueReasonableForCbtFiler(app)[0] === false,
     messageGenerator: app =>
-      `Applicant's 2019 3-month actual revenues reported on application are ${numeral(
-        isSelfReportedRevenueReasonableForCbtFiler(app)[1]
-      ).format('0,0%')} higher than their ${
+      `Applicant's 2019 3-month actual revenues reported on application are ${formatPercent(
+        <number>isSelfReportedRevenueReasonableForCbtFiler(app)[1]
+      )} higher than their ${
         isSelfReportedRevenueReasonableForCbtFiler(app)[2]
       } revenues reported by Taxation`,
     severity: types.Decision.Review,
@@ -316,12 +331,12 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     name: 'TGI/Partnership filer reports unreasonably high 2019 revenue',
     trigger: app => isSelfReportedRevenueReasonableForPartOrTgiFiler(app)[0] === false,
     messageGenerator: app =>
-      `Applicant's 2019 self-reported actuals (${numeral(
-        app.RevenueComparison_MarchAprilMay2019
-      ).format('$0,0')}) may not be reasonable given their ${
+      `Applicant's 2019 self-reported actuals (${formatDollars(
+        <number>app.RevenueComparison_MarchAprilMay2019
+      )}) may not be reasonable given their ${
         isSelfReportedRevenueReasonableForPartOrTgiFiler(app)[2]
-      } Taxation reported net income of ${numeral(getTaxationReportedNetIncomeLoss(app)).format(
-        '$0,0'
+      } Taxation reported net income of ${formatDollars(
+        <number>getTaxationReportedNetIncomeLoss(app)
       )}`,
     severity: types.Decision.Review,
   },
@@ -329,7 +344,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     name: 'Other program indicated but amount is 0 (PPP)',
     trigger: app =>
       bool(app.DOBAffidavit_SBAPPP) &&
-      approvedOrInProgress(app.DOBAffidavit_SBAPPPDetails_Status_Value) &&
+      isDobProgramApprovedOrInProgress(app.DOBAffidavit_SBAPPPDetails_Status_Value) &&
       !app.DOBAffidavit_SBAPPPDetails_Amount,
     messageGenerator: app =>
       `Applicant reported PPP funding approved or in progress but did not indicate the amount`,
@@ -339,7 +354,7 @@ const FINDING_DEFINITIONS: types.FindingDef[] = [
     name: 'Other program indicated but amount is 0 (EIDG)',
     trigger: app =>
       bool(app.DOBAffidavit_SBAEIDG) &&
-      approvedOrInProgress(app.DOBAffidavit_SBAEIDGDetails_Status_Value) &&
+      isDobProgramApprovedOrInProgress(app.DOBAffidavit_SBAEIDGDetails_Status_Value) &&
       !app.DOBAffidavit_SBAEIDGDetails_Amount,
     messageGenerator: app =>
       `Applicant reported EIDG funding approved or in progress but did not indicate the amount`,
@@ -664,49 +679,6 @@ function getDobPurposes(
   return purposesOfFunds.join('; ');
 }
 
-// returns a number of FTEs calculated from WR-30 data (without limit) and a description
-// of the quarter used, e.g. [17, "Q1 2020"]
-function getQuarterlyWageData(app: types.DecoratedApplication): types.QuarterlyWageData {
-  if (app.wr30.notFound) {
-    return [null, null];
-  }
-
-  const DOLLARS_PER_HOUR = 10.0;
-  const HOURS_PER_WEEK = 35.0;
-  const WEEKS_PER_QUARTER = 13.0;
-  const FTE_QUARTERLY_MIN_WAGE = DOLLARS_PER_HOUR * HOURS_PER_WEEK * WEEKS_PER_QUARTER;
-
-  const year: number = Math.max(...app.wr30.wageRecords.map(record => record.Year));
-  const quarter: number = Math.max(
-    ...app.wr30.wageRecords.filter(record => record.Year === year).map(record => record.Quarter)
-  );
-
-  const fractionalFtes: number = app.wr30.wageRecords
-    .filter(record => record.Year === year && record.Quarter === quarter)
-    .map(record => Math.min(1, record.Dollars / FTE_QUARTERLY_MIN_WAGE))
-    .reduce((sum, fraction) => sum + fraction, 0);
-
-  const roundedFtes: number = Math.round(fractionalFtes);
-  const quarterYear: string = `Q${quarter} ${year}`;
-
-  return [roundedFtes, quarterYear];
-}
-
-// not adjusted for external funding or size of need
-function getAwardAmount(app: types.DecoratedApplication): number {
-  const AWARD_AMOUNT_PER_ELIGIBLE_FTE: number = 1000;
-  const MIN_AWARD_SIZE: number = 1000;
-  const MAX_AWARD_SIZE: number = 10000;
-  const roundedFteCount: number = getQuarterlyWageData(app)[0] || 0;
-
-  const awardAmount = Math.min(
-    MAX_AWARD_SIZE,
-    Math.max(MIN_AWARD_SIZE, roundedFteCount * AWARD_AMOUNT_PER_ELIGIBLE_FTE)
-  );
-
-  return awardAmount;
-}
-
 function getNonprofitType(app: types.DecoratedApplication): types.NullableString {
   switch (app.Business_EntityType_Value) {
     case EntityType.Nonprofit_501c3:
@@ -825,39 +797,53 @@ function getMonitoringType(app: types.DecoratedApplication): types.MonitoringTyp
   }
 }
 
-function getTaxationReportedTaxFilingAndYear(app: types.DecoratedApplication): types.TaxationTuple {
+function getTaxationReportedTaxFilingAndYear(
+  app: types.DecoratedApplication
+): types.TaxationFiling {
   if (app.taxation['2019 CBT']) {
-    return [types.TaxationReportedTaxFilingValues.CBT, types.RevenueYears._2019];
+    return { type: types.TaxationReportedTaxFilingValues.CBT, year: types.RevenueYears._2019 };
   }
 
   if (app.taxation['2019 Part']) {
-    return [types.TaxationReportedTaxFilingValues.Partnership, types.RevenueYears._2019];
+    return {
+      type: types.TaxationReportedTaxFilingValues.Partnership,
+      year: types.RevenueYears._2019,
+    };
   }
 
   if (app.taxation['2019 TGI']) {
-    return [types.TaxationReportedTaxFilingValues.Sole_Prop_SMLLC, types.RevenueYears._2019];
+    return {
+      type: types.TaxationReportedTaxFilingValues.Sole_Prop_SMLLC,
+      year: types.RevenueYears._2019,
+    };
   }
 
   if (app.taxation['2018 CBT']) {
-    return [types.TaxationReportedTaxFilingValues.CBT, types.RevenueYears._2018];
+    return { type: types.TaxationReportedTaxFilingValues.CBT, year: types.RevenueYears._2018 };
   }
 
   if (app.taxation['2018 Part']) {
-    return [types.TaxationReportedTaxFilingValues.Partnership, types.RevenueYears._2018];
+    return {
+      type: types.TaxationReportedTaxFilingValues.Partnership,
+      year: types.RevenueYears._2018,
+    };
   }
 
   if (app.taxation['2018 TGI']) {
-    return [types.TaxationReportedTaxFilingValues.Sole_Prop_SMLLC, types.RevenueYears._2018];
+    return {
+      type: types.TaxationReportedTaxFilingValues.Sole_Prop_SMLLC,
+      year: types.RevenueYears._2018,
+    };
   }
 
-  return [types.TaxationReportedTaxFilingValues.None, null];
+  return { type: types.TaxationReportedTaxFilingValues.None, year: null };
 }
 
 function getTaxationReportedRevenue(app: types.DecoratedApplication): types.NullableNumber {
-  const [filing, year]: types.TaxationTuple = getTaxationReportedTaxFilingAndYear(app);
+  const { type, year }: types.TaxationFiling = getTaxationReportedTaxFilingAndYear(app);
 
   // revenue is only relevant to CBT filers (we don't have it for Part/TGI filers)
-  if (filing !== types.TaxationReportedTaxFilingValues.CBT) {
+  if (type !== types.TaxationReportedTaxFilingValues.CBT) {
     return null;
   }
 
@@ -872,23 +858,23 @@ function getTaxationReportedRevenue(app: types.DecoratedApplication): types.Null
 }
 
 function getTaxationReportedNetIncomeLoss(app: types.DecoratedApplication): types.NullableNumber {
-  const [filing, year]: types.TaxationTuple = getTaxationReportedTaxFilingAndYear(app);
+  const { type, year }: types.TaxationFiling = getTaxationReportedTaxFilingAndYear(app);
 
   // sole prop income is only relevant to Part/TGI filers
   if (
-    filing !== types.TaxationReportedTaxFilingValues.Partnership &&
-    filing !== types.TaxationReportedTaxFilingValues.Sole_Prop_SMLLC
+    type !== types.TaxationReportedTaxFilingValues.Partnership &&
+    type !== types.TaxationReportedTaxFilingValues.Sole_Prop_SMLLC
   ) {
     return null;
   }
 
   switch (year) {
     case types.RevenueYears._2019:
-      return filing === types.TaxationReportedTaxFilingValues.Partnership
+      return type === types.TaxationReportedTaxFilingValues.Partnership
         ? app.taxation['2019 Part Amt']
         : app.taxation['2019 TGI Amt'];
     case types.RevenueYears._2018:
-      return filing === types.TaxationReportedTaxFilingValues.Partnership
+      return type === types.TaxationReportedTaxFilingValues.Partnership
         ? app.taxation['2018 Part Amt']
         : app.taxation['2018 TGI Amt'];
     default:
@@ -898,7 +884,7 @@ function getTaxationReportedNetIncomeLoss(app: types.DecoratedApplication): type
 
 function isUnknownToTaxation(app: types.DecoratedApplication): boolean {
   return (
-    getTaxationReportedTaxFilingAndYear(app)[0] == types.TaxationReportedTaxFilingValues.None &&
+    getTaxationReportedTaxFilingAndYear(app).type == types.TaxationReportedTaxFilingValues.None &&
     app.taxation['Clean Ind'] === TaxationCleanStatus.Not_Found &&
     app.taxation['S&U A 19'] === 0 &&
     app.taxation['S&U M 19'] === 0 &&
@@ -957,10 +943,10 @@ function isSelfReportedRevenueReasonable(
 function isSelfReportedRevenueReasonableForCbtFiler(
   app: types.DecoratedApplication
 ): [boolean | undefined, number | undefined, types.RevenueYears | undefined] {
-  const [filing, year]: types.TaxationTuple = getTaxationReportedTaxFilingAndYear(app);
+  const { type, year }: types.TaxationFiling = getTaxationReportedTaxFilingAndYear(app);
 
   // not a CBT filer
-  if (filing !== types.TaxationReportedTaxFilingValues.CBT) {
+  if (type !== types.TaxationReportedTaxFilingValues.CBT) {
     return [undefined, undefined, undefined];
   }
 
@@ -985,12 +971,12 @@ function isSelfReportedRevenueReasonableForCbtFiler(
 function isSelfReportedRevenueReasonableForPartOrTgiFiler(
   app: types.DecoratedApplication
 ): [boolean | undefined, number | undefined, types.RevenueYears | undefined] {
-  const [filing, year]: types.TaxationTuple = getTaxationReportedTaxFilingAndYear(app);
+  const { type, year }: types.TaxationFiling = getTaxationReportedTaxFilingAndYear(app);
 
   // not a Part or TGI filer
   if (
-    filing !== types.TaxationReportedTaxFilingValues.Partnership &&
-    filing !== types.TaxationReportedTaxFilingValues.Sole_Prop_SMLLC
+    type !== types.TaxationReportedTaxFilingValues.Partnership &&
+    type !== types.TaxationReportedTaxFilingValues.Sole_Prop_SMLLC
   ) {
     return [undefined, undefined, undefined];
   }
@@ -1072,7 +1058,7 @@ function getReasonablenessExceptions(app: types.DecoratedApplication): string {
   }
 
   if (
-    getTaxationReportedTaxFilingAndYear(app)[0] == types.TaxationReportedTaxFilingValues.None &&
+    getTaxationReportedTaxFilingAndYear(app).type == types.TaxationReportedTaxFilingValues.None &&
     typeof salesTaxPercentChange !== 'undefined' &&
     salesTaxPercentChange <= 0
   ) {
@@ -1082,55 +1068,6 @@ function getReasonablenessExceptions(app: types.DecoratedApplication): string {
   }
 
   return messages.join(' ');
-}
-
-// based on self-reported March-May YoY actual gross revenues
-function getRevenueChange(app: types.DecoratedApplication): types.NullableNumber {
-  if (typeof app.RevenueComparison_MarchAprilMay2019 === 'undefined') {
-    return null;
-  }
-
-  return app.RevenueComparison_MarchAprilMay2020 - app.RevenueComparison_MarchAprilMay2019;
-}
-
-// negative revenue change, rounded to 1000
-function getRoundedUnmetNeed(app: types.DecoratedApplication): types.NullableNumber {
-  const revChange: types.NullableNumber = getRevenueChange(app);
-
-  if (revChange === null) {
-    return null;
-  }
-
-  return Math.round(-revChange / 1000) * 1000;
-}
-
-function approvedOrInProgress(dobStatusValue?: DOB_Status): boolean {
-  return (
-    (dobStatusValue || false) &&
-    [DOB_Status.Approved, DOB_Status.In_Process].includes(dobStatusValue)
-  );
-}
-
-// sum of approved or pending
-function getExternalFunding(app: types.DecoratedApplication): number {
-  return (
-    // self-reported values
-    ((bool(app.DOBAffidavit_SBAPPP) &&
-      approvedOrInProgress(app.DOBAffidavit_SBAPPPDetails_Status_Value) &&
-      app.DOBAffidavit_SBAPPPDetails_Amount) ||
-      0) +
-    ((bool(app.DOBAffidavit_SBAEIDG) &&
-      approvedOrInProgress(app.DOBAffidavit_SBAEIDGDetails_Status_Value) &&
-      app.DOBAffidavit_SBAEIDGDetails_Amount) ||
-      0) +
-    ((bool(app.DOBAffidavit_OtherStateLocal) &&
-      app.DOBAffidavit_OtherStateLocalDetails_TotalAmountApprovedInProcess) ||
-      0) +
-    // authoratative values
-    ((app.grantPhase1?.['Product Status'] !== ProductStatuses.Ended && app.grantPhase1?.Amount) ||
-      0) +
-    (app.nonDeclinedEdaLoan?.Amount || 0)
-  );
 }
 
 export function generateOlaDatas(app: types.DecoratedApplication): types.OlaDatas {
@@ -1170,7 +1107,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         DevelopmentOfficer: '',
         ServicingOfficerId: getServicingOfficer(app),
         AppReceivedDate: formatExcelDate(app.Entry_DateSubmitted),
-        Amount: value(getAwardAmount(app)),
+        Amount: value(awardSize(app)),
         nol_total_NOL_benefit: null,
         nol_total_RD_benefit: null,
         benefit_allocation_factor: null,
@@ -1258,7 +1195,7 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         selectedProducts: 'Covid Small Business Emergency Assistance Grant Phase 2',
         ReceivedPreiousFundingFromEDA: '',
         ReceivedPreiousFundingFromOtherthanEDA: '',
-        TotalFullTimeEligibleJobs: getQuarterlyWageData(app)[0],
+        TotalFullTimeEligibleJobs: getQuarterlyWageData(app).fteCount,
         NJFullTimeJobsAtapplication: app.Business_W2EmployeesFullTime,
         PartTimeJobsAtapplication: app.Business_W2EmployeesPartTime,
         softCosts: value(),
@@ -1324,18 +1261,16 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
         ActualRevenue2020: value(app.RevenueComparison_MarchAprilMay2020),
         UseofFunds: 'Business Interruption - Loss of Revenue',
         TaxationReportedRevenue: value(getTaxationReportedRevenue(app)),
-        TaxationReportedRevenueYear: getTaxationReportedTaxFilingAndYear(app)[1],
+        TaxationReportedRevenueYear: getTaxationReportedTaxFilingAndYear(app).year,
         TaxationSalesTax2019: value(getTaxationSalesTax2019(app)),
         TaxationSalesTax2020: value(getTaxationSalesTax2020(app)),
-        TaxationReportedTaxFiling: getTaxationReportedTaxFilingAndYear(app)[0],
+        TaxationReportedTaxFiling: getTaxationReportedTaxFilingAndYear(app).type,
         TaxationReportedSolePropIncome: value(getTaxationReportedNetIncomeLoss(app)),
         ReportedRevenueReasonable: getReportedRevenueReasonableness(app),
         YYRevenueDeclineReasonable: getYYRevenueDeclineReasonableness(app),
         ReasonablenessExceptions: getReasonablenessExceptions(app),
-        DOLWR30FilingQuarter: getQuarterlyWageData(app)[1],
-        WR30ReportingComments: app.wr30.notFound
-          ? types.WR30ReportingComments.WR30_Not_Found
-          : types.WR30ReportingComments.WR30_Found,
+        DOLWR30FilingQuarter: getQuarterlyWageData(app).quarterDesc,
+        WR30ReportingComments: getWr30ReportingComments(app),
       },
       OtherCovid19Assistance: {
         IsExists: yesNo(
@@ -1477,4 +1412,24 @@ export function generateOlaDatas(app: types.DecoratedApplication): types.OlaData
 
     throw e;
   }
+}
+
+function getWr30ReportingComments(app: types.DecoratedApplication): string {
+  const comments: string[] = [];
+
+  if (app.wr30.notFound) {
+    comments.push(
+      'Applicant did not file a WR-30, therefore possibly eligible for the minimum Grant Award of $1,000.'
+    );
+  }
+
+  if (grantPhase1AmountApproved(app)) {
+    comments.push(
+      `Award basis of ${formatDollars(awardBasis(app))} reduced by ${formatDollars(
+        grantPhase1AmountApproved(app)
+      )} of Grant Phase 1 funding (${app.grantPhase1?.["OLA Application ID "]}).`
+    );
+  }
+
+  return comments.join(' ');
 }

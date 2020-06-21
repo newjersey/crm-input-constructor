@@ -95,15 +95,7 @@
                     "AppReceivedDate": {
                         "type": "string"
                     },
-                    "Amount": {
-                        "type": "object",
-                        "properties": {
-                            "Value": {
-                                "type": "integer"
-                            },
-                            "ExtensionData": {}
-                        }
-                    },
+                    "Amount": {},
                     "nol_total_NOL_benefit": {},
                     "nol_total_RD_benefit": {},
                     "benefit_allocation_factor": {},

@@ -19,7 +19,7 @@ enum ProductSubStatuses {
   Underwriting_IncompleteApplicationUWinProgress = 'Incomplete Application-UW in Progress',
 }
 
-interface GrantPhase1Data {
+export interface GrantPhase1Data {
   readonly 'OLA Application ID ': string;
   readonly 'Product ID': string;
   readonly 'Product Type': string;

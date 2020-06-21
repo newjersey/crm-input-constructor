@@ -49,11 +49,6 @@ export enum TaxationReportedTaxFilingValues {
   None = 'None',
 }
 
-export enum WR30ReportingComments {
-  WR30_Found = '',
-  WR30_Not_Found = 'Applicant did not file a WR-30, therefore eligible for the minimum Grant Award of $1,000',
-}
-
 export enum RemainOpenCapacities {
   'Less than 10%' = 'Less than 10%',
   '25%' = '25%',
@@ -155,10 +150,8 @@ export type YesNo = 'Yes' | 'No';
 export type YesNoNA = 'Yes' | 'No' | 'N/A';
 export type NullableNumber = number | null;
 export type NullableString = string | null;
-export type QuarterlyWageData = [NullableNumber, NullableString];
 export type ServicingOfficer = ServicingOfficersEN | ServicingOfficersES | ServicingOfficersExternal;
 export type TaxationReportedRevenueYear = RevenueYears | null;
-export type TaxationTuple = [TaxationReportedTaxFilingValues, TaxationReportedRevenueYear];
 export type CapacityOpen = RemainOpenCapacities | null;
 export type DecoratedApplication = Application &
   Dol &
@@ -170,6 +163,16 @@ export type DecoratedApplication = Application &
   Sams &
   Taxation &
   WR30;
+
+export interface QuarterlyWageData {
+  fteCount: NullableNumber,
+  quarterDesc: NullableString,
+}
+
+export interface TaxationFiling {
+  type: TaxationReportedTaxFilingValues,
+  year: TaxationReportedRevenueYear,
+}
 
 export interface Finding {
   message: string;
@@ -391,7 +394,7 @@ interface Covid19Impacts {
   YYRevenueDeclineReasonable: YesNoNA;
   ReasonablenessExceptions: string;
   DOLWR30FilingQuarter: NullableString;
-  WR30ReportingComments: WR30ReportingComments;
+  WR30ReportingComments: string;
 }
 
 interface OtherCovid19Assistance {
