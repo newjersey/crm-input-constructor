@@ -1,5 +1,5 @@
 import { getFindings } from './findings';
-import * as types from './ola-datas-types';
+import * as types from './types';
 import {
   Capacities,
   DOB_Purposes,
@@ -7,11 +7,11 @@ import {
   EntityType,
   YesNo as Application_YesNo,
   Languages,
-} from './applications';
-import { EligibilityStatus as OZEligibilityStatus } from './policy-map';
-import { CleanStatus as TaxationCleanStatus } from './taxation';
-import { bool, formatExcelDate, formatDollars } from './util';
-import { ProductStatuses } from './grant-phase-1';
+} from '../inputs/applications';
+import { EligibilityStatus as OZEligibilityStatus } from '../inputs/policy-map';
+import { CleanStatus as TaxationCleanStatus } from '../inputs/taxation';
+import { bool, formatExcelDate, formatDollars } from '../util';
+import { ProductStatuses } from '../inputs/grant-phase-1';
 import { awardBasis, grantPhase1AmountApproved } from './award-size';
 
 export function getQuarterlyWageData(app: types.DecoratedApplication): types.QuarterlyWageData {
@@ -44,6 +44,13 @@ export function getQuarterlyWageData(app: types.DecoratedApplication): types.Qua
     fteCount,
     quarterDesc,
   };
+}
+
+export function isDobProgramApprovedOrInProgress(dobStatusValue?: DOB_Status): boolean {
+  return (
+    (dobStatusValue || false) &&
+    [DOB_Status.Approved, DOB_Status.In_Process].includes(dobStatusValue)
+  );
 }
 
 export function getWr30ReportingComments(app: types.DecoratedApplication): string {

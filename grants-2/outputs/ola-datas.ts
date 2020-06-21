@@ -7,8 +7,8 @@ import {
   ProgramApprovals,
   ProgramDescriptions,
   SmallBusinessStatuses,
-} from './ola-datas-types';
-import { bool, formatDate, formatExcelDate } from './util';
+} from './types';
+import { bool, formatDate, formatExcelDate } from '../util';
 import {
   flag,
   getApplicantBackground,
@@ -41,10 +41,10 @@ import {
   getYYRevenueDeclineReasonableness,
   value,
   yesNo,
-} from './ola-datas-helpers';
+} from './helpers';
 
-import { Designations } from './applications';
-import { ProductStatuses } from './grant-phase-1';
+import { Designations } from '../inputs/applications';
+import { ProductStatuses } from '../inputs/grant-phase-1';
 import { awardSize } from './award-size';
 
 export function generateOlaDatas(app: DecoratedApplication): OlaDatas {

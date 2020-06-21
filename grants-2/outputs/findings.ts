@@ -6,15 +6,9 @@ import {
   OwnershipStructures,
   DecoratedApplication,
   Finding,
-} from './ola-datas-types';
-import {
-  bool,
-  dateFromExcel,
-  formatDollars,
-  formatPercent,
-  isDobProgramApprovedOrInProgress,
-} from './util';
-import { ProductStatuses } from './grant-phase-1';
+} from './types';
+import { bool, dateFromExcel, formatDollars, formatPercent } from '../util';
+import { ProductStatuses } from '../inputs/grant-phase-1';
 import {
   awardBasis,
   grantPhase1AmountApproved,
@@ -23,7 +17,6 @@ import {
   yoyDecline,
   reducibleFunding,
 } from './award-size';
-import { EntityType } from './applications';
 import {
   getQuarterlyWageData,
   getCapacityOpen,
@@ -36,7 +29,9 @@ import {
   isSelfReportedRevenueReasonableForCbtFiler,
   isSelfReportedRevenueReasonableForPartOrTgiFiler,
   getTaxationReportedNetIncomeLoss,
-} from './ola-datas-helpers';
+  isDobProgramApprovedOrInProgress,
+} from './helpers';
+import { EntityType } from '../inputs/applications';
 
 // try to keep Declines at top and Reviews at bottom, so they print that way when serialized in CRM;
 // also keep potentially long messages (e.g. user input) at the end, in case it goes on forever.

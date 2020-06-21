@@ -1,13 +1,13 @@
-import { Application } from './applications';
-import { Dol } from './dol';
-import { Duplicates } from './duplicates';
-import { Geography } from './geography';
-import { GrantPhase1 } from './grant-phase-1';
-import { NonDeclinedEdaLoan } from './non-declined-loans';
-import { PolicyMap } from './policy-map';
-import { Sams } from './sams';
-import { Taxation } from './taxation';
-import { WR30 } from './wr30';
+import { Application } from '../inputs/applications';
+import { Dol } from '../inputs/dol';
+import { Duplicates } from '../inputs/duplicates';
+import { Geography } from '../inputs/geography';
+import { GrantPhase1 } from '../inputs/grant-phase-1';
+import { NonDeclinedEdaLoan } from '../inputs/non-declined-loans';
+import { PolicyMap } from '../inputs/policy-map';
+import { Sams } from '../inputs/sams';
+import { Taxation } from '../inputs/taxation';
+import { WR30 } from '../inputs/wr30';
 
 export enum Decision {
   Approve = 'Approve',

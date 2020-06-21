@@ -1,4 +1,4 @@
-import { DOB_Status, YesNo } from './applications';
+import { DOB_Status, YesNo } from './inputs/applications';
 
 // TODO -- make these imports?
 const numeral = require('numeral');
@@ -51,11 +51,4 @@ export function formatPercent(number: number, options?: { decimals: number }): s
   const decimalString: string = `[.]${'0'.repeat(options?.decimals || 0)}`;
 
   return numeral(number).format(`0,0${options?.decimals ? decimalString : ''}%`);
-}
-
-export function isDobProgramApprovedOrInProgress(dobStatusValue?: DOB_Status): boolean {
-  return (
-    (dobStatusValue || false) &&
-    [DOB_Status.Approved, DOB_Status.In_Process].includes(dobStatusValue)
-  );
 }
