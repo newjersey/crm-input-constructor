@@ -1,5 +1,5 @@
-import XLSX from 'xlsx';
 import { Application } from './applications';
+import XLSX from 'xlsx';
 
 export enum ProductStatuses {
   Ended = 'Ended',

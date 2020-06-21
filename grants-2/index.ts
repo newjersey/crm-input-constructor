@@ -1,20 +1,23 @@
 const chalk = require('chalk');
 const cliProgress = require('cli-progress');
 const fs = require('fs');
-const path = require('path');
-import { generateOlaDatas, getDecision, getFindings } from './ola-datas';
+
+import { Application, getApplications } from './applications';
 import { Decision, DecoratedApplication, OlaDatas } from './ola-datas-types';
 import { addDolData, init as loadDolData } from './dol';
-import { addDuplicateData } from './duplicates';
-import { addGeographyData } from './geography';
 import { addGrantPhase1Data, init as loadGrantPhse1Data } from './grant-phase-1';
 import { addNonDeclinedEdaLoanData, init as loanNonDeclinedEdaLoanData } from './non-declined-loans';
 import { addPolicyMapData, init as loadPolicyMapDada } from './policy-map';
-import { options, optionsSatisfied, printStartMessage, printUsage } from './options';
-import { Application, getApplications } from './applications';
 import { addSamsData, init as loadSamsData } from './sams';
 import { addTaxationData, init as loadTaxationData } from './taxation';
 import { addWR30Data, init as loadWR30Data } from './wr30';
+import { options, optionsSatisfied, printStartMessage, printUsage } from './options';
+
+import { addDuplicateData } from './duplicates';
+import { addGeographyData } from './geography';
+import { generateOlaDatas } from './ola-datas';
+import { getDecision } from './ola-datas-helpers';
+import { getFindings } from './findings';
 
 const BASE_PATH = '/Users/ross/NJEDA Grants Phase 2/First 5 hours';
 

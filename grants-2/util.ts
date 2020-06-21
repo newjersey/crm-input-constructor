@@ -1,5 +1,4 @@
-import { YesNo, DOB_Status } from './applications';
-import { DecoratedApplication } from './ola-datas-types';
+import { DOB_Status, YesNo } from './applications';
 
 // TODO -- make these imports?
 const numeral = require('numeral');

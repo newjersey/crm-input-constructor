@@ -1,7 +1,8 @@
 import { GrantPhase1Data, ProductStatuses } from './grant-phase-1';
-import { getQuarterlyWageData } from './ola-datas-helpers';
+import { bool, isDobProgramApprovedOrInProgress, mround } from './util';
+
 import { DecoratedApplication } from './ola-datas-types';
-import { mround, bool, isDobProgramApprovedOrInProgress } from './util';
+import { getQuarterlyWageData } from './ola-datas-helpers';
 
 const AMOUNT_PER_FTE = 1000;
 const ABSOLUTE_MIN = 1000;

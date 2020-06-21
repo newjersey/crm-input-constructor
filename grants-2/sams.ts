@@ -1,6 +1,7 @@
 const fs = require('fs');
 const neatCsv = require('neat-csv');
 const stringSimilarity = require('string-similarity');
+
 import { Application } from './applications';
 import { Taxation } from './taxation';
 

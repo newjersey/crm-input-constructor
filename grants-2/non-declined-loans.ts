@@ -1,5 +1,5 @@
-import XLSX from 'xlsx';
 import { Application } from './applications';
+import XLSX from 'xlsx';
 
 interface LoanData {
   readonly 'OLA Application ID (Underwriting) (Underwriting)': string;
