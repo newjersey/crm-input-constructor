@@ -109,4 +109,4 @@ dist
 .tern-port
 
 loans/grant-eins.json
-grants-2/*.js
+grants-2/**/*.js
