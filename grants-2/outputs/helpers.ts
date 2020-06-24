@@ -567,14 +567,20 @@ export function cappedMarchAprilMay2019Revenue(
   app: types.DecoratedApplication
 ): number | undefined {
   const reportedMarchAprilMay2019: number | undefined = app.RevenueComparison_MarchAprilMay2019;
-  const maxReasonablePastAnnual: number | undefined = maxReasonablePastRevenue(app);
+  const maxReasonablePastAnnual: number | null | undefined = maxReasonablePastRevenue(app);
 
   if (typeof reportedMarchAprilMay2019 === 'undefined') {
     return undefined;
   }
 
+  // no tax filings from which to construct a maximum reasonable revenue; take 2019 at face value
   if (typeof maxReasonablePastAnnual === 'undefined') {
-    return undefined;
+    return reportedMarchAprilMay2019;
+  }
+
+  // if operating at a loss or breakeven, then take self-reported 2019 quarterly at face value
+  if (maxReasonablePastAnnual === null) {
+    return reportedMarchAprilMay2019;
   }
 
   const maxReasonableMarchAprilMay2019: number = maxReasonablePastAnnual / 4;
@@ -627,7 +633,7 @@ export function cbtRevenue(app: types.DecoratedApplication): number | undefined 
 
 // if filing is Partnership or TGI, we get net profit (not gross revenue); we extrapolate a presumed
 // gross revenue given an assumed profit margin, and proceed with comparison the same as with revenue.
-export function presumedTgiRevenue(app: types.DecoratedApplication): number | undefined {
+export function presumedTgiRevenue(app: types.DecoratedApplication): number | null |undefined {
   const PRESUMED_PROFIT_MARGIN = 0.1;
   const { type, year }: types.TaxationFiling = getTaxationReportedTaxFilingAndYear(app);
 
@@ -646,7 +652,7 @@ export function presumedTgiRevenue(app: types.DecoratedApplication): number | un
   }
 
   if (pastAnnualProfit <= 0) {
-    return undefined;
+    return null;
   }
 
   const presumedPastAnnualRevenue = pastAnnualProfit / PRESUMED_PROFIT_MARGIN;
@@ -664,7 +670,7 @@ export function getSalesTaxPercentChange(app: types.DecoratedApplication): numbe
   return undefined;
 }
 
-export function presumedPastRevenue(app: types.DecoratedApplication): number | undefined {
+export function presumedPastRevenue(app: types.DecoratedApplication): number | undefined | null {
   // we're certain
   if (typeof cbtRevenue(app) !== 'undefined') {
     return cbtRevenue(app);
@@ -678,12 +684,16 @@ export function presumedPastRevenue(app: types.DecoratedApplication): number | u
   return undefined;
 }
 
-function maxReasonablePastRevenue(app: types.DecoratedApplication): number | undefined {
+function maxReasonablePastRevenue(app: types.DecoratedApplication): number | null | undefined {
   const TOLERANCE = 1.2;
-  const pastRevenue: number | undefined = presumedPastRevenue(app);
+  const pastRevenue: number | undefined | null = presumedPastRevenue(app);
 
   if (typeof pastRevenue === 'undefined') {
     return undefined;
+  }
+
+  if (pastRevenue === null) {
+    return null;
   }
 
   return pastRevenue * TOLERANCE;
@@ -693,12 +703,18 @@ export function isReportedPastRevenueReasonable(
   app: types.DecoratedApplication
 ): boolean | undefined {
   const cappedReported: number | undefined = cappedReportedPastRevenue(app);
-  const maxReasonable: number | undefined = maxReasonablePastRevenue(app);
+  const maxReasonable: number | null | undefined = maxReasonablePastRevenue(app);
 
   if (typeof cappedReported === 'undefined' || typeof maxReasonable === 'undefined') {
     return undefined;
   }
 
+  // if operating at break-even or a loss, consider anything self-reported to be reasonable
+  if (maxReasonable === null) {
+    return true;
+  }
+
+  // this will actually always be true, since the capped value is capped at maxReasonable
   return cappedReported <= maxReasonable;
 }
 
