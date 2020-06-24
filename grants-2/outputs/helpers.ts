@@ -537,10 +537,7 @@ export function getTaxationReportedNetIncomeLoss(
 export function hasNoTaxFilings(app: types.DecoratedApplication): boolean {
   return (
     getTaxationReportedTaxFilingAndYear(app).type == types.TaxationReportedTaxFilingValues.None &&
-    app.taxation['S&U A 19'] === 0 &&
-    app.taxation['S&U M 19'] === 0 &&
-    app.taxation['S&U A 20'] === 0 &&
-    app.taxation['S&U M 20'] === 0
+    typeof getSalesTaxPercentChange(app) === 'undefined'
   );
 }
 
