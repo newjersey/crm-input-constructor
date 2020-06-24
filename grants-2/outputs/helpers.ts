@@ -1,18 +1,41 @@
-import { getFindings } from './findings';
 import * as types from './types';
+
 import {
+  YesNo as Application_YesNo,
   Capacities,
   DOB_Purposes,
   DOB_Status,
   EntityType,
-  YesNo as Application_YesNo,
   Languages,
 } from '../inputs/applications';
-import { EligibilityStatus as OZEligibilityStatus } from '../inputs/policy-map';
-import { CleanStatus as TaxationCleanStatus } from '../inputs/taxation';
-import { bool, formatExcelDate, formatDollars } from '../util';
-import { ProductStatuses } from '../inputs/grant-phase-1';
 import { awardBasis, grantPhase1AmountApproved } from './award-size';
+import { bool, formatDollars, formatExcelDate } from '../util';
+
+import { EligibilityStatus as OZEligibilityStatus } from '../inputs/policy-map';
+import { ProductStatuses } from '../inputs/grant-phase-1';
+import { CleanStatus as TaxationCleanStatus } from '../inputs/taxation';
+import { getFindings } from './findings';
+
+export function yesNo(test: boolean): types.YesNo {
+  return test ? 'Yes' : 'No';
+}
+
+export function flag(test: boolean): types.Flag {
+  return test ? 'Yes' : '';
+}
+
+export function value(number?: number | null): types.Value {
+  if (number === null || typeof number === 'undefined') {
+    return null;
+  }
+
+  const valueObject: types.ValueObject = {
+    Value: number,
+    ExtensionData: null,
+  };
+
+  return valueObject;
+}
 
 export function getQuarterlyWageData(app: types.DecoratedApplication): types.QuarterlyWageData {
   if (app.wr30.notFound) {
@@ -96,14 +119,6 @@ export function getCapacityOpen(app: types.DecoratedApplication): types.Capacity
         `Unexpected capacity value: ${capacity} for application ${app.ApplicationId}`
       );
   }
-}
-
-export function yesNo(test: boolean): types.YesNo {
-  return test ? 'Yes' : 'No';
-}
-
-export function flag(test: boolean): types.Flag {
-  return test ? 'Yes' : '';
 }
 
 export function getTaxClearanceComments(app: types.DecoratedApplication): types.TaxClearanceValues {
@@ -231,19 +246,6 @@ export function getEligibleOpportunityZoneValue(
         `Unexpected opportunity zone eligibility status ${status} for application ${app.ApplicationId}`
       );
   }
-}
-
-export function value(number?: number | null): types.Value {
-  if (number === null || typeof number === 'undefined') {
-    return null;
-  }
-
-  const valueObject: types.ValueObject = {
-    Value: number,
-    ExtensionData: null,
-  };
-
-  return valueObject;
 }
 
 export function getDobAmountValue(
@@ -532,15 +534,18 @@ export function getTaxationReportedNetIncomeLoss(
   }
 }
 
-export function isUnknownToTaxation(app: types.DecoratedApplication): boolean {
+export function hasNoTaxFilings(app: types.DecoratedApplication): boolean {
   return (
     getTaxationReportedTaxFilingAndYear(app).type == types.TaxationReportedTaxFilingValues.None &&
-    app.taxation['Clean Ind'] === TaxationCleanStatus.Not_Found &&
     app.taxation['S&U A 19'] === 0 &&
     app.taxation['S&U M 19'] === 0 &&
     app.taxation['S&U A 20'] === 0 &&
     app.taxation['S&U M 20'] === 0
   );
+}
+
+export function isUnknownToTaxation(app: types.DecoratedApplication): boolean {
+  return app.taxation['Clean Ind'] === TaxationCleanStatus.Not_Found && hasNoTaxFilings(app);
 }
 
 export function getTaxationSalesTax2019(app: types.DecoratedApplication): types.NullableNumber {
@@ -558,69 +563,72 @@ export function getTaxationSalesTax2020(app: types.DecoratedApplication): types.
   return sum;
 }
 
-// how much higher is self-reported revenue compared to a known benchmark?
-function revenuePercentOverBenchmark(
-  app: types.DecoratedApplication,
-  benchmarkAnnual: number
+export function cappedMarchAprilMay2019Revenue(
+  app: types.DecoratedApplication
 ): number | undefined {
-  // no basis for comparison: company is too new (didn't ask for 2019 data)
-  if (typeof app.RevenueComparison_MarchAprilMay2019 === 'undefined') {
+  const reportedMarchAprilMay2019: number | undefined = app.RevenueComparison_MarchAprilMay2019;
+  const maxReasonablePastAnnual: number | undefined = maxReasonablePastRevenue(app);
+
+  if (typeof reportedMarchAprilMay2019 === 'undefined') {
     return undefined;
   }
 
-  const selfReportedAnnual2019: number = app.RevenueComparison_MarchAprilMay2019 * 4;
-
-  return selfReportedAnnual2019 / benchmarkAnnual - 1;
-}
-
-function isSelfReportedRevenueReasonable(
-  app: types.DecoratedApplication,
-  benchmarkAnnual: number
-): [boolean | undefined, number | undefined] {
-  const PERCENT_TOLERANCE: number = 0.2;
-  const percentOverBenchmark: number | undefined = revenuePercentOverBenchmark(
-    app,
-    benchmarkAnnual
-  );
-
-  if (typeof percentOverBenchmark === 'undefined') {
-    return [undefined, undefined];
+  if (typeof maxReasonablePastAnnual === 'undefined') {
+    return undefined;
   }
 
-  return [percentOverBenchmark < PERCENT_TOLERANCE, percentOverBenchmark];
+  const maxReasonableMarchAprilMay2019: number = maxReasonablePastAnnual / 4;
+
+  return Math.min(reportedMarchAprilMay2019, maxReasonableMarchAprilMay2019);
 }
 
-export function isSelfReportedRevenueReasonableForCbtFiler(
-  app: types.DecoratedApplication
-): [boolean | undefined, number | undefined, types.RevenueYears | undefined] {
+export function cappedReportedPastRevenue(app: types.DecoratedApplication): number | undefined {
+  const _cappedMarchAprilMay2019Revenue: number | undefined = cappedMarchAprilMay2019Revenue(app);
+
+  if (typeof _cappedMarchAprilMay2019Revenue === 'undefined') {
+    return undefined;
+  }
+
+  return _cappedMarchAprilMay2019Revenue * 4;
+}
+
+export function adjustedYoyChange(app: types.DecoratedApplication): number | undefined {
+  const capped2019: number | undefined = cappedMarchAprilMay2019Revenue(app);
+  const reported2020: number | undefined = app.RevenueComparison_MarchAprilMay2020;
+
+  if (typeof capped2019 === 'undefined') {
+    return undefined;
+  }
+
+  if (typeof reported2020 === 'undefined') {
+    return undefined;
+  }
+
+  return (reported2020 - capped2019) / capped2019;
+}
+
+export function cbtRevenue(app: types.DecoratedApplication): number | undefined {
   const { type, year }: types.TaxationFiling = getTaxationReportedTaxFilingAndYear(app);
 
   // not a CBT filer
   if (type !== types.TaxationReportedTaxFilingValues.CBT) {
-    return [undefined, undefined, undefined];
+    return undefined;
   }
-
-  let taxationReportedAnnual: number;
 
   switch (year) {
     case types.RevenueYears._2019:
-      taxationReportedAnnual = app.taxation['2019 CBT Amt'];
-      break;
+      return app.taxation['2019 CBT Amt'];
     case types.RevenueYears._2018:
-      taxationReportedAnnual = app.taxation['2018 CBT Amt'];
-      break;
+      return app.taxation['2018 CBT Amt'];
     default:
       throw new Error(`Unexpected CBT filing year (${year}) for application ${app.ApplicationId}`);
   }
-
-  return [...isSelfReportedRevenueReasonable(app, taxationReportedAnnual), year];
 }
 
 // if filing is Partnership or TGI, we get net profit (not gross revenue); we extrapolate a presumed
 // gross revenue given an assumed profit margin, and proceed with comparison the same as with revenue.
-export function isSelfReportedRevenueReasonableForPartOrTgiFiler(
-  app: types.DecoratedApplication
-): [boolean | undefined, number | undefined, types.RevenueYears | undefined] {
+export function presumedTgiRevenue(app: types.DecoratedApplication): number | undefined {
+  const PRESUMED_PROFIT_MARGIN = 0.1;
   const { type, year }: types.TaxationFiling = getTaxationReportedTaxFilingAndYear(app);
 
   // not a Part or TGI filer
@@ -628,7 +636,7 @@ export function isSelfReportedRevenueReasonableForPartOrTgiFiler(
     type !== types.TaxationReportedTaxFilingValues.Partnership &&
     type !== types.TaxationReportedTaxFilingValues.Sole_Prop_SMLLC
   ) {
-    return [undefined, undefined, undefined];
+    return undefined;
   }
 
   const pastAnnualProfit: types.NullableNumber = getTaxationReportedNetIncomeLoss(app);
@@ -638,13 +646,11 @@ export function isSelfReportedRevenueReasonableForPartOrTgiFiler(
   }
 
   if (pastAnnualProfit <= 0) {
-    return [true, undefined, year || undefined];
+    return undefined;
   }
 
-  const PRESUMED_PROFIT_MARGIN = 0.1;
   const presumedPastAnnualRevenue = pastAnnualProfit / PRESUMED_PROFIT_MARGIN;
-
-  return [...isSelfReportedRevenueReasonable(app, presumedPastAnnualRevenue), year || undefined];
+  return presumedPastAnnualRevenue;
 }
 
 export function getSalesTaxPercentChange(app: types.DecoratedApplication): number | undefined {
@@ -658,18 +664,55 @@ export function getSalesTaxPercentChange(app: types.DecoratedApplication): numbe
   return undefined;
 }
 
+export function presumedPastRevenue(app: types.DecoratedApplication): number | undefined {
+  // we're certain
+  if (typeof cbtRevenue(app) !== 'undefined') {
+    return cbtRevenue(app);
+  }
+
+  // we're extrapolating
+  if (typeof presumedTgiRevenue(app) !== 'undefined') {
+    return presumedTgiRevenue(app);
+  }
+
+  return undefined;
+}
+
+function maxReasonablePastRevenue(app: types.DecoratedApplication): number | undefined {
+  const TOLERANCE = 1.2;
+  const pastRevenue: number | undefined = presumedPastRevenue(app);
+
+  if (typeof pastRevenue === 'undefined') {
+    return undefined;
+  }
+
+  return pastRevenue * TOLERANCE;
+}
+
+export function isReportedPastRevenueReasonable(
+  app: types.DecoratedApplication
+): boolean | undefined {
+  const cappedReported: number | undefined = cappedReportedPastRevenue(app);
+  const maxReasonable: number | undefined = maxReasonablePastRevenue(app);
+
+  if (typeof cappedReported === 'undefined' || typeof maxReasonable === 'undefined') {
+    return undefined;
+  }
+
+  return cappedReported <= maxReasonable;
+}
+
 // goal: guard against 2019 over-reporting (to inflate need)
 export function getReportedRevenueReasonableness(app: types.DecoratedApplication): types.YesNoNA {
-  if (typeof isSelfReportedRevenueReasonableForCbtFiler(app)[0] !== 'undefined') {
-    return yesNo(<boolean>isSelfReportedRevenueReasonableForCbtFiler(app)[0]);
+  const isReportedRevenueReasonable: boolean | undefined = isReportedPastRevenueReasonable(app);
+  const salesTaxPercentChange: number | undefined = getSalesTaxPercentChange(app);
+
+  if (typeof isReportedRevenueReasonable !== 'undefined') {
+    return yesNo(isReportedRevenueReasonable);
   }
 
-  if (typeof isSelfReportedRevenueReasonableForPartOrTgiFiler(app)[0] !== 'undefined') {
-    return yesNo(<boolean>isSelfReportedRevenueReasonableForPartOrTgiFiler(app)[0]);
-  }
-
-  if (typeof getSalesTaxPercentChange(app) !== 'undefined') {
-    return yesNo(<number>getSalesTaxPercentChange(app) <= 0);
+  if (typeof salesTaxPercentChange !== 'undefined') {
+    return yesNo(salesTaxPercentChange <= 0);
   }
 
   return 'N/A';
@@ -677,19 +720,21 @@ export function getReportedRevenueReasonableness(app: types.DecoratedApplication
 
 // goal: guard against 2020 under-reporting (to inflate need)
 export function getYYRevenueDeclineReasonableness(app: types.DecoratedApplication): types.YesNoNA {
-  if (typeof app.RevenueComparison_YearOverYearChange === 'undefined') {
+  const _adjustedYoyChange: number | undefined = adjustedYoyChange(app);
+
+  if (typeof _adjustedYoyChange === 'undefined') {
     return 'N/A';
   }
 
   switch (getCapacityOpen(app)) {
     case types.RemainOpenCapacities['100%']:
-      return yesNo(!(app.RevenueComparison_YearOverYearChange <= -0.25));
+      return yesNo(!(_adjustedYoyChange <= -0.25));
     case types.RemainOpenCapacities['75%']:
-      return yesNo(!(app.RevenueComparison_YearOverYearChange <= -0.5));
+      return yesNo(!(_adjustedYoyChange <= -0.5));
     case types.RemainOpenCapacities['50%']:
-      return yesNo(!(app.RevenueComparison_YearOverYearChange <= -0.75));
+      return yesNo(!(_adjustedYoyChange <= -0.75));
     case types.RemainOpenCapacities['25%']:
-      return yesNo(!(app.RevenueComparison_YearOverYearChange <= -1.0));
+      return yesNo(!(_adjustedYoyChange <= -1.0));
     case types.RemainOpenCapacities['Less than 10%']:
     case null:
       return 'Yes';
@@ -714,6 +759,21 @@ export function getReasonablenessExceptions(app: types.DecoratedApplication): st
   ) {
     messages.push(
       'The applicant has reported Sales and Use Tax for 2019 and 2020, is deemed to have filed taxes, and has revenue numbers that are reasonable.'
+    );
+  }
+
+  if (
+    typeof cappedMarchAprilMay2019Revenue(app) !== 'undefined' &&
+    <number>cappedMarchAprilMay2019Revenue(app) < <number>app.RevenueComparison_MarchAprilMay2019
+  ) {
+    messages.push(
+      `Applicant's self-reported March/April/May 2019 revenues of ${formatDollars(
+        <number>app.RevenueComparison_MarchAprilMay2019
+      )} have been reduced to ${formatDollars(
+        <number>cappedMarchAprilMay2019Revenue(app)
+      )}, the amount deemed reasonable given their ${
+        getTaxationReportedTaxFilingAndYear(app).year
+      } Taxation filings.`
     );
   }
 

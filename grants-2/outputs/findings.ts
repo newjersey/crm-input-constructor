@@ -6,6 +6,7 @@ import {
   OwnershipStructures,
   DecoratedApplication,
   Finding,
+  TaxationReportedTaxFilingValues,
 } from './types';
 import { bool, dateFromExcel, formatDollars, formatPercent } from '../util';
 import { ProductStatuses } from '../inputs/grant-phase-1';
@@ -14,7 +15,7 @@ import {
   grantPhase1AmountApproved,
   unmetNeed,
   discountedAwardBasis,
-  yoyDecline,
+  adjustedYoyDecline,
   reducibleFunding,
 } from './award-size';
 import {
@@ -25,11 +26,15 @@ import {
   getYYRevenueDeclineReasonableness,
   getSalesTaxPercentChange,
   getNonprofitType,
-  getReportedRevenueReasonableness,
-  isSelfReportedRevenueReasonableForCbtFiler,
-  isSelfReportedRevenueReasonableForPartOrTgiFiler,
+  cbtRevenue,
   getTaxationReportedNetIncomeLoss,
   isDobProgramApprovedOrInProgress,
+  cappedMarchAprilMay2019Revenue,
+  adjustedYoyChange,
+  getTaxationReportedTaxFilingAndYear,
+  cappedReportedPastRevenue,
+  isReportedPastRevenueReasonable,
+  hasNoTaxFilings,
 } from './helpers';
 import { EntityType } from '../inputs/applications';
 
@@ -161,8 +166,8 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     name: 'Capacity 100%, no self-reported revenue decrease',
     trigger: app =>
       getCapacityOpen(app) === RemainOpenCapacities['100%'] &&
-      yoyDecline(app) !== null &&
-      <number>yoyDecline(app) <= 0,
+      adjustedYoyDecline(app) !== null &&
+      <number>adjustedYoyDecline(app) <= 0,
     messageGenerator: app =>
       `Capacity remained at 100% and self-reported YoY revenue did not decrease from 2019 to 2020`,
     severity: Decision.Decline,
@@ -249,17 +254,17 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     name: 'Unreasonable revenue decline',
     trigger: app => getYYRevenueDeclineReasonableness(app) === 'No',
     messageGenerator: app =>
-      `Applicant reported an unreasonably high YoY revenue decline (${formatPercent(
-        <number>app.RevenueComparison_YearOverYearChange
-      )}) given business operational capacity (${getCapacityOpen(app)})`,
+      `Applicant's adjusted YoY revenue decline (${formatPercent(
+        <number>adjustedYoyChange(app)
+      )}) is unreasonably high given business operational capacity (${getCapacityOpen(app)})`,
     severity: Decision.Review,
   },
   {
     name: 'No unmet need',
     trigger: app => unmetNeed(app) === 0,
     messageGenerator: app =>
-      `Business does not have an unmet need based on YoY revenue loss (${formatDollars(
-        <number>yoyDecline(app)
+      `Business does not have an unmet need based on adjusted YoY revenue loss (${formatDollars(
+        <number>adjustedYoyDecline(app)
       )}) and other disaster resources pending or received (${formatDollars(
         reducibleFunding(app)
       )})`,
@@ -308,30 +313,38 @@ const FINDING_DEFINITIONS: FindingDef[] = [
   },
   {
     name: 'Known to Taxation but no filings',
-    trigger: app =>
-      app.taxation['Clean Ind'] !== 'X' && getReportedRevenueReasonableness(app) === 'N/A',
+    trigger: app => app.taxation['Clean Ind'] !== 'X' && hasNoTaxFilings(app),
     messageGenerator: app => `Organization is recognized by Taxation, but has no Taxation filings`,
     severity: Decision.Review,
   },
   {
     name: 'CBT filer reports unreasonably high 2019 revenue',
-    trigger: app => isSelfReportedRevenueReasonableForCbtFiler(app)[0] === false,
+    trigger: app =>
+      isReportedPastRevenueReasonable(app) === false &&
+      getTaxationReportedTaxFilingAndYear(app).type === TaxationReportedTaxFilingValues.CBT,
     messageGenerator: app =>
-      `Applicant's 2019 3-month actual revenues reported on application are ${formatPercent(
-        <number>isSelfReportedRevenueReasonableForCbtFiler(app)[1]
+      `Applicant's capped 2019 3-month actual revenues reported on application (${formatDollars(
+        <number>cappedMarchAprilMay2019Revenue(app)
+      )}) are ${formatPercent(
+        <number>cbtRevenue(app) / <number>cappedReportedPastRevenue(app) - 1
       )} higher than their ${
-        isSelfReportedRevenueReasonableForCbtFiler(app)[2]
-      } revenues reported by Taxation`,
+        getTaxationReportedTaxFilingAndYear(app).year
+      } revenues reported by Taxation (${formatDollars(<number>cbtRevenue(app))}) when annualized`,
     severity: Decision.Review,
   },
   {
     name: 'TGI/Partnership filer reports unreasonably high 2019 revenue',
-    trigger: app => isSelfReportedRevenueReasonableForPartOrTgiFiler(app)[0] === false,
+    trigger: app =>
+      isReportedPastRevenueReasonable(app) === false &&
+      (getTaxationReportedTaxFilingAndYear(app).type ===
+        TaxationReportedTaxFilingValues.Partnership ||
+        getTaxationReportedTaxFilingAndYear(app).type ===
+          TaxationReportedTaxFilingValues.Sole_Prop_SMLLC),
     messageGenerator: app =>
-      `Applicant's 2019 self-reported actuals (${formatDollars(
-        <number>app.RevenueComparison_MarchAprilMay2019
+      `Applicant's capped 2019 3-month actual revenues reported on application (${formatDollars(
+        <number>cappedMarchAprilMay2019Revenue(app)
       )}) may not be reasonable given their ${
-        isSelfReportedRevenueReasonableForPartOrTgiFiler(app)[2]
+        getTaxationReportedTaxFilingAndYear(app).year
       } Taxation reported net income of ${formatDollars(
         <number>getTaxationReportedNetIncomeLoss(app)
       )}`,

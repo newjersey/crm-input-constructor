@@ -10,6 +10,7 @@ import {
 } from './types';
 import { bool, formatDate, formatExcelDate } from '../util';
 import {
+  cappedMarchAprilMay2019Revenue,
   flag,
   getApplicantBackground,
   getCapacityOpen,
@@ -234,7 +235,7 @@ export function generateOlaDatas(app: DecoratedApplication): OlaDatas {
         DeemedAsEssentialBusiness: yesNo(bool(app.COVID19Impact_EssentialBusiness)),
         RemainOpenMar2020: yesNo(bool(app.COVID19Impact_OpenOrReopened)),
         CapacityOpen: getCapacityOpen(app),
-        ActualRevenue2019: value(app.RevenueComparison_MarchAprilMay2019),
+        ActualRevenue2019: value(cappedMarchAprilMay2019Revenue(app)),
         ActualRevenue2020: value(app.RevenueComparison_MarchAprilMay2020),
         UseofFunds: 'Business Interruption - Loss of Revenue',
         TaxationReportedRevenue: value(getTaxationReportedRevenue(app)),

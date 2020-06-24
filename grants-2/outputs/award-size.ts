@@ -1,6 +1,10 @@
 import { GrantPhase1Data, ProductStatuses } from '../inputs/grant-phase-1';
 import { bool, mround } from '../util';
-import { getQuarterlyWageData, isDobProgramApprovedOrInProgress } from './helpers';
+import {
+  cappedMarchAprilMay2019Revenue,
+  getQuarterlyWageData,
+  isDobProgramApprovedOrInProgress,
+} from './helpers';
 
 import { DecoratedApplication } from './types';
 
@@ -53,12 +57,14 @@ export function reducibleFunding(app: DecoratedApplication): number {
   return grant + loan + ppp + eidg + other;
 }
 
-export function yoyDecline(app: DecoratedApplication): number | null {
-  if (typeof app.RevenueComparison_MarchAprilMay2019 === 'undefined') {
+export function adjustedYoyDecline(app: DecoratedApplication): number | null {
+  const _cappedMarchAprilMay2019Revenue: number | undefined = cappedMarchAprilMay2019Revenue(app);
+
+  if (typeof _cappedMarchAprilMay2019Revenue === 'undefined') {
     return null;
   }
 
-  return app.RevenueComparison_MarchAprilMay2019 - app.RevenueComparison_MarchAprilMay2020;
+  return _cappedMarchAprilMay2019Revenue - app.RevenueComparison_MarchAprilMay2020;
 }
 
 export function discountedAwardBasis(app: DecoratedApplication): number {
@@ -68,7 +74,7 @@ export function discountedAwardBasis(app: DecoratedApplication): number {
 }
 
 export function unmetNeed(app: DecoratedApplication): number | null {
-  const _yoyDecline: number | null = yoyDecline(app);
+  const _yoyDecline: number | null = adjustedYoyDecline(app);
 
   if (_yoyDecline === null) {
     return null;
