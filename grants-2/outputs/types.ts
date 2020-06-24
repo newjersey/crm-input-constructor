@@ -107,9 +107,15 @@ export enum ServicingOfficersExternal {
 }
 
 // TEST values:
-// export enum ServicingOfficersEN { BRUCE_TEST = '{FB3F23BA-3ED6-E811-811B-1458D04E2F10}' }
-// export enum ServicingOfficersES { BRUCE_TEST = '{FB3F23BA-3ED6-E811-811B-1458D04E2F10}' }
-// export enum ServicingOfficersExternal { Richard_Toro = '{FB3F23BA-3ED6-E811-811B-1458D04E2F10}' }
+export enum TEST_ServicingOfficersEN {
+  BRUCE_TEST = '{FB3F23BA-3ED6-E811-811B-1458D04E2F10}',
+}
+export enum TEST_ServicingOfficersES {
+  BRUCE_TEST = '{FB3F23BA-3ED6-E811-811B-1458D04E2F10}',
+}
+export enum TEST_ServicingOfficersExternal {
+  Richard_Toro = '{FB3F23BA-3ED6-E811-811B-1458D04E2F10}',
+}
 
 export enum ProductStatuses {
   Ended = '{359B8B3E-65F7-E511-80DE-005056AD31F5}',
@@ -150,7 +156,13 @@ export type YesNo = 'Yes' | 'No';
 export type YesNoNA = 'Yes' | 'No' | 'N/A';
 export type NullableNumber = number | null;
 export type NullableString = string | null;
-export type ServicingOfficer = ServicingOfficersEN | ServicingOfficersES | ServicingOfficersExternal;
+export type ServicingOfficer =
+  | ServicingOfficersEN
+  | ServicingOfficersES
+  | ServicingOfficersExternal
+  | TEST_ServicingOfficersEN
+  | TEST_ServicingOfficersES
+  | TEST_ServicingOfficersExternal;
 export type TaxationReportedRevenueYear = RevenueYears | null;
 export type CapacityOpen = RemainOpenCapacities | null;
 export type DecoratedApplication = Application &
@@ -165,25 +177,25 @@ export type DecoratedApplication = Application &
   WR30;
 
 export interface QuarterlyWageData {
-  fteCount: NullableNumber,
-  quarterDesc: NullableString,
+  fteCount: NullableNumber;
+  quarterDesc: NullableString;
 }
 
 export interface TaxationFiling {
-  type: TaxationReportedTaxFilingValues,
-  year: TaxationReportedRevenueYear,
+  type: TaxationReportedTaxFilingValues;
+  year: TaxationReportedRevenueYear;
 }
 
 export interface Finding {
   message: string;
-  name: string,
+  name: string;
   severity: Decision;
 }
 
 export interface FindingDef {
   trigger(application: DecoratedApplication): boolean;
   messageGenerator(application: DecoratedApplication): string;
-  name: string,
+  name: string;
   severity: Decision;
 }
 

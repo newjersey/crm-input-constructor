@@ -11,6 +11,7 @@ export interface Options {
   readonly pretty?: boolean;
   readonly debug?: boolean;
   readonly force?: boolean;
+  readonly test?: boolean;
 }
 
 const optionDefinitions: object[] = [
@@ -40,7 +41,7 @@ const optionDefinitions: object[] = [
     name: 'out',
     alias: 'o',
     type: String,
-    description: 'Path to output file; suggest naming like ola_datas_100-skipping-5.json',
+    description: 'Directory to hold output files.',
   },
   {
     name: 'pretty',
@@ -59,6 +60,12 @@ const optionDefinitions: object[] = [
     alias: 'f',
     type: Boolean,
     description: 'Force overwrite of existing files (suggested only during development).',
+  },
+  {
+    name: 'test',
+    alias: 't',
+    type: Boolean,
+    description: 'If this run is meant for the CRM TEST environment (uses different entity IDs).',
   },
 ];
 

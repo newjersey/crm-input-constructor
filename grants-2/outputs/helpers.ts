@@ -192,8 +192,9 @@ export function getDesignation(app: types.DecoratedApplication, designation: num
 }
 
 let nextServicingOfficerIndexEN: number = 0;
-function getNextServicingOfficerEN(): types.ServicingOfficersEN {
-  const values = Object.values(types.ServicingOfficersEN);
+function getNextServicingOfficerEN(test: boolean): types.ServicingOfficersEN | types.TEST_ServicingOfficersEN {
+  const _enum = test ? types.TEST_ServicingOfficersES : types.ServicingOfficersES;
+  const values = Object.values(_enum);
   const value: types.ServicingOfficersEN = values[nextServicingOfficerIndexEN];
 
   nextServicingOfficerIndexEN = (nextServicingOfficerIndexEN + 1) % values.length;
@@ -202,8 +203,9 @@ function getNextServicingOfficerEN(): types.ServicingOfficersEN {
 }
 
 let nextServicingOfficerIndexES: number = 0;
-function getNextServicingOfficerES(): types.ServicingOfficersES {
-  const values = Object.values(types.ServicingOfficersES);
+function getNextServicingOfficerES(test: boolean): types.ServicingOfficersES | types.TEST_ServicingOfficersES {
+  const _enum = test ? types.TEST_ServicingOfficersES : types.ServicingOfficersES;
+  const values = Object.values(_enum);
   const value: types.ServicingOfficersES = values[nextServicingOfficerIndexES];
 
   nextServicingOfficerIndexES = (nextServicingOfficerIndexES + 1) % values.length;
@@ -211,16 +213,16 @@ function getNextServicingOfficerES(): types.ServicingOfficersES {
   return value;
 }
 
-export function getServicingOfficer(app: types.DecoratedApplication): types.ServicingOfficer {
+export function getServicingOfficer(app: types.DecoratedApplication, test: boolean): types.ServicingOfficer {
   if (getDecision(app) !== types.Decision.Review) {
     return types.ServicingOfficersExternal.Richard_Toro;
   }
 
   switch (app.Language) {
     case Languages.English:
-      return getNextServicingOfficerEN();
+      return getNextServicingOfficerEN(test);
     case Languages.Spanish:
-      return getNextServicingOfficerES();
+      return getNextServicingOfficerES(test);
     default:
       throw new Error(`Unexpected language ${app.Language} for application$ ${app.ApplicationId}`);
   }

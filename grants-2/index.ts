@@ -1,12 +1,16 @@
 const chalk = require('chalk');
 const cliProgress = require('cli-progress');
 const fs = require('fs');
+const path = require('path');
 
 import { Application, getApplications } from './inputs/applications';
 import { Decision, DecoratedApplication, OlaDatas } from './outputs/types';
 import { addDolData, init as loadDolData } from './inputs/dol';
 import { addGrantPhase1Data, init as loadGrantPhse1Data } from './inputs/grant-phase-1';
-import { addNonDeclinedEdaLoanData, init as loanNonDeclinedEdaLoanData } from './inputs/non-declined-loans';
+import {
+  addNonDeclinedEdaLoanData,
+  init as loanNonDeclinedEdaLoanData,
+} from './inputs/non-declined-loans';
 import { addPolicyMapData, init as loadPolicyMapDada } from './inputs/policy-map';
 import { addSamsData, init as loadSamsData } from './inputs/sams';
 import { addTaxationData, init as loadTaxationData } from './inputs/taxation';
@@ -74,10 +78,14 @@ async function main() {
 
   // load
   await loadGrantPhse1Data(`${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 6-13-2020 7am.xlsx`);
-  await loanNonDeclinedEdaLoanData(`${BASE_PATH}/Non-Declined Loans/Loan Data 6-19-2020 630pm.xlsx`);
+  await loanNonDeclinedEdaLoanData(
+    `${BASE_PATH}/Non-Declined Loans/Loan Data 6-19-2020 630pm.xlsx`
+  );
   await loadPolicyMapDada(`${BASE_PATH}/Policy Map/Policy Map First 20768 Apps v2.xlsx`);
   await loadSamsData(`${BASE_PATH}/SAMS/SAM_Exclusions_Public_Extract_20161.CSV`);
-  await loadTaxationData(`${BASE_PATH}/Taxation/EDA_OUTPUT_PROJ2_wRELCHK_PROD_1stLeads_061820.xlsx`);
+  await loadTaxationData(
+    `${BASE_PATH}/Taxation/EDA_OUTPUT_PROJ2_wRELCHK_PROD_1stLeads_061820.xlsx`
+  );
   await loadWR30Data(
     `${BASE_PATH}/WR30/njeda crossmatch wage output file 6-9-2020.txt`,
     `${BASE_PATH}/WR30/20200609 FEIN Not Found.txt`
@@ -119,10 +127,13 @@ async function main() {
     console.dir(decoratedApplications, { depth: null });
   }
 
+  // curry
+  const generateFunc = (app: DecoratedApplication) => generateOlaDatas(app, !!options.test);
+
   // generate
   const olaDatasArray: OlaDatas[] = map(
     decoratedApplications,
-    generateOlaDatas,
+    generateFunc,
     'Generating OLADatas objects...'
   );
 
@@ -157,17 +168,21 @@ async function main() {
 
   // write
   if (options.out) {
-    const debug: string = `${options.out}-INPUTS.json`;
+    const n = olaDatasArray.length;
+    const env = options.test ? 'TEST' : 'PROD';
+    const base = `${env}-${n}-skipping-${options.skip || 0}`;
+    const inputs: string = path.join(options.out, `${base}-INPUTS.json`);
+    const outputs: string = path.join(options.out, `${base}-OUTPUTS.json`);
     const overwrite: boolean = !!options.force;
 
     console.log(
       `\nWriting JSON files:\
-         \n  Inputs: ${chalk.blue(debug)}\
-         \n  Output: ${chalk.blue(options.out)}`
+         \n  Inputs: ${chalk.blue(inputs)}\
+         \n  Output: ${chalk.blue(outputs)}`
     );
 
-    writeFile(debug, JSON.stringify(decoratedApplications), overwrite);
-    writeFile(options.out, JSON.stringify(olaDatasArray), overwrite);
+    writeFile(inputs, JSON.stringify(decoratedApplications), overwrite);
+    writeFile(outputs, JSON.stringify(olaDatasArray), overwrite);
   }
 
   // done

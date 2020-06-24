@@ -48,7 +48,7 @@ import { Designations } from '../inputs/applications';
 import { ProductStatuses } from '../inputs/grant-phase-1';
 import { awardSize } from './award-size';
 
-export function generateOlaDatas(app: DecoratedApplication): OlaDatas {
+export function generateOlaDatas(app: DecoratedApplication, test: boolean): OlaDatas {
   try {
     const olaDatas: OlaDatas = {
       Account: {
@@ -83,7 +83,7 @@ export function generateOlaDatas(app: DecoratedApplication): OlaDatas {
       },
       Product: {
         DevelopmentOfficer: '',
-        ServicingOfficerId: getServicingOfficer(app),
+        ServicingOfficerId: getServicingOfficer(app, test),
         AppReceivedDate: formatExcelDate(app.Entry_DateSubmitted),
         Amount: value(awardSize(app)),
         nol_total_NOL_benefit: null,
