@@ -193,7 +193,7 @@ export function getDesignation(app: types.DecoratedApplication, designation: num
 
 let nextServicingOfficerIndexEN: number = 0;
 function getNextServicingOfficerEN(test: boolean): types.ServicingOfficersEN | types.TEST_ServicingOfficersEN {
-  const _enum = test ? types.TEST_ServicingOfficersES : types.ServicingOfficersES;
+  const _enum = test ? types.TEST_ServicingOfficersEN : types.ServicingOfficersEN;
   const values = Object.values(_enum);
   const value: types.ServicingOfficersEN = values[nextServicingOfficerIndexEN];
 
