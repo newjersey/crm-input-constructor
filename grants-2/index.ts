@@ -77,7 +77,7 @@ async function main() {
   }
 
   // load
-  await loadGrantPhse1Data(`${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 6-13-2020 7am.xlsx`);
+  await loadGrantPhse1Data(`${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 6-26-2020 345pm.xlsx`);
   await loanNonDeclinedEdaLoanData(
     `${BASE_PATH}/Non-Declined Loans/Loan Data 6-19-2020 630pm.xlsx`
   );
