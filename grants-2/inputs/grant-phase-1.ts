@@ -21,20 +21,20 @@ enum ProductSubStatuses {
 
 export interface GrantPhase1Data {
   readonly 'OLA Application ID ': string;
-  readonly 'Product ID': string;
-  readonly 'Product Type': string;
   readonly 'Product Status': ProductStatuses;
-  readonly 'Product Sub Status': ProductSubStatuses;
-  readonly 'Account Name (Applicant) (Account)': string;
-  readonly 'Doing Business As (Applicant) (Account)'?: string;
-  readonly Amount?: number;
-  readonly 'Total NJ FT Eligible Jobs at Project Site at App.'?: number;
   readonly 'Approval Date'?: number;
-  readonly 'Closing Date'?: number;
+  readonly Amount?: number;
 }
 
 interface Row extends GrantPhase1Data {
   readonly 'EIN (Applicant) (Account)': string;
+  readonly 'Product Type': string;
+  readonly 'Product ID': string;
+  readonly 'Product Sub Status': ProductSubStatuses;
+  readonly 'Account Name (Applicant) (Account)': string;
+  readonly 'Doing Business As (Applicant) (Account)'?: string;
+  readonly 'Total NJ FT Eligible Jobs at Project Site at App.'?: number;
+  readonly 'Closing Date'?: number;
 }
 
 interface GrantPhase1DataMap {
@@ -55,7 +55,33 @@ function getData(filePath: string): GrantPhase1DataMap {
   const map: GrantPhase1DataMap = {};
   rows.forEach(row => {
     const { 'EIN (Applicant) (Account)': ein, ...rest } = row;
-    map[ein] = rest;
+
+    // found a duplicate
+    if (map[ein]) {
+      const existing: GrantPhase1Data = map[ein];
+
+      if (
+        existing['Product Status'] === ProductStatuses.Ended ||
+        rest['Product Status'] === ProductStatuses.Closing ||
+        rest['Product Status'] === ProductStatuses.Closed
+      ) {
+        map[ein] = rest;
+      } else if (
+        rest['Product Status'] === ProductStatuses.Ended ||
+        existing['Product Status'] === ProductStatuses.Closing ||
+        existing['Product Status'] === ProductStatuses.Closed
+      ) {
+        // NOOP
+      } else if (
+        // neither is approved nor declined -- take the first one (oldest)
+        parseInt(rest['OLA Application ID '].replace(/\D/g, ''), 10) <
+        parseInt(existing['OLA Application ID '].replace(/\D/g, ''), 10)
+      ) {
+        map[ein] = rest;
+      }
+    } else {
+      map[ein] = rest;
+    }
   });
 
   return map;
