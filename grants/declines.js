@@ -254,7 +254,7 @@ function appeal_url(application) {
     EIN: application.Business_EIN,
     NAICS: application.NAICSCode,
     YearFounded: application.Business_YearEstablished,
-    Expiration: format(addBusinessDays(new Date(), 1), 'yyyy-MM-dd'),
+    Expiration: format(addBusinessDays(new Date(), 4), 'yyyy-MM-dd'),
     Email: application.ContactInformation_Email,
     Reasons: reasons(application, 'slug'),
   };
