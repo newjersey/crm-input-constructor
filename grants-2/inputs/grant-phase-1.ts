@@ -20,7 +20,7 @@ enum ProductSubStatuses {
 }
 
 export interface GrantPhase1Data {
-  readonly 'OLA Application ID ': string;
+  readonly OLA: string;
   readonly 'Product Status': ProductStatuses;
   readonly 'Approval Date'?: number;
   readonly Amount?: number;
@@ -33,7 +33,7 @@ interface Row extends GrantPhase1Data {
   readonly 'Product Sub Status': ProductSubStatuses;
   readonly 'Account Name (Applicant) (Account)': string;
   readonly 'Doing Business As (Applicant) (Account)'?: string;
-  readonly 'Total NJ FT Eligible Jobs at Project Site at App.'?: number;
+  readonly 'Total NJ FT Eligible Jobs at Project Site at App. (Underwriting) (Underwriting)'?: number;
   readonly 'Closing Date'?: number;
 }
 
@@ -74,8 +74,8 @@ function getData(filePath: string): GrantPhase1DataMap {
         // NOOP
       } else if (
         // neither is approved nor declined -- take the first one (oldest)
-        parseInt(rest['OLA Application ID '].replace(/\D/g, ''), 10) <
-        parseInt(existing['OLA Application ID '].replace(/\D/g, ''), 10)
+        parseInt(rest['OLA'].replace(/\D/g, ''), 10) <
+        parseInt(existing['OLA'].replace(/\D/g, ''), 10)
       ) {
         map[ein] = rest;
       }

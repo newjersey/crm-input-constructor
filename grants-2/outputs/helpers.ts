@@ -89,7 +89,7 @@ export function getWr30ReportingComments(app: types.DecoratedApplication): strin
     comments.push(
       `Award basis of ${formatDollars(awardBasis(app))} reduced by ${formatDollars(
         grantPhase1AmountApproved(app)
-      )} of Grant Phase 1 funding (${app.grantPhase1?.['OLA Application ID ']}).`
+      )} of Grant Phase 1 funding (${app.grantPhase1?.['OLA']}).`
     );
   }
 

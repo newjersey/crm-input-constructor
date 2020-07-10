@@ -145,7 +145,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     trigger: app => grantPhase1AmountApproved(app) >= awardBasis(app),
     messageGenerator: app =>
       `Business received a NJEDA Emergency Phase 1 Grant (${
-        app.grantPhase1?.['OLA Application ID ']
+        app.grantPhase1?.['OLA']
       } for ${formatDollars(
         grantPhase1AmountApproved(app)
       )}) and is not eligible for incremental funding based on WR-30 data (award basis: ${formatDollars(
@@ -231,7 +231,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     name: 'Phase 1 under review',
     trigger: app => app.grantPhase1?.['Product Status'] === ProductStatuses.Underwriting,
     messageGenerator: app =>
-      `Business is currently under review for Phase 1 Grant funding (${app.grantPhase1?.['OLA Application ID ']})`,
+      `Business is currently under review for Phase 1 Grant funding (${app.grantPhase1?.['OLA']})`,
     severity: Decision.Review,
   },
   {

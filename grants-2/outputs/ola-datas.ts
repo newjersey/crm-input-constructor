@@ -229,7 +229,7 @@ export function generateOlaDatas(app: DecoratedApplication, test: boolean): OlaD
       },
       Covid19Impacts: {
         ApplicationLanguage: app.Language,
-        Grant1applicationID: app.grantPhase1?.['OLA Application ID '] || null,
+        Grant1applicationID: app.grantPhase1?.['OLA'] || null,
         ApplicationSequenceID: app.Sequence,
         OntheSAMSExclusionList: yesNo(app.sams.possibleMatches.length > 0),
         DeemedAsEssentialBusiness: yesNo(bool(app.COVID19Impact_EssentialBusiness)),
@@ -348,7 +348,7 @@ export function generateOlaDatas(app: DecoratedApplication, test: boolean): OlaD
           app.grantPhase1?.['Product Status'] !== ProductStatuses.Ended
         ),
         Program: ProgramDescriptions.CVSBGR,
-        ProgramDescription: `OLA Application ID: ${app.grantPhase1?.['OLA Application ID ']}`,
+        ProgramDescription: `OLA Application ID: ${app.grantPhase1?.['OLA']}`,
         Status: getGrantPhase1Status(app),
         ApprovalDate:
           typeof app.grantPhase1?.['Approval Date'] === 'undefined'
