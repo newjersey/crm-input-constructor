@@ -595,7 +595,8 @@ export function cappedMarchAprilMay2019Revenue(
 }
 
 export function adjustedMarchAprilMay2020Revenue(app: types.DecoratedApplication): number {
-  return app.RevenueComparison_MarchAprilMay2020;
+  // negatives become 0
+  return Math.max(0, app.RevenueComparison_MarchAprilMay2020);
 }
 
 export function cappedReportedPastRevenue(app: types.DecoratedApplication): number | undefined {
@@ -766,6 +767,14 @@ export function getReasonablenessExceptions(app: types.DecoratedApplication): st
   const messages: string[] = [];
   const netIncomeLoss: types.NullableNumber = getTaxationReportedNetIncomeLoss(app);
   const salesTaxPercentChange: number | undefined = getSalesTaxPercentChange(app);
+
+  if (app.RevenueComparison_MarchAprilMay2020 !== adjustedMarchAprilMay2020Revenue(app)) {
+    messages.push(
+      `Applicant's reported 2020 March–May revenue (${formatDollars(
+        app.RevenueComparison_MarchAprilMay2020
+      )}) has been adjusted to ${formatDollars(adjustedMarchAprilMay2020Revenue(app))}.`
+    );
+  }
 
   if (netIncomeLoss !== null && netIncomeLoss <= 0) {
     messages.push(
