@@ -192,7 +192,9 @@ export function getDesignation(app: types.DecoratedApplication, designation: num
 }
 
 let nextServicingOfficerIndexEN: number = 0;
-function getNextServicingOfficerEN(test: boolean): types.ServicingOfficersEN | types.TEST_ServicingOfficersEN {
+function getNextServicingOfficerEN(
+  test: boolean
+): types.ServicingOfficersEN | types.TEST_ServicingOfficersEN {
   const _enum = test ? types.TEST_ServicingOfficersEN : types.ServicingOfficersEN;
   const values = Object.values(_enum);
   const value: types.ServicingOfficersEN = values[nextServicingOfficerIndexEN];
@@ -203,7 +205,9 @@ function getNextServicingOfficerEN(test: boolean): types.ServicingOfficersEN | t
 }
 
 let nextServicingOfficerIndexES: number = 0;
-function getNextServicingOfficerES(test: boolean): types.ServicingOfficersES | types.TEST_ServicingOfficersES {
+function getNextServicingOfficerES(
+  test: boolean
+): types.ServicingOfficersES | types.TEST_ServicingOfficersES {
   const _enum = test ? types.TEST_ServicingOfficersES : types.ServicingOfficersES;
   const values = Object.values(_enum);
   const value: types.ServicingOfficersES = values[nextServicingOfficerIndexES];
@@ -213,7 +217,10 @@ function getNextServicingOfficerES(test: boolean): types.ServicingOfficersES | t
   return value;
 }
 
-export function getServicingOfficer(app: types.DecoratedApplication, test: boolean): types.ServicingOfficer {
+export function getServicingOfficer(
+  app: types.DecoratedApplication,
+  test: boolean
+): types.ServicingOfficer {
   if (getDecision(app) !== types.Decision.Review) {
     return types.ServicingOfficersExternal.Richard_Toro;
   }
@@ -587,6 +594,10 @@ export function cappedMarchAprilMay2019Revenue(
   return Math.min(reportedMarchAprilMay2019, maxReasonableMarchAprilMay2019);
 }
 
+export function adjustedMarchAprilMay2020Revenue(app: types.DecoratedApplication): number {
+  return app.RevenueComparison_MarchAprilMay2020;
+}
+
 export function cappedReportedPastRevenue(app: types.DecoratedApplication): number | undefined {
   const _cappedMarchAprilMay2019Revenue: number | undefined = cappedMarchAprilMay2019Revenue(app);
 
@@ -599,17 +610,12 @@ export function cappedReportedPastRevenue(app: types.DecoratedApplication): numb
 
 export function adjustedYoyChange(app: types.DecoratedApplication): number | undefined {
   const capped2019: number | undefined = cappedMarchAprilMay2019Revenue(app);
-  const reported2020: number | undefined = app.RevenueComparison_MarchAprilMay2020;
 
   if (typeof capped2019 === 'undefined') {
     return undefined;
   }
 
-  if (typeof reported2020 === 'undefined') {
-    return undefined;
-  }
-
-  return (reported2020 - capped2019) / capped2019;
+  return (adjustedMarchAprilMay2020Revenue(app) - capped2019) / capped2019;
 }
 
 export function cbtRevenue(app: types.DecoratedApplication): number | undefined {
@@ -632,7 +638,7 @@ export function cbtRevenue(app: types.DecoratedApplication): number | undefined 
 
 // if filing is Partnership or TGI, we get net profit (not gross revenue); we extrapolate a presumed
 // gross revenue given an assumed profit margin, and proceed with comparison the same as with revenue.
-export function presumedTgiRevenue(app: types.DecoratedApplication): number | null |undefined {
+export function presumedTgiRevenue(app: types.DecoratedApplication): number | null | undefined {
   const PRESUMED_PROFIT_MARGIN = 0.1;
   const { type, year }: types.TaxationFiling = getTaxationReportedTaxFilingAndYear(app);
 

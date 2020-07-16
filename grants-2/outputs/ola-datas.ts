@@ -8,8 +8,8 @@ import {
   ProgramDescriptions,
   SmallBusinessStatuses,
 } from './types';
-import { bool, formatDate, formatExcelDate } from '../util';
 import {
+  adjustedMarchAprilMay2020Revenue,
   cappedMarchAprilMay2019Revenue,
   flag,
   getApplicantBackground,
@@ -43,6 +43,7 @@ import {
   value,
   yesNo,
 } from './helpers';
+import { bool, formatDate, formatExcelDate } from '../util';
 
 import { Designations } from '../inputs/applications';
 import { ProductStatuses } from '../inputs/grant-phase-1';
@@ -236,7 +237,7 @@ export function generateOlaDatas(app: DecoratedApplication, test: boolean): OlaD
         RemainOpenMar2020: yesNo(bool(app.COVID19Impact_OpenOrReopened)),
         CapacityOpen: getCapacityOpen(app),
         ActualRevenue2019: value(cappedMarchAprilMay2019Revenue(app)),
-        ActualRevenue2020: value(app.RevenueComparison_MarchAprilMay2020),
+        ActualRevenue2020: value(adjustedMarchAprilMay2020Revenue(app)),
         UseofFunds: 'Business Interruption - Loss of Revenue',
         TaxationReportedRevenue: value(getTaxationReportedRevenue(app)),
         TaxationReportedRevenueYear: getTaxationReportedTaxFilingAndYear(app).year,

@@ -1,10 +1,11 @@
 import { GrantPhase1Data, ProductStatuses } from '../inputs/grant-phase-1';
-import { bool, mround } from '../util';
 import {
+  adjustedMarchAprilMay2020Revenue,
   cappedMarchAprilMay2019Revenue,
   getQuarterlyWageData,
   isDobProgramApprovedOrInProgress,
 } from './helpers';
+import { bool, mround } from '../util';
 
 import { DecoratedApplication } from './types';
 
@@ -64,7 +65,7 @@ export function adjustedYoyDecline(app: DecoratedApplication): number | null {
     return null;
   }
 
-  return _cappedMarchAprilMay2019Revenue - app.RevenueComparison_MarchAprilMay2020;
+  return _cappedMarchAprilMay2019Revenue - adjustedMarchAprilMay2020Revenue(app);
 }
 
 export function discountedAwardBasis(app: DecoratedApplication): number {
