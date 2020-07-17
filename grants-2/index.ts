@@ -23,7 +23,7 @@ import { generateOlaDatas } from './outputs/ola-datas';
 import { getDecision } from './outputs/helpers';
 import { getFindings } from './outputs/findings';
 
-const BASE_PATH = '/Users/ross/NJEDA Grants Phase 2/First 5 hours';
+const BASE_PATH = '/Users/ross/NJEDA Grants Phase 2/All';
 
 function map<T extends Application, K>(
   applications: T[],
@@ -77,18 +77,18 @@ async function main() {
   }
 
   // load
-  await loadGrantPhse1Data(`${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 7-10-2020 4-30pm.xlsx`);
+  await loadGrantPhse1Data(`${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 7-16-2020 5-10pm.xlsx`);
   await loanNonDeclinedEdaLoanData(
     `${BASE_PATH}/Non-Declined Loans/Loan Data 6-19-2020 630pm.xlsx`
   );
-  await loadPolicyMapDada(`${BASE_PATH}/Policy Map/Policy Map First 20768 Apps v2.xlsx`);
+  await loadPolicyMapDada(`${BASE_PATH}/Policy Map/Policy Map Data 7-15-2020.xlsx`);
   await loadSamsData(`${BASE_PATH}/SAMS/SAM_Exclusions_Public_Extract_20161.CSV`);
   await loadTaxationData(
-    `${BASE_PATH}/Taxation/EDA_OUTPUT_PROJ2_wRELCHK_PROD_1stLeads_061820.xlsx`
+    `${BASE_PATH}/Taxation/EDA_PROD_P2_2ndBatch_Output_071520 COMBINED.xlsx`
   );
   await loadWR30Data(
-    `${BASE_PATH}/WR30/njeda crossmatch wage output file 6-9-2020.txt`,
-    `${BASE_PATH}/WR30/20200609 FEIN Not Found.txt`
+    `${BASE_PATH}/WR30/njeda crossmatch wage output file 7-10-2020 COMBINED.txt`,
+    `${BASE_PATH}/WR30/20200709 FEIN Not Found COMBINED.txt`
   );
   await loadDolData(
     `${BASE_PATH}/DOL Lists/Active-Emps-03302020.xlsx`,

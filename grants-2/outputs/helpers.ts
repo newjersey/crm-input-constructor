@@ -245,10 +245,10 @@ export function getEligibleOpportunityZoneValue(
   const status = app.policyMap.eligibilityStatus;
 
   switch (status) {
-    case OZEligibilityStatus.Eligible_Contiguous:
-    case OZEligibilityStatus.Eligible_LIC:
+    case OZEligibilityStatus.Eligible:
       return types.EligibleOpportunityZoneValues.Yes;
     case OZEligibilityStatus.Not_Eligible:
+    case OZEligibilityStatus.Not_Found:
       return types.EligibleOpportunityZoneValues.No;
     default:
       throw new Error(

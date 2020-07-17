@@ -2,26 +2,15 @@ import { Application } from './applications';
 import XLSX from 'xlsx';
 
 export enum EligibilityStatus {
-  Eligible_Contiguous = 'Eligible (Contiguous)',
-  Eligible_LIC = 'Eligible (LIC)',
+  Eligible = 'Eligible',
   Not_Eligible = 'Not Eligible',
+  Not_Found = 'Not Found',
 }
 
 interface Row {
   readonly 'Census Tract': number;
-  readonly State: string;
-  readonly 'FIPS Code': number;
-  readonly 'Formatted FIPS': string;
-  readonly 'Eligibility status for Qualified Opportunity Zones, as of 2018.': EligibilityStatus;
-  readonly NJEDAGrantApplication8_Id: number;
-  readonly Column4: string;
-  readonly 'Submittal Id': number;
-  readonly 'Business Name': string;
-  readonly 'Street 1': string;
-  readonly 'Street 2': string;
-  readonly ContactInformation_Geography_Label: string;
-  readonly Zip: number;
-  readonly State_1: string;
+  readonly 'Eligibility status for Opportunity Zones, as of 2018.': EligibilityStatus;
+  readonly 'OLA ID': string;
 }
 
 interface PolicyMapData extends Row {
@@ -45,12 +34,11 @@ function getData(filePath: string): PolicyMapDataMap {
 
   rows.forEach(row => {
     const {
-      Column4: languageSequence,
+      'OLA ID': applicationID,
       'Census Tract': censusTract,
-      'Eligibility status for Qualified Opportunity Zones, as of 2018.': eligibilityStatus,
+      'Eligibility status for Opportunity Zones, as of 2018.': eligibilityStatus,
     } = row;
 
-    const applicationID = languageSequence.replace(/(\w{2})-(\d+)/, 'CV19G$1$2');
     const policyMapData: PolicyMapData = {
       ...row,
       censusTract,
