@@ -77,15 +77,15 @@ async function main() {
   }
 
   // load
-  await loadGrantPhse1Data(`${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 7-16-2020 5-10pm.xlsx`);
+  await loadGrantPhse1Data(
+    `${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 7-16-2020 5-10pm.xlsx`
+  );
   await loanNonDeclinedEdaLoanData(
     `${BASE_PATH}/Non-Declined Loans/Loan Data 6-19-2020 630pm.xlsx`
   );
-  await loadPolicyMapDada(`${BASE_PATH}/Policy Map/Policy Map Data 7-15-2020.xlsx`);
+  await loadPolicyMapDada(`${BASE_PATH}/Policy Map/Policy Map Data 7-16-2020.xlsx`);
   await loadSamsData(`${BASE_PATH}/SAMS/SAM_Exclusions_Public_Extract_20161.CSV`);
-  await loadTaxationData(
-    `${BASE_PATH}/Taxation/EDA_PROD_P2_2ndBatch_Output_071520 COMBINED.xlsx`
-  );
+  await loadTaxationData(`${BASE_PATH}/Taxation/EDA_PROD_P2_2ndBatch_Output_071520 COMBINED.xlsx`);
   await loadWR30Data(
     `${BASE_PATH}/WR30/njeda crossmatch wage output file 7-10-2020 COMBINED.txt`,
     `${BASE_PATH}/WR30/20200709 FEIN Not Found COMBINED.txt`
@@ -120,7 +120,16 @@ async function main() {
   const apps9 = map(apps8, addWR30Data, 'Applying WR-30 data...');
 
   // indirection
-  const decoratedApplications: DecoratedApplication[] = apps9;
+  let decoratedApplications: DecoratedApplication[] = apps9;
+
+  // limit to county
+  // NOTE: ApplicationSequenceID is generated prior to this step, and will therefore
+  //       reflect the order of application submission (not the order of CRM entry).
+  if (options.county) {
+    decoratedApplications = decoratedApplications.filter(
+      app => app.geography.County === options.county
+    );
+  }
 
   // debug
   if (options.debug) {
@@ -168,9 +177,11 @@ async function main() {
 
   // write
   if (options.out) {
-    const n = olaDatasArray.length;
+    const n = options.count || 'all';
     const env = options.test ? 'TEST' : 'PROD';
-    const base = `${env}-${n}-skipping-${options.skip || 0}`;
+    const base = `${env}-${n}-skipping-${options.skip || 0}${
+      options.county ? `-${options.county}` : ''
+    }-${olaDatasArray.length}`;
     const inputs: string = path.join(options.out, `${base}-INPUTS.json`);
     const outputs: string = path.join(options.out, `${base}-OUTPUTS.json`);
     const overwrite: boolean = !!options.force;

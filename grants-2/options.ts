@@ -5,6 +5,7 @@ const commandLineUsage = require('command-line-usage');
 export interface Options {
   readonly en: string;
   readonly es: string;
+  readonly county?: string;
   readonly skip?: number;
   readonly count?: number;
   readonly out?: string;
@@ -24,6 +25,12 @@ const optionDefinitions: object[] = [
     name: 'es',
     type: String,
     description: '(REQUIRED) Spanish source XLSX input file.',
+  },
+  {
+    name: 'county',
+    alias: 'c',
+    type: String,
+    description: 'Limit to county (do not include "County")',
   },
   {
     name: 'skip',
@@ -94,7 +101,9 @@ export function printStartMessage(options: Options): void {
   console.log(
     `Generating OLA Datas creation JSON for ${chalk.blue(
       options.count ? options.count : 'all'
-    )} applications, skipping ${chalk.blue(options.skip || 0)}, from:\
+    )} applications, skipping ${chalk.blue(options.skip || 0)}, ${
+      options.county ? `filtering to only include ${chalk.blue(`${options.county} County`)}, ` : ''
+    }from:\
     \n  ${chalk.blue(options.en)}\
     \n  ${chalk.blue(options.es)}\n`
   );
