@@ -3,6 +3,8 @@ import XLSX from 'xlsx';
 
 export enum EligibilityStatus {
   Eligible = 'Eligible',
+  Eligible_Contiguous = 'Eligible (Contiguous)',
+  Eligible_LIC = 'Eligible (LIC)',
   Not_Eligible = 'Not Eligible',
   Not_Found = 'Not Found',
 }

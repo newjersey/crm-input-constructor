@@ -238,7 +238,10 @@ export function getServicingOfficer(
 export function getEligibleOpportunityZoneValue(
   app: types.DecoratedApplication
 ): types.EligibleOpportunityZoneValues {
-  if (typeof app.policyMap === 'undefined') {
+  if (
+    typeof app.policyMap === 'undefined' ||
+    app.policyMap.eligibilityStatus === OZEligibilityStatus.Not_Found
+  ) {
     return types.EligibleOpportunityZoneValues.Not_Found;
   }
 
@@ -246,9 +249,10 @@ export function getEligibleOpportunityZoneValue(
 
   switch (status) {
     case OZEligibilityStatus.Eligible:
+    case OZEligibilityStatus.Eligible_Contiguous:
+    case OZEligibilityStatus.Eligible_LIC:
       return types.EligibleOpportunityZoneValues.Yes;
     case OZEligibilityStatus.Not_Eligible:
-    case OZEligibilityStatus.Not_Found:
       return types.EligibleOpportunityZoneValues.No;
     default:
       throw new Error(

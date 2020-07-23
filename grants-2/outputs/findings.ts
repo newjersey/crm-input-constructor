@@ -7,6 +7,7 @@ import {
   DecoratedApplication,
   Finding,
   TaxationReportedTaxFilingValues,
+  EligibleOpportunityZoneValues,
 } from './types';
 import { bool, dateFromExcel, formatDollars, formatPercent } from '../util';
 import { ProductStatuses } from '../inputs/grant-phase-1';
@@ -35,6 +36,7 @@ import {
   cappedReportedPastRevenue,
   isReportedPastRevenueReasonable,
   hasNoTaxFilings,
+  getEligibleOpportunityZoneValue,
 } from './helpers';
 import { EntityType } from '../inputs/applications';
 
@@ -237,7 +239,8 @@ const FINDING_DEFINITIONS: FindingDef[] = [
   {
     // unverified
     name: 'No Census Tract',
-    trigger: app => !app.policyMap?.censusTract,
+    trigger: app =>
+      getEligibleOpportunityZoneValue(app) === EligibleOpportunityZoneValues.Not_Found,
     messageGenerator: app => `Business address does not have a census tract`,
     severity: Decision.Review,
   },
