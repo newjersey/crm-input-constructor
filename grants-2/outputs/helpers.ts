@@ -240,6 +240,7 @@ export function getEligibleOpportunityZoneValue(
 ): types.EligibleOpportunityZoneValues {
   if (
     typeof app.policyMap === 'undefined' ||
+    app.policyMap.eligibilityStatus === OZEligibilityStatus.NA ||
     app.policyMap.eligibilityStatus === OZEligibilityStatus.Not_Found
   ) {
     return types.EligibleOpportunityZoneValues.Not_Found;

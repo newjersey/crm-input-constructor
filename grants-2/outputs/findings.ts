@@ -8,6 +8,7 @@ import {
   Finding,
   TaxationReportedTaxFilingValues,
   EligibleOpportunityZoneValues,
+  Finding_Decline,
 } from './types';
 import { bool, dateFromExcel, formatDollars, formatPercent } from '../util';
 import { ProductStatuses } from '../inputs/grant-phase-1';
@@ -50,7 +51,10 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     trigger: app => app.Business_EntityType_Value === EntityType.Other,
     messageGenerator: app =>
       `Ineligible Business Entity Type: "Other (estate, municipality, etc.)"`,
+    publicMessageGenerator: app =>
+      `Entity is considered an ineligible entity type (e.g. estate, municipality)`,
     severity: Decision.Decline,
+    slug: 'Entity',
   },
   {
     // TODO: unverified
@@ -66,14 +70,19 @@ const FINDING_DEFINITIONS: FindingDef[] = [
         2,
         15
       ).toLocaleDateString()}`,
+    publicMessageGenerator: app => `Entity was not in operation on February 15, 2020`,
     severity: Decision.Decline,
+    slug: 'Year',
   },
   {
     // unverified
     name: 'Gambling',
     trigger: app => bool(app.BusinessDetails_GamblingActivities),
     messageGenerator: app => `Organization hosts gambling or gaming activities`,
+    publicMessageGenerator: app =>
+      `Entity is considered an ineligible entity because it hosts gambling or gaming activities`,
     severity: Decision.Decline,
+    slug: 'Gambling',
   },
   {
     // unverified
@@ -82,7 +91,10 @@ const FINDING_DEFINITIONS: FindingDef[] = [
       app.BusinessDetails_AdultActivities !== '' && bool(app.BusinessDetails_AdultActivities),
     messageGenerator: app =>
       `Organization conducts or purveys “adult” activities, services, products or materials`,
+    publicMessageGenerator: app =>
+      `Entity is considered an ineligible entity because it conducts or purveys “adult” activities, services, products or materials`,
     severity: Decision.Decline,
+    slug: 'Adult',
   },
   {
     // unverified
@@ -90,7 +102,10 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     trigger: app => bool(app.BusinessDetails_SalessActivities),
     messageGenerator: app =>
       `Organization conducts auctions, bankruptcy sales, fire sales, “lost-our-lease,” “going-out-of-business,” or similar sales`,
+    publicMessageGenerator: app =>
+      `Entity is considered an ineligible entity because it conducts auctions, bankruptcy sales, fire sales, “lost-our-lease,” “going-out-of-business,” or similar sales`,
     severity: Decision.Decline,
+    slug: 'Sales',
   },
   {
     // unverified
@@ -98,48 +113,69 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     trigger: app => bool(app.BusinessDetails_TransientMerchant),
     messageGenerator: app =>
       `Organization is a transient merchant ("peddler," "popup store," or "itinerant vendor")`,
+    publicMessageGenerator: app =>
+      `Entity is considered an ineligible entity because it is a transient merchant ("peddler," "popup store," or "itinerant vendor")`,
     severity: Decision.Decline,
+    slug: 'Transient',
   },
   {
     // unverified
     name: 'Outdoor storage',
     trigger: app => bool(app.BusinessDetails_OutdoorStorageCompany),
     messageGenerator: app => `Organization is an outdoor storage company`,
+    publicMessageGenerator: app =>
+      `Entity is considered an ineligible entity because it is an outdoor storage company`,
     severity: Decision.Decline,
+    slug: 'Outdoor',
   },
   {
     // unverified
     name: 'Nuisance',
     trigger: app => bool(app.BusinessDetails_NuisanceActivities),
     messageGenerator: app => `Organization conducts activities that may constitute a nuisance`,
+    publicMessageGenerator: app =>
+      `Entity is considered an ineligible entity because it conducts activities that may constitute a nuisance`,
     severity: Decision.Decline,
+    slug: 'Nuisance',
   },
   {
     // unverified
     name: 'Illegal',
     trigger: app => bool(app.BusinessDetails_IllegalActivities),
     messageGenerator: app => `Organization conducts business for an illegal purpose`,
+    publicMessageGenerator: app =>
+      `Entity is considered an ineligible entity because it conducts business for an illegal purpose`,
     severity: Decision.Decline,
+    slug: 'Illegal',
   },
   {
     name: 'On Unemployment Not Clear List',
     trigger: app => app.dol.uidNoGo,
     messageGenerator: app => `Applicant is on the DOL UI no-go list`,
+    publicMessageGenerator: app =>
+      `Entity is not in good standing with the NJ Department of Labor and Workforce Development (Unemployment Insurance Division)`,
     severity: Decision.Decline,
+    slug: 'DOLUI',
   },
   {
     // unverified
     name: 'On Wage/Hour Not Clear List',
     trigger: app => app.dol.whdNoGo,
     messageGenerator: app => `Applicant is on the DOL Wage/Hour no-go list`,
+    publicMessageGenerator: app =>
+      `Entity is not in good standing with the NJ Department of Labor and Workforce Development (Wage and Hour Division)`,
     severity: Decision.Decline,
+    slug: 'DOLWH',
   },
   {
     name: 'FTE Greater than 25',
     trigger: app => (getQuarterlyWageData(app).fteCount || 0) > 25,
     messageGenerator: app =>
       `Too Many FTE Equivalents: ${getQuarterlyWageData(app).fteCount} but should be at most 25`,
+    publicMessageGenerator: app =>
+      `Entity had over 25 full-time equivalent employees on their most recently filed NJ WR-30 filed with the NJ Department of Labor and Workforce Development, based on the calculation specified in the Guidelines`,
     severity: Decision.Decline,
+    slug: 'HighFTE',
   },
   {
     // unverified
@@ -153,7 +189,10 @@ const FINDING_DEFINITIONS: FindingDef[] = [
       )}) and is not eligible for incremental funding based on WR-30 data (award basis: ${formatDollars(
         awardBasis(app)
       )})`,
+    publicMessageGenerator: app =>
+      `Entity received funding in the Small Business Emergency Assistance Phase 1 Grant Program and is not eligible for incremental funding`,
     severity: Decision.Decline,
+    slug: 'Phase1',
   },
   {
     // unverified
@@ -161,7 +200,9 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     trigger: app => !!app.duplicates.byTin,
     messageGenerator: app =>
       `EIN was found in more than one application (${app.duplicates.byTin?.join(', ')})`,
+    publicMessageGenerator: app => `Tax Identification Number (TIN) reported on application was found in a previous application`,
     severity: Decision.Decline,
+    slug: 'DupEIN',
   },
   {
     // unverified
@@ -172,7 +213,9 @@ const FINDING_DEFINITIONS: FindingDef[] = [
       <number>adjustedYoyDecline(app) <= 0,
     messageGenerator: app =>
       `Capacity remained at 100% and self-reported YoY revenue did not decrease from 2019 to 2020`,
+    publicMessageGenerator: app => `As reported on your application your business was open at 100% capacity and your revenue year-over-year from 2019 to 2020 did not suffer a negative impact. A requirement of this program was a negative impact as a result of Covid19 and based on your application your business does not meet that requirement.`,
     severity: Decision.Decline,
+    slug: 'Capacity',
   },
   {
     name: 'No Taxation record (excluding nonprofits)',
@@ -182,7 +225,10 @@ const FINDING_DEFINITIONS: FindingDef[] = [
       `Business is a ${getOwnershipStructure(app)} (TIN: ${
         app.Business_TIN
       }) that is not registered with Taxation, did not file taxes with Taxation for 2018 or 2019, and did not file sales/usage taxes with Taxation in 2019 or 2020`,
+    publicMessageGenerator: app =>
+      `Entity was not registered to do business in the State of New Jersey at the time of application`,
     severity: Decision.Decline,
+    slug: 'EIN',
   },
   ////////////////////// Reviews below ////////////////////////
   {
@@ -431,6 +477,8 @@ const FINDING_DEFINITIONS: FindingDef[] = [
 export function getFindings(app: DecoratedApplication): Finding[] {
   const findings: Finding[] = FINDING_DEFINITIONS.filter(def => def.trigger(app)).map(def => ({
     message: def.messageGenerator(app),
+    publicMessage: 'publicMessageGenerator' in def ? def.publicMessageGenerator(app) : undefined,
+    slug: 'slug' in def ? def.slug : undefined,
     severity: def.severity,
     name: def.name,
   }));

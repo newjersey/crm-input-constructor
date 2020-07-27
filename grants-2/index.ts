@@ -5,6 +5,7 @@ const path = require('path');
 
 import { Application, getApplications } from './inputs/applications';
 import { Decision, DecoratedApplication, OlaDatas } from './outputs/types';
+import { Decline, generateDecline } from './outputs/decline';
 import { addDolData, init as loadDolData } from './inputs/dol';
 import { addGrantPhase1Data, init as loadGrantPhse1Data } from './inputs/grant-phase-1';
 import {
@@ -146,6 +147,13 @@ async function main() {
     'Generating OLADatas objects...'
   );
 
+  // generate declines
+  const declineObjects = <Decline[]> map(
+    decoratedApplications,
+    generateDecline,
+    'Generating decline objects...'
+  ).filter(d => d);
+
   // print
   if (options.pretty) {
     console.dir(olaDatasArray, { depth: null });
@@ -181,17 +189,20 @@ async function main() {
     const env = options.test ? 'TEST' : 'PROD';
     const base = `${env}-${n}-skipping-${options.skip || 0}${
       options.county ? `-${options.county}` : ''
-    }-${olaDatasArray.length}`;
-    const inputs: string = path.join(options.out, `${base}-INPUTS.json`);
-    const outputs: string = path.join(options.out, `${base}-OUTPUTS.json`);
+    }`;
+    const declines: string = path.join(options.out, `${base}-${declineObjects.length}-DECLINES.json`);
+    const inputs: string = path.join(options.out, `${base}-${decoratedApplications.length}-INPUTS.json`);
+    const outputs: string = path.join(options.out, `${base}-${decoratedApplications.length}-OUTPUTS.json`);
     const overwrite: boolean = !!options.force;
 
     console.log(
       `\nWriting JSON files:\
+         \n  Declines: ${chalk.blue(declines)}\
          \n  Inputs: ${chalk.blue(inputs)}\
          \n  Output: ${chalk.blue(outputs)}`
     );
 
+    writeFile(declines, JSON.stringify(declineObjects), overwrite);
     writeFile(inputs, JSON.stringify(decoratedApplications), overwrite);
     writeFile(outputs, JSON.stringify(olaDatasArray), overwrite);
   }

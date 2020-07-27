@@ -188,16 +188,36 @@ export interface TaxationFiling {
 
 export interface Finding {
   message: string;
+  publicMessage?: string;
   name: string;
   severity: Decision;
+  slug?: string;
 }
 
-export interface FindingDef {
+export interface Finding_Decline {
+  publicMessage: string;
+  severity: Decision.Decline;
+  slug: string;
+}
+
+interface FindingDef_Base {
   trigger(application: DecoratedApplication): boolean;
   messageGenerator(application: DecoratedApplication): string;
   name: string;
   severity: Decision;
 }
+
+interface FindingDef_Decline extends FindingDef_Base {
+  publicMessageGenerator(application: DecoratedApplication): string;
+  severity: Decision.Decline;
+  slug: string;
+}
+
+interface FindingDef_Review extends FindingDef_Base {
+  severity: Decision.Review;
+}
+
+export type FindingDef = FindingDef_Decline | FindingDef_Review;
 
 export interface ValueObject {
   Value: number;

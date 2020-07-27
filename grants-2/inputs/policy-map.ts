@@ -7,6 +7,7 @@ export enum EligibilityStatus {
   Eligible_LIC = 'Eligible (LIC)',
   Not_Eligible = 'Not Eligible',
   Not_Found = 'Not Found',
+  NA = 'N/A',
 }
 
 interface Row {
