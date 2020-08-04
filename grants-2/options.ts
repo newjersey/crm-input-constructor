@@ -1,10 +1,11 @@
+import { Languages } from './inputs/applications';
+
 const chalk = require('chalk');
 const commandLineArgs = require('command-line-args');
 const commandLineUsage = require('command-line-usage');
 
 export interface Options {
-  readonly en: string;
-  readonly es: string;
+  readonly language?: Languages;
   readonly county?: string;
   readonly skip?: number;
   readonly count?: number;
@@ -17,14 +18,10 @@ export interface Options {
 
 const optionDefinitions: object[] = [
   {
-    name: 'en',
+    name: 'language',
+    alias: 'l',
     type: String,
-    description: '(REQUIRED) English source XLSX input file.',
-  },
-  {
-    name: 'es',
-    type: String,
-    description: '(REQUIRED) Spanish source XLSX input file.',
+    description: 'Limit to a language (English|Spanish)',
   },
   {
     name: 'county',
@@ -60,7 +57,7 @@ const optionDefinitions: object[] = [
     name: 'debug',
     alias: 'd',
     type: Boolean,
-    description: 'Include extra data useful ffor debugging.',
+    description: 'Include extra data useful for debugging.',
   },
   {
     name: 'force',
@@ -83,14 +80,14 @@ export function printUsage(): void {
     {
       header: 'CRM Input Constructor',
       content:
-        'This takes grant data from two XLSX input files and outputs a corresponding JSON array of objects for feeding to new OLA Datas records.',
+        'This takes grant data from many input files (hard coded paths in index.ts) and outputs three JSON files: objects for feeding to new OLA Datas records, objects representing all raw input data, and objects used to send declinations.',
     },
     {
       header: 'Options',
       optionList: optionDefinitions,
     },
     {
-      content: 'Example: npm run grants-2 -- --en=grants/sample-en.csv --es=grants/sample-es.csv',
+      content: 'Example: npm run grants-2 -- -n 10 -dtp -o /path/to/my/outputs/',
     },
   ]);
 
@@ -99,16 +96,15 @@ export function printUsage(): void {
 
 export function printStartMessage(options: Options): void {
   console.log(
-    `Generating OLA Datas creation JSON for ${chalk.blue(
-      options.count ? options.count : 'all'
-    )} applications, skipping ${chalk.blue(options.skip || 0)}, ${
+    `Generating OLA Datas creation JSON for ${chalk.blue(options.count ? options.count : 'all')}${
+      options.language ? ` ${chalk.blue(options.language)}` : ''
+    } applications, skipping ${chalk.blue(options.skip || 0)}, ${
       options.county ? `filtering to only include ${chalk.blue(`${options.county} County`)}, ` : ''
-    }from:\
-    \n  ${chalk.blue(options.en)}\
-    \n  ${chalk.blue(options.es)}\n`
+    }\n`
   );
 }
 
 export function optionsSatisfied(options: Options): boolean {
-  return !!options.en && !!options.es;
+  // arbitrary -- assume that usage should be printed if no options are specified
+  return Object.keys(options).length > 0;
 }

@@ -79,31 +79,33 @@ async function main() {
 
   // load
   await loadGrantPhse1Data(
-    `${BASE_PATH}/Grant Phase 1/Phase 1 Statuses As Of 7-16-2020 5-10pm.xlsx`
+    path.join(BASE_PATH, 'Grant Phase 1', 'Phase 1 Statuses As Of 7-16-2020 5-10pm.xlsx')
   );
   await loanNonDeclinedEdaLoanData(
-    `${BASE_PATH}/Non-Declined Loans/Loan Data 6-19-2020 630pm.xlsx`
+    path.join(BASE_PATH, 'Non-Declined Loans', 'Loan Data 6-19-2020 630pm.xlsx')
   );
-  await loadPolicyMapDada(`${BASE_PATH}/Policy Map/Policy Map Data 7-16-2020.xlsx`);
-  await loadSamsData(`${BASE_PATH}/SAMS/SAM_Exclusions_Public_Extract_20161.CSV`);
-  await loadTaxationData(`${BASE_PATH}/Taxation/EDA_PROD_P2_2ndBatch_Output_071520 COMBINED.xlsx`);
+  await loadPolicyMapDada(path.join(BASE_PATH, 'Policy Map', 'Policy Map Data 7-16-2020.xlsx'));
+  await loadSamsData(path.join(BASE_PATH, 'SAMS', 'SAM_Exclusions_Public_Extract_20161.CSV'));
+  await loadTaxationData(
+    path.join(BASE_PATH, 'Taxation', 'EDA_PROD_P2_2ndBatch_Output_071520 COMBINED.xlsx')
+  );
   await loadWR30Data(
-    `${BASE_PATH}/WR30/njeda crossmatch wage output file 7-10-2020 COMBINED.txt`,
-    `${BASE_PATH}/WR30/20200709 FEIN Not Found COMBINED.txt`
+    path.join(BASE_PATH, 'WR30', 'njeda crossmatch wage output file 7-10-2020 COMBINED.txt'),
+    path.join(BASE_PATH, 'WR30', '20200709 FEIN Not Found COMBINED.txt')
   );
   await loadDolData(
-    `${BASE_PATH}/DOL Lists/Active-Emps-03302020.xlsx`,
-    `${BASE_PATH}/DOL Lists/No.Go.List.3.30.2020.UID.xlsx`,
-    `${BASE_PATH}/DOL Lists/No.Go.List.3.30.2020.WHD.xlsx`
+    path.join(BASE_PATH, 'DOL Lists', 'Active-Emps-03302020.xlsx'),
+    path.join(BASE_PATH, 'DOL Lists', 'No.Go.List.3.30.2020.UID.xlsx'),
+    path.join(BASE_PATH, 'DOL Lists', 'No.Go.List.3.30.2020.WHD.xlsx')
   );
 
   // apply data
   // Ugly number of variables, but makes type inference pick up the chained unions of generics.
   // I'm probably doing it wrong. Note that a map() chain here causes out-of-memory panics.
-  const apps0 = getApplications(options.en, options.es).slice(
-    0,
-    options.count && options.count + (options.skip || 0)
-  );
+  const apps0 = getApplications(
+    path.join(BASE_PATH, 'Raw from Cognito', 'NJEDA Grant Application.xlsx'),
+    path.join(BASE_PATH, 'Raw from Cognito', 'Solicitud de Subsidio.xlsx')
+  ).slice(0, options.count && options.count + (options.skip || 0));
 
   // Need 0 through the last application desired for duplicate checking. Don't need those skipped, thereafter.
   const apps1 = map(apps0, addDuplicateData, '\nApplying duplicate data...').slice(
@@ -132,6 +134,13 @@ async function main() {
     );
   }
 
+  // limit to language
+  // NOTE: ApplicationSequenceID is generated prior to this step, and will therefore
+  //       reflect the order of application submission (not the order of CRM entry).
+  if (options.language) {
+    decoratedApplications = decoratedApplications.filter(app => app.Language === options.language);
+  }
+
   // debug
   if (options.debug) {
     console.dir(decoratedApplications, { depth: null });
@@ -148,11 +157,9 @@ async function main() {
   );
 
   // generate declines
-  const declineObjects = <Decline[]> map(
-    decoratedApplications,
-    generateDecline,
-    'Generating decline objects...'
-  ).filter(d => d);
+  const declineObjects = <Decline[]>(
+    map(decoratedApplications, generateDecline, 'Generating decline objects...').filter(d => d)
+  );
 
   // print
   if (options.pretty) {
@@ -188,11 +195,20 @@ async function main() {
     const n = options.count || 'all';
     const env = options.test ? 'TEST' : 'PROD';
     const base = `${env}-${n}-skipping-${options.skip || 0}${
-      options.county ? `-${options.county}` : ''
-    }`;
-    const declines: string = path.join(options.out, `${base}-${declineObjects.length}-DECLINES.json`);
-    const inputs: string = path.join(options.out, `${base}-${decoratedApplications.length}-INPUTS.json`);
-    const outputs: string = path.join(options.out, `${base}-${decoratedApplications.length}-OUTPUTS.json`);
+      options.language ? `-${options.language}` : ''
+    }${options.county ? `-${options.county}` : ''}`;
+    const declines: string = path.join(
+      options.out,
+      `${base}-${declineObjects.length}-DECLINES.json`
+    );
+    const inputs: string = path.join(
+      options.out,
+      `${base}-${decoratedApplications.length}-INPUTS.json`
+    );
+    const outputs: string = path.join(
+      options.out,
+      `${base}-${decoratedApplications.length}-OUTPUTS.json`
+    );
     const overwrite: boolean = !!options.force;
 
     console.log(
