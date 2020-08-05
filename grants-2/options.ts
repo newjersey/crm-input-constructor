@@ -5,11 +5,12 @@ const commandLineArgs = require('command-line-args');
 const commandLineUsage = require('command-line-usage');
 
 export interface Options {
+  readonly base: string;
   readonly language?: Languages;
   readonly county?: string;
   readonly skip?: number;
   readonly count?: number;
-  readonly out?: string;
+  readonly out?: boolean;
   readonly pretty?: boolean;
   readonly debug?: boolean;
   readonly force?: boolean;
@@ -18,16 +19,22 @@ export interface Options {
 
 const optionDefinitions: object[] = [
   {
+    name: 'base',
+    alias: 'b',
+    type: String,
+    description: 'Base directory for inputs/outputs (required).',
+  },
+  {
     name: 'language',
     alias: 'l',
     type: String,
-    description: 'Limit to a language (English|Spanish)',
+    description: 'Limit to a language (English|Spanish).',
   },
   {
     name: 'county',
     alias: 'c',
     type: String,
-    description: 'Limit to county (do not include "County")',
+    description: 'Limit to county (do not include "County").',
   },
   {
     name: 'skip',
@@ -44,8 +51,8 @@ const optionDefinitions: object[] = [
   {
     name: 'out',
     alias: 'o',
-    type: String,
-    description: 'Directory to hold output files.',
+    type: Boolean,
+    description: 'Whether or not to write output files.',
   },
   {
     name: 'pretty',
@@ -87,7 +94,7 @@ export function printUsage(): void {
       optionList: optionDefinitions,
     },
     {
-      content: 'Example: npm run grants-2 -- -n 10 -dtp -o /path/to/my/outputs/',
+      content: 'Example: npm run grants-2 -- -n 10 -dtpo -b /my/base/path/',
     },
   ]);
 
@@ -100,11 +107,10 @@ export function printStartMessage(options: Options): void {
       options.language ? ` ${chalk.blue(options.language)}` : ''
     } applications, skipping ${chalk.blue(options.skip || 0)}, ${
       options.county ? `filtering to only include ${chalk.blue(`${options.county} County`)}, ` : ''
-    }\n`
+    }from ${chalk.blue(options.base)}\n`
   );
 }
 
 export function optionsSatisfied(options: Options): boolean {
-  // arbitrary -- assume that usage should be printed if no options are specified
-  return Object.keys(options).length > 0;
+  return !!options.base;
 }

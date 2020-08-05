@@ -25,34 +25,34 @@ Run this script with no options for help text:
 
 Run this script with options to produce a result:
 
-`npm run grants-2 -- -n 1 -dtp`
+`npm run grants-2 -- -n 1 -dtp -b /my/base/path/`
 
 This will throw an error, because the program can't find the needed input files. Create this folder structure, add the appropriate files in each folder, and update the paths in [grants-2/index.ts](grants-2/index.ts) as necessary -- it's probably easiest to start with a zip of an existing such folder structure, which is not included in this repository for obvious privacy reasons:
 
-* `/some/base/path/`
-  * `/some/base/path/Raw from Cognito/`
-  * `/some/base/path/Taxation/`
-  * `/some/base/path/WR30/`
-  * `/some/base/path/DOL Lists/`
-  * `/some/base/path/SAMS/`
-  * `/some/base/path/Grant Phase 1/`
-  * `/some/base/path/Policy Map/`
-  * `/some/base/path/Non-Declined Loans/`
+* `/my/base/path/`
+  * `/my/base/path/Raw from Cognito/`
+  * `/my/base/path/Taxation/`
+  * `/my/base/path/WR30/`
+  * `/my/base/path/DOL Lists/`
+  * `/my/base/path/SAMS/`
+  * `/my/base/path/Grant Phase 1/`
+  * `/my/base/path/Policy Map/`
+  * `/my/base/path/Non-Declined Loans/`
 
 Now run the above command again; it should print a JSON object representing 1 application. This is usseful for debugging, especially with the `dtp` options.
 
-To run the script in for production use, include an output path:
+To run the script in for production use, include the `-o` flag:
 
-`npm run grants-2 -- -n 10 -dtp -o /path/to/my/outputs/`
+`npm run grants-2 -- -n 10 -dtp -b /my/base/path/ -o`
 
-This will result in the generation of three files:
+This will result in the generation of three files in a `Output` folder within your base bath:
 
-* `/path/to/my/outputs/TEST-10-skipping-0-10-OUTPUTS.json`
+* `/my/base/path/Output/TEST-10-skipping-0-10-OUTPUTS.json`
   * gets fed to a Power Automate flow that creates an OLADatas object in CRM, which then causes an integration to generate many records
-* `/path/to/my/outputs/TEST-10-skipping-0-10-INPUTS.json`
+* `/my/base/path/Output/TEST-10-skipping-0-10-INPUTS.json`
   * gets fed to a Power Automate flow that uploads each object in the JSON to its corresponding records in CRM
   * this acts as an audit trail; all raw data that went into generating the OUTPUTS file is preserved herein the INPUTS file
-* `/path/to/my/outputs/TEST-10-skipping-0-1-DECLINES.json`
+* `/my/base/path/Output/TEST-10-skipping-0-1-DECLINES.json`
   * gets fed to a Power Automate flow that sends declinations to applicants
 
 ### grants

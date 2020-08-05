@@ -24,8 +24,6 @@ import { generateOlaDatas } from './outputs/ola-datas';
 import { getDecision } from './outputs/helpers';
 import { getFindings } from './outputs/findings';
 
-const BASE_PATH = '/Users/ross/NJEDA Grants Phase 2/All';
-
 function map<T extends Application, K>(
   applications: T[],
   fn: (application: T) => K,
@@ -76,6 +74,9 @@ async function main() {
     printUsage();
     return;
   }
+
+  const BASE_PATH = options.base;
+  const OUTPUT_PATH = path.join(options.base, 'Output');
 
   // load
   await loadGrantPhse1Data(
@@ -198,15 +199,15 @@ async function main() {
       options.language ? `-${options.language}` : ''
     }${options.county ? `-${options.county}` : ''}`;
     const declines: string = path.join(
-      options.out,
+      OUTPUT_PATH,
       `${base}-${declineObjects.length}-DECLINES.json`
     );
     const inputs: string = path.join(
-      options.out,
+      OUTPUT_PATH,
       `${base}-${decoratedApplications.length}-INPUTS.json`
     );
     const outputs: string = path.join(
-      options.out,
+      OUTPUT_PATH,
       `${base}-${decoratedApplications.length}-OUTPUTS.json`
     );
     const overwrite: boolean = !!options.force;
