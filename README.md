@@ -4,6 +4,8 @@ This repository contains a node.js command line interface (CLI) application that
 
 This takes some developer expertise to execute.
 
+*NOTE: this has not been tested on Windows systems.*
+
 ## Usage
 1. Install [node.js](https://nodejs.org/) on your system.
 2. Clone this repository: `git clone https://github.com/newjersey/crm-input-constructor.git`
