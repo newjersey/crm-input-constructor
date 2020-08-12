@@ -34,7 +34,7 @@ function printUsage() {
       optionList: optionDefinitions,
     },
     {
-      content: 'Example: node loans/split-fico.js --src ~/Downloads/fico.xlsx',
+      content: 'Example: node loans/split-fico.js --src ~/Downloads/fico.xlsx --dir ~/Downloads/fico/',
     },
   ]);
 
