@@ -191,6 +191,21 @@ async function main() {
       console.log(`  ${chalk.yellow(findings[key].toString().padStart(5))} ${key}`);
     });
 
+  // counties
+  const counties = decoratedApplications
+    .map(app => ({ [app.geography.County]: 1 }))
+    .reduce((accum: { [county: string]: number }, currentValue: { [county: string]: number }) => {
+      for (const [key, n] of Object.entries(currentValue)) {
+        accum[key] = accum[key] ? accum[key] + n : n;
+      }
+      return accum;
+    });
+  Object.keys(counties)
+    .sort()
+    .forEach(key => {
+      console.log(`  ${chalk.yellow(counties[key].toString().padStart(5))} ${key}`);
+    });
+
   // write
   if (options.out) {
     const n = options.count || 'all';
