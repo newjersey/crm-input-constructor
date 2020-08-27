@@ -58,6 +58,27 @@ export function reducibleFunding(app: DecoratedApplication): number {
   return grant + loan + ppp + eidg + other;
 }
 
+export function reducibleFundingDescription(app: DecoratedApplication): string {
+  const grant = grantPhase1AmountApproved(app) && 'NJEDA Small Business Emergency Assistance Phase 1 Grant Program';
+  const loan = app.nonDeclinedEdaLoan?.Amount && 'NJEDA Small Business Emergency Assistance Loan Program';
+  const ppp =
+    (bool(app.DOBAffidavit_SBAPPP) &&
+      isDobProgramApprovedOrInProgress(app.DOBAffidavit_SBAPPPDetails_Status_Value) &&
+      app.DOBAffidavit_SBAPPPDetails_Amount) &&
+      'Paycheck Protection Program (PPP)';
+  const eidg =
+    (bool(app.DOBAffidavit_SBAEIDG) &&
+      isDobProgramApprovedOrInProgress(app.DOBAffidavit_SBAEIDGDetails_Status_Value) &&
+      app.DOBAffidavit_SBAEIDGDetails_Amount) &&
+      'Economic Injury Disaster Grant (EIDG) Program';
+  const other =
+    (bool(app.DOBAffidavit_OtherStateLocal) &&
+      app.DOBAffidavit_OtherStateLocalDetails_TotalAmountApprovedInProcess) &&
+      'another program through any state or local municipality';
+
+  return [grant, loan, ppp, eidg, other].filter(s => s).join(', ');
+}
+
 export function adjustedYoyDecline(app: DecoratedApplication): number | null {
   const _cappedMarchAprilMay2019Revenue: number | undefined = cappedMarchAprilMay2019Revenue(app);
 
@@ -66,6 +87,19 @@ export function adjustedYoyDecline(app: DecoratedApplication): number | null {
   }
 
   return _cappedMarchAprilMay2019Revenue - adjustedMarchAprilMay2020Revenue(app);
+}
+
+export function wasYoyDeclineAdjusted(app: DecoratedApplication): boolean | null {
+  const reportedMarchAprilMay2019: number | undefined = app.RevenueComparison_MarchAprilMay2019;
+  const _cappedMarchAprilMay2019Revenue: number | undefined = cappedMarchAprilMay2019Revenue(app);
+  const didAdjust2019 = reportedMarchAprilMay2019 !== _cappedMarchAprilMay2019Revenue;
+  const didAdjust2020 = app.RevenueComparison_MarchAprilMay2020 !== adjustedMarchAprilMay2020Revenue(app);
+
+  if (typeof _cappedMarchAprilMay2019Revenue === 'undefined') {
+    return null;
+  }
+
+  return didAdjust2019 || didAdjust2020;
 }
 
 export function discountedAwardBasis(app: DecoratedApplication): number {

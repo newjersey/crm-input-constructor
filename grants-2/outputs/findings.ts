@@ -237,6 +237,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `It is unknown if the organization conducts or purveys “adult” activities, services, products or materials (question left blank on application)`,
     severity: Decision.Review,
+    slug: 'MissingAdult',
   },
   {
     name: 'Business established in 2019 or 2020',
@@ -246,24 +247,28 @@ const FINDING_DEFINITIONS: FindingDef[] = [
         <number>app.Business_DateEstablished
       ).toLocaleDateString()})`,
     severity: Decision.Review,
+    slug: 'Year',
   },
   {
     name: 'Religious Affiliation',
     trigger: app => bool(app.Business_Religious),
     messageGenerator: app => `Business has religious affiliations`,
     severity: Decision.Review,
+    slug: 'Religious',
   },
   {
     name: 'Lobbying and Political Activities',
     trigger: app => app.Business_LobbyingPolitical === 'Yes',
     messageGenerator: app => `Business engages in lobbying and/or political activities`,
     severity: Decision.Review,
+    slug: 'Political',
   },
   {
     name: 'NAICS Code (813)',
     trigger: app => app.NAICSCode.startsWith('813'),
     messageGenerator: app => `NAICS code starts with 813: ${app.NAICSCode}`,
     severity: Decision.Review,
+    slug: 'NAICS',
   },
   {
     name: 'On SAM exclusion list',
@@ -273,6 +278,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
         .map(match => `DUNS ${match.DUNS}`)
         .join(', ')}`,
     severity: Decision.Review,
+    slug: 'SAMS',
   },
   {
     // unverified
@@ -281,6 +287,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Business is currently under review for Phase 1 Grant funding (${app.grantPhase1?.['OLA']})`,
     severity: Decision.Review,
+    slug: 'Phase1',
   },
   {
     // unverified
@@ -289,6 +296,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
       getEligibleOpportunityZoneValue(app) === EligibleOpportunityZoneValues.Not_Found,
     messageGenerator: app => `Business address does not have a census tract`,
     severity: Decision.Review,
+    slug: 'NoCensusTract',
   },
   {
     name: 'Duplicate Address',
@@ -298,6 +306,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
         ', '
       )})`,
     severity: Decision.Review,
+    slug: 'DupAddress',
   },
   {
     name: 'Unreasonable revenue decline',
@@ -307,6 +316,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
         <number>adjustedYoyChange(app)
       )}) is unreasonably high given business operational capacity (${getCapacityOpen(app)})`,
     severity: Decision.Review,
+    slug: 'BusinessCapacity',
   },
   {
     name: 'No unmet need',
@@ -318,6 +328,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
         reducibleFunding(app)
       )})`,
     severity: Decision.Review,
+    slug: 'NoUnmetNeed',
   },
   {
     name: 'Unmet Need is less than Discounted Award Basis',
@@ -329,6 +340,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
         discountedAwardBasis(app)
       )}`,
     severity: Decision.Review,
+    slug: 'AdjustedAwardSize',
   },
   {
     name: 'Missing WR-30 but expect employees',
@@ -338,6 +350,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `No WR-30 found for applicant, but applicant reported ${app.Business_W2EmployeesFullTime} full-time W2 employees and ${app.Business_W2EmployeesPartTime} part-time W2 employees`,
     severity: Decision.Review,
+    slug: 'WR30',
   },
   {
     name: 'Sales tax increased',
@@ -349,6 +362,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
         decimals: 1,
       })} from 2019 to 2020`,
     severity: Decision.Review,
+    slug: 'TaxIncrease',
   },
   {
     name: 'No Taxation record (nonprofits)',
@@ -359,12 +373,14 @@ const FINDING_DEFINITIONS: FindingDef[] = [
         app
       )} that is not registered with Taxation, did not file taxes with Taxation for 2018 or 2019, and did not file sales/usage taxes with Taxation in 2019 or 2020`,
     severity: Decision.Review,
+    slug: 'Taxation',
   },
   {
     name: 'Known to Taxation but no filings',
     trigger: app => app.taxation['Clean Ind'] !== 'X' && hasNoTaxFilings(app),
     messageGenerator: app => `Organization is recognized by Taxation, but has no Taxation filings`,
     severity: Decision.Review,
+    slug: 'Taxation',
   },
   {
     name: 'CBT filer reports unreasonably high 2019 revenue',
@@ -380,6 +396,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
         getTaxationReportedTaxFilingAndYear(app).year
       } revenues reported by Taxation (${formatDollars(<number>cbtRevenue(app))}) when annualized`,
     severity: Decision.Review,
+    slug: 'High2019Revenue',
   },
   {
     name: 'TGI/Partnership filer reports unreasonably high 2019 revenue',
@@ -398,6 +415,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
         <number>getTaxationReportedNetIncomeLoss(app)
       )}`,
     severity: Decision.Review,
+    slug: 'High2019Revenue',
   },
   {
     name: 'Other program indicated but amount is 0 (PPP)',
@@ -408,6 +426,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Applicant reported PPP funding approved or in progress but did not indicate the amount`,
     severity: Decision.Review,
+    slug: 'MissingDOBAmount',
   },
   {
     name: 'Other program indicated but amount is 0 (EIDG)',
@@ -418,6 +437,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Applicant reported EIDG funding approved or in progress but did not indicate the amount`,
     severity: Decision.Review,
+    slug: 'MissingDOBAmount',
   },
   {
     name: 'Other program indicated but amount is 0 (other stat/local)',
@@ -427,8 +447,8 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Applicant reported other disaster funding approved or in progress ("${app.DOBAffidavit_OtherStateLocalDetails_ProgramDescriptions}") but did not indicate the amount`,
     severity: Decision.Review,
+    slug: 'MissingDOBAmount',
   },
-  // UNVERIFIED--
   // keep these last, since they could include long text:
   {
     name: 'Background Question #1 (convictions)',
@@ -436,6 +456,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Additional information provided on background question #1 (convictions): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails1}"`,
     severity: Decision.Review,
+    slug: 'Background1',
   },
   {
     name: 'Background Question #2 (denied licensure)',
@@ -443,6 +464,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Additional information provided on background question #2 (denied licensure): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails2}"`,
     severity: Decision.Review,
+    slug: 'Background2',
   },
   {
     name: 'Background Question #3 (public contractor subcontract ineligibility)',
@@ -450,6 +472,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Additional information provided on background question #3 (public contractor subcontract ineligibility): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails3}"`,
     severity: Decision.Review,
+    slug: 'Background3',
   },
   {
     name: 'Background Question #4 (violated the terms of a public agreement)',
@@ -457,6 +480,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Additional information provided on background question #4 (violated the terms of a public agreement): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails4}"`,
     severity: Decision.Review,
+    slug: 'Background4',
   },
   {
     name: 'Background Question #5 (injunction, order or lien)',
@@ -464,6 +488,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Additional information provided on background question #5 (injunction, order or lien): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails5}"`,
     severity: Decision.Review,
+    slug: 'Background5',
   },
   {
     name: 'Background Question #6 (presently indicted)',
@@ -471,6 +496,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Additional information provided on background question #6 (presently indicted): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails6}"`,
     severity: Decision.Review,
+    slug: 'Background6',
   },
 ];
 

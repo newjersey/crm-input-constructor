@@ -13,16 +13,17 @@ import {
   init as loanNonDeclinedEdaLoanData,
 } from './inputs/non-declined-loans';
 import { addPolicyMapData, init as loadPolicyMapDada } from './inputs/policy-map';
+import { addReviewNeededData, init as loadReviewNeededData } from './inputs/review-needed';
 import { addSamsData, init as loadSamsData } from './inputs/sams';
 import { addTaxationData, init as loadTaxationData } from './inputs/taxation';
 import { addWR30Data, init as loadWR30Data } from './inputs/wr30';
 import { options, optionsSatisfied, printStartMessage, printUsage } from './options';
-
 import { addDuplicateData } from './inputs/duplicates';
 import { addGeographyData } from './inputs/geography';
 import { generateOlaDatas } from './outputs/ola-datas';
 import { getDecision } from './outputs/helpers';
 import { getFindings } from './outputs/findings';
+import { Review, generateReview } from './outputs/review';
 
 function map<T extends Application, K>(
   applications: T[],
@@ -79,6 +80,9 @@ async function main() {
   const OUTPUT_PATH = path.join(options.base, 'Output');
 
   // load
+  await loadReviewNeededData(
+    path.join(BASE_PATH, 'Review Needed', 'Review List 8-26-2020 7am.xlsx')
+  );
   await loadGrantPhse1Data(
     path.join(BASE_PATH, 'Grant Phase 1', 'Phase 1 Statuses As Of 7-16-2020 5-10pm.xlsx')
   );
@@ -122,9 +126,10 @@ async function main() {
   const apps7 = map(apps6, addTaxationData, 'Applying Taxation data...');
   const apps8 = map(apps7, addSamsData, 'Applying SAMS data...');
   const apps9 = map(apps8, addWR30Data, 'Applying WR-30 data...');
+  const apps10 = map(apps9, addReviewNeededData, 'Applying review-needed data...');
 
   // indirection
-  let decoratedApplications: DecoratedApplication[] = apps9;
+  let decoratedApplications: DecoratedApplication[] = apps10;
 
   // limit to county
   // NOTE: ApplicationSequenceID is generated prior to this step, and will therefore
@@ -157,6 +162,11 @@ async function main() {
     'Generating OLADatas objects...'
   );
 
+  // generate reviews
+  const reviewObjects = <Review[]>(
+    map(decoratedApplications, generateReview, 'Generating review objects...').filter(r => r)
+  );
+
   // generate declines
   const declineObjects = <Decline[]>(
     map(decoratedApplications, generateDecline, 'Generating decline objects...').filter(d => d)
@@ -166,6 +176,22 @@ async function main() {
   if (options.pretty) {
     console.dir(olaDatasArray, { depth: null });
   }
+
+  // counties
+  console.log('\nCounties:');
+  const counties = decoratedApplications
+    .map(app => ({ [app.geography.County]: 1 }))
+    .reduce((accum: { [county: string]: number }, currentValue: { [county: string]: number }) => {
+      for (const [key, n] of Object.entries(currentValue)) {
+        accum[key] = accum[key] ? accum[key] + n : n;
+      }
+      return accum;
+    });
+  Object.keys(counties)
+    .sort()
+    .forEach(key => {
+      console.log(`  ${chalk.yellow(counties[key].toString().padStart(5))} ${key}`);
+    });
 
   // stats
   const stats: { [key in Decision]?: number } = {};
@@ -191,21 +217,6 @@ async function main() {
       console.log(`  ${chalk.yellow(findings[key].toString().padStart(5))} ${key}`);
     });
 
-  // counties
-  const counties = decoratedApplications
-    .map(app => ({ [app.geography.County]: 1 }))
-    .reduce((accum: { [county: string]: number }, currentValue: { [county: string]: number }) => {
-      for (const [key, n] of Object.entries(currentValue)) {
-        accum[key] = accum[key] ? accum[key] + n : n;
-      }
-      return accum;
-    });
-  Object.keys(counties)
-    .sort()
-    .forEach(key => {
-      console.log(`  ${chalk.yellow(counties[key].toString().padStart(5))} ${key}`);
-    });
-
   // write
   if (options.out) {
     const n = options.count || 'all';
@@ -213,6 +224,7 @@ async function main() {
     const base = `${env}-${n}-skipping-${options.skip || 0}${
       options.language ? `-${options.language}` : ''
     }${options.county ? `-${options.county}` : ''}`;
+    const reviews: string = path.join(OUTPUT_PATH, `${base}-${reviewObjects.length}-REVIEW.json`);
     const declines: string = path.join(
       OUTPUT_PATH,
       `${base}-${declineObjects.length}-DECLINES.json`
@@ -230,10 +242,12 @@ async function main() {
     console.log(
       `\nWriting JSON files:\
          \n  Declines: ${chalk.blue(declines)}\
+         \n  Reviews: ${chalk.blue(reviews)}\
          \n  Inputs: ${chalk.blue(inputs)}\
          \n  Output: ${chalk.blue(outputs)}`
     );
 
+    writeFile(reviews, JSON.stringify(reviewObjects), overwrite);
     writeFile(declines, JSON.stringify(declineObjects), overwrite);
     writeFile(inputs, JSON.stringify(decoratedApplications), overwrite);
     writeFile(outputs, JSON.stringify(olaDatasArray), overwrite);

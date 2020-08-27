@@ -8,6 +8,7 @@ import { PolicyMap } from '../inputs/policy-map';
 import { Sams } from '../inputs/sams';
 import { Taxation } from '../inputs/taxation';
 import { WR30 } from '../inputs/wr30';
+import { ReviewNeeded } from '../inputs/review-needed';
 
 export enum Decision {
   Approve = 'Approve',
@@ -174,7 +175,8 @@ export type DecoratedApplication = Application &
   PolicyMap &
   Sams &
   Taxation &
-  WR30;
+  WR30 &
+  ReviewNeeded;
 
 export interface QuarterlyWageData {
   fteCount: NullableNumber;
@@ -200,6 +202,11 @@ export interface Finding_Decline {
   slug: string;
 }
 
+export interface Finding_Review {
+  severity: Decision.Review;
+  slug: string;
+}
+
 interface FindingDef_Base {
   trigger(application: DecoratedApplication): boolean;
   messageGenerator(application: DecoratedApplication): string;
@@ -215,6 +222,7 @@ interface FindingDef_Decline extends FindingDef_Base {
 
 interface FindingDef_Review extends FindingDef_Base {
   severity: Decision.Review;
+  slug: string;
 }
 
 export type FindingDef = FindingDef_Decline | FindingDef_Review;
