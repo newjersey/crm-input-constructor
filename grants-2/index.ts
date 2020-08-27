@@ -81,7 +81,7 @@ async function main() {
 
   // load
   await loadReviewNeededData(
-    path.join(BASE_PATH, 'Review Needed', 'Review List 8-26-2020 7am.xlsx')
+    path.join(BASE_PATH, 'Review Needed', 'NJEDA Review List 8-27-2020 1-30pm.xlsx')
   );
   await loadGrantPhse1Data(
     path.join(BASE_PATH, 'Grant Phase 1', 'Phase 1 Statuses As Of 7-16-2020 5-10pm.xlsx')
