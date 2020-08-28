@@ -287,7 +287,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Business is currently under review for Phase 1 Grant funding (${app.grantPhase1?.['OLA']})`,
     severity: Decision.Review,
-    slug: 'Phase1',
+    slug: null,
   },
   {
     // unverified
@@ -456,7 +456,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Additional information provided on background question #1 (convictions): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails1}"`,
     severity: Decision.Review,
-    slug: 'Background1',
+    slug: null,
   },
   {
     name: 'Background Question #2 (denied licensure)',
@@ -464,7 +464,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Additional information provided on background question #2 (denied licensure): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails2}"`,
     severity: Decision.Review,
-    slug: 'Background2',
+    slug: null,
   },
   {
     name: 'Background Question #3 (public contractor subcontract ineligibility)',
@@ -472,7 +472,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Additional information provided on background question #3 (public contractor subcontract ineligibility): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails3}"`,
     severity: Decision.Review,
-    slug: 'Background3',
+    slug: null,
   },
   {
     name: 'Background Question #4 (violated the terms of a public agreement)',
@@ -480,7 +480,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Additional information provided on background question #4 (violated the terms of a public agreement): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails4}"`,
     severity: Decision.Review,
-    slug: 'Background4',
+    slug: null,
   },
   {
     name: 'Background Question #5 (injunction, order or lien)',
@@ -488,7 +488,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Additional information provided on background question #5 (injunction, order or lien): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails5}"`,
     severity: Decision.Review,
-    slug: 'Background5',
+    slug: null,
   },
   {
     name: 'Background Question #6 (presently indicted)',
@@ -496,7 +496,7 @@ const FINDING_DEFINITIONS: FindingDef[] = [
     messageGenerator: app =>
       `Additional information provided on background question #6 (presently indicted): "${app.AdditionalBackgroundInformation_BackgroundQuestionDetails6}"`,
     severity: Decision.Review,
-    slug: 'Background6',
+    slug: null,
   },
 ];
 
@@ -504,7 +504,7 @@ export function getFindings(app: DecoratedApplication): Finding[] {
   const findings: Finding[] = FINDING_DEFINITIONS.filter(def => def.trigger(app)).map(def => ({
     message: def.messageGenerator(app),
     publicMessage: 'publicMessageGenerator' in def ? def.publicMessageGenerator(app) : undefined,
-    slug: 'slug' in def ? def.slug : undefined,
+    slug: 'slug' in def ? (def.slug || undefined) : undefined,
     severity: def.severity,
     name: def.name,
   }));

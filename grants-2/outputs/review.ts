@@ -31,7 +31,7 @@ export interface Review {
   appeal_url: string;
 }
 
-const getAppealUrl = (app: DecoratedApplication, findings: Finding_Review[]): string => {
+const getAppealUrl = (app: DecoratedApplication, reasons: string[]): string => {
   const _adjustedYoyChange = adjustedYoyChange(app);
   const _unmetNeed = unmetNeed(app);
   const entry = {
@@ -43,7 +43,7 @@ const getAppealUrl = (app: DecoratedApplication, findings: Finding_Review[]): st
       YearFounded: app.Business_YearEstablished,
       Expiration: format(addDays(new Date(), 30), 'yyyy-MM-dd'),
       Email: app.ContactInformation_Email.trim(),
-      Reasons: [...new Set(findings.map(finding => finding.slug))], // unique slugs
+      Reasons: reasons,
       TaxYear: getTaxationReportedTaxFilingAndYear(app).year,
       DiscountedAwardBasis: formatDollars(discountedAwardBasis(app)),
       UnmetNeed: _unmetNeed && formatDollars(_unmetNeed),
@@ -76,6 +76,7 @@ export const generateReview = (app: DecoratedApplication): Review | null => {
   const findings = <Finding_Review[]>(
     getFindings(app).filter(finding => finding.severity === Decision.Review)
   );
+  const reasons: string[] = [...new Set(findings.map(finding => finding.slug).filter(s => s))] // unique truthy slugs
   const city_state_zip = `${app.geography.City.trim()}, ${app.ContactInformation_PrimaryBusinessAddress_State.trim()} ${app.ContactInformation_PrimaryBusinessAddress_PostalCode.padStart(
     5,
     '0'
@@ -90,6 +91,6 @@ export const generateReview = (app: DecoratedApplication): Review | null => {
     address1: app.ContactInformation_PrimaryBusinessAddress_Line1.toUpperCase().trim(),
     address2: app.ContactInformation_PrimaryBusinessAddress_Line2.toUpperCase().trim(),
     city_state_zip,
-    appeal_url: getAppealUrl(app, findings),
+    appeal_url: getAppealUrl(app, reasons),
   };
 };

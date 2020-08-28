@@ -222,7 +222,7 @@ interface FindingDef_Decline extends FindingDef_Base {
 
 interface FindingDef_Review extends FindingDef_Base {
   severity: Decision.Review;
-  slug: string;
+  slug: string | null; // null means don't include in reviewObjects
 }
 
 export type FindingDef = FindingDef_Decline | FindingDef_Review;
