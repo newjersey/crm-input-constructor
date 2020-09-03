@@ -1,5 +1,3 @@
-.vscode
-
 # Program output
 *.txt
 
@@ -110,3 +108,4 @@ dist
 
 loans/grant-eins.json
 grants-2/**/*.js
+grants-2/**/*.js.map
