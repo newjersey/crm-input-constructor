@@ -464,36 +464,36 @@ export function getMonitoringType(app: types.DecoratedApplication): types.Monito
 export function getTaxationReportedTaxFilingAndYear(
   app: types.DecoratedApplication
 ): types.TaxationFiling {
-  if (app.taxation['2019 CBT']) {
+  if (app.taxation['2019 CBT'] && app.taxation['2019 CBT Amt'] != null) {
     return { type: types.TaxationReportedTaxFilingValues.CBT, year: types.RevenueYears._2019 };
   }
 
-  if (app.taxation['2019 Part']) {
+  if (app.taxation['2019 Part'] && app.taxation['2019 Part Amt'] != null) {
     return {
       type: types.TaxationReportedTaxFilingValues.Partnership,
       year: types.RevenueYears._2019,
     };
   }
 
-  if (app.taxation['2019 TGI']) {
+  if (app.taxation['2019 TGI'] && app.taxation['2019 TGI Amt'] != null) {
     return {
       type: types.TaxationReportedTaxFilingValues.Sole_Prop_SMLLC,
       year: types.RevenueYears._2019,
     };
   }
 
-  if (app.taxation['2018 CBT']) {
+  if (app.taxation['2018 CBT'] && app.taxation['2018 CBT Amt'] != null) {
     return { type: types.TaxationReportedTaxFilingValues.CBT, year: types.RevenueYears._2018 };
   }
 
-  if (app.taxation['2018 Part']) {
+  if (app.taxation['2018 Part'] && app.taxation['2018 Part Amt'] != null) {
     return {
       type: types.TaxationReportedTaxFilingValues.Partnership,
       year: types.RevenueYears._2018,
     };
   }
 
-  if (app.taxation['2018 TGI']) {
+  if (app.taxation['2018 TGI'] && app.taxation['2018 TGI Amt'] != null) {
     return {
       type: types.TaxationReportedTaxFilingValues.Sole_Prop_SMLLC,
       year: types.RevenueYears._2018,
