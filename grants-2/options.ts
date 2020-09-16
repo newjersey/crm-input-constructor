@@ -8,6 +8,7 @@ export interface Options {
   readonly base: string;
   readonly language?: Languages;
   readonly county?: string;
+  readonly ozonly?: boolean;
   readonly skip?: number;
   readonly count?: number;
   readonly out?: boolean;
@@ -34,7 +35,13 @@ const optionDefinitions: object[] = [
     name: 'county',
     alias: 'c',
     type: String,
-    description: 'Limit to county (do not include "County").',
+    description: 'Limit to county (do not include "County"); can be a list.',
+  },
+  {
+    name: 'ozonly',
+    alias: 'z',
+    type: Boolean,
+    description: 'Limit to those in eligible Opportunity Zones.',
   },
   {
     name: 'skip',
@@ -105,7 +112,9 @@ export function printStartMessage(options: Options): void {
   console.log(
     `Generating OLA Datas creation JSON for ${chalk.blue(options.count ? options.count : 'all')}${
       options.language ? ` ${chalk.blue(options.language)}` : ''
-    } applications, skipping ${chalk.blue(options.skip || 0)}, ${
+    } applications${
+      options.ozonly ? ` which are ${chalk.blue('only')} in eligible Opportunity Zones` : ''
+    }, skipping ${chalk.blue(options.skip || 0)}, ${
       options.county ? `filtering to only include ${chalk.blue(`${options.county} County`)}, ` : ''
     }from ${chalk.blue(options.base)}\n`
   );

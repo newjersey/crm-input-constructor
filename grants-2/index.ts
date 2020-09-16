@@ -12,7 +12,11 @@ import {
   addNonDeclinedEdaLoanData,
   init as loanNonDeclinedEdaLoanData,
 } from './inputs/non-declined-loans';
-import { addPolicyMapData, init as loadPolicyMapDada } from './inputs/policy-map';
+import {
+  addPolicyMapData,
+  init as loadPolicyMapDada,
+  EligibilityStatus as OZEligibilityStatus,
+} from './inputs/policy-map';
 import { addReviewNeededData, init as loadReviewNeededData } from './inputs/review-needed';
 import { addSamsData, init as loadSamsData } from './inputs/sams';
 import { addTaxationData, init as loadTaxationData } from './inputs/taxation';
@@ -135,8 +139,20 @@ async function main() {
   // NOTE: ApplicationSequenceID is generated prior to this step, and will therefore
   //       reflect the order of application submission (not the order of CRM entry).
   if (options.county) {
+    decoratedApplications = decoratedApplications.filter(app =>
+      options.county?.split(/\W+/)?.includes(app.geography.County)
+    );
+  }
+
+  // limit to eligible opportunity zones
+  // NOTE: ApplicationSequenceID is generated prior to this step, and will therefore
+  //       reflect the order of application submission (not the order of CRM entry).
+  if (options.ozonly) {
     decoratedApplications = decoratedApplications.filter(
-      app => app.geography.County === options.county
+      app =>
+        app.policyMap?.eligibilityStatus === OZEligibilityStatus.Eligible ||
+        app.policyMap?.eligibilityStatus === OZEligibilityStatus.Eligible_Contiguous ||
+        app.policyMap?.eligibilityStatus === OZEligibilityStatus.Eligible_LIC
     );
   }
 
@@ -223,7 +239,9 @@ async function main() {
     const env = options.test ? 'TEST' : 'PROD';
     const base = `${env}-${n}-skipping-${options.skip || 0}${
       options.language ? `-${options.language}` : ''
-    }${options.county ? `-${options.county}` : ''}`;
+    }${options.ozonly ? '-OZ' : ''}${
+      options.county ? `-${options.county.replace(/\W+/g, '_')}` : ''
+    }`;
     const reviews: string = path.join(OUTPUT_PATH, `${base}-${reviewObjects.length}-REVIEW.json`);
     const declines: string = path.join(
       OUTPUT_PATH,
