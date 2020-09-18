@@ -65,9 +65,9 @@ const getAppealUrl = (app: DecoratedApplication, reasons: string[]): string => {
 };
 
 export const generateReview = (app: DecoratedApplication): Review | null => {
-  if (!app.reviewNeeded) {
-    return null;
-  }
+  // if (!app.reviewNeeded) {
+  //   return null;
+  // }
   
   if (getDecision(app) !== Decision.Review) {
     return null;
@@ -84,7 +84,7 @@ export const generateReview = (app: DecoratedApplication): Review | null => {
 
   return {
     application_id: app.ApplicationId,
-    email: app.reviewNeeded.email,
+    email: app.reviewNeeded?.email || app.ContactInformation_Email,
     first_name: app.ContactInformation_ContactName_First.trim(),
     last_name: app.ContactInformation_ContactName_Last.trim(),
     business_name: app.ContactInformation_BusinessName.trim(),
