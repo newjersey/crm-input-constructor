@@ -60,7 +60,7 @@ function main() {
   rows.forEach(row => {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet([row]);
-    const path = `${options.dir}/FICO_CV19L${row.CustomerKey}.xlsx`;
+    const path = `${options.dir}/FICO_CV19L${row['CUSTOMER REFERENCE NUMBER']}.xlsx`;
 
     wb.SheetNames.push(SHEET_NAME);
     wb.Sheets[SHEET_NAME] = ws;
