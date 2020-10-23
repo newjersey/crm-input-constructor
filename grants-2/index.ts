@@ -72,6 +72,14 @@ function writeFile(path: string, content: string, overwrite: boolean): void {
   );
 }
 
+function isOz(app: DecoratedApplication) {
+  return (
+    app.policyMap?.eligibilityStatus === OZEligibilityStatus.Eligible ||
+    app.policyMap?.eligibilityStatus === OZEligibilityStatus.Eligible_Contiguous ||
+    app.policyMap?.eligibilityStatus === OZEligibilityStatus.Eligible_LIC
+  );
+}
+
 async function main() {
   if (optionsSatisfied(options)) {
     printStartMessage(options);
@@ -148,12 +156,14 @@ async function main() {
   // NOTE: ApplicationSequenceID is generated prior to this step, and will therefore
   //       reflect the order of application submission (not the order of CRM entry).
   if (options.ozonly) {
-    decoratedApplications = decoratedApplications.filter(
-      app =>
-        app.policyMap?.eligibilityStatus === OZEligibilityStatus.Eligible ||
-        app.policyMap?.eligibilityStatus === OZEligibilityStatus.Eligible_Contiguous ||
-        app.policyMap?.eligibilityStatus === OZEligibilityStatus.Eligible_LIC
-    );
+    decoratedApplications = decoratedApplications.filter(app => isOz(app));
+  }
+
+  // limit to non-opportunity-zone-eligible areas
+  // NOTE: ApplicationSequenceID is generated prior to this step, and will therefore
+  //       reflect the order of application submission (not the order of CRM entry).
+  if (options.nooz) {
+    decoratedApplications = decoratedApplications.filter(app => !isOz(app));
   }
 
   // limit to language
