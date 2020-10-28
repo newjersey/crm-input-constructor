@@ -8,6 +8,7 @@
     "loans": "node loans/index.js",
     "grant-declines": "node grants/declines.js",
     "grants-2": "tsc && node grants-2/index.js",
+    "wr30": "tsc && node grants-2/wr30.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
