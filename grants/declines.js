@@ -262,8 +262,9 @@ function appeal_url(application) {
   const json = JSON.stringify(entry);
   const buffer = Buffer.from(json);
   const entryBase64 = buffer.toString('base64');
+  const encodedEntry = encodeURIComponent(entryBase64);
 
-  return `https://forms.business.nj.gov/grant-appeal/?code=${entryBase64}`;
+  return `https://forms.business.nj.gov/grant-appeal/?code=${encodedEntry}`;
 }
 
 function businessNameWithDBA(application) {

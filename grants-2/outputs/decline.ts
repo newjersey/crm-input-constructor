@@ -36,8 +36,9 @@ const getAppealUrl = (app: DecoratedApplication, findings: Finding_Decline[]): s
   const json = JSON.stringify(entry);
   const buffer = Buffer.from(json);
   const entryBase64 = buffer.toString('base64');
+  const encodedEntry = encodeURIComponent(entryBase64);
 
-  return `https://forms.business.nj.gov/grant-2-appeal/?code=${entryBase64}`;
+  return `https://forms.business.nj.gov/grant-2-appeal/?code=${encodedEntry}`;
 };
 
 export const generateDecline = (app: DecoratedApplication): Decline | null => {

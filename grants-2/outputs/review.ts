@@ -61,8 +61,9 @@ const getAppealUrl = (app: DecoratedApplication, reasons: string[]): string => {
   const json = JSON.stringify(entry);
   const buffer = Buffer.from(json);
   const entryBase64 = buffer.toString('base64');
+  const encodedEntry = encodeURIComponent(entryBase64);
 
-  return `${host}/grants-2-review/?code=${entryBase64}`;
+  return `${host}/grants-2-review/?code=${encodedEntry}`;
 };
 
 export const generateReview = (app: DecoratedApplication): Review | null => {
@@ -92,6 +93,7 @@ export const generateReview = (app: DecoratedApplication): Review | null => {
     address1: app.ContactInformation_PrimaryBusinessAddress_Line1.toUpperCase().trim(),
     address2: app.ContactInformation_PrimaryBusinessAddress_Line2.toUpperCase().trim(),
     city_state_zip,
+    reasons,
     appeal_url: getAppealUrl(app, reasons),
   };
 };
