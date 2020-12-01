@@ -24,7 +24,7 @@ const getReasons = (findings: Finding_Decline[]): string[] => {
 const getAppealUrl = (app: DecoratedApplication, findings: Finding_Decline[]): string => {
   const entry = {
     ApplicationID: app.ApplicationId,
-    EntityName: app.ContactInformation_BusinessName.trim().trim(),
+    EntityName: app.ContactInformation_BusinessName.trim(),
     EIN: app.Business_TIN.trim(),
     NAICS: app.NAICSCode,
     YearFounded: app.Business_YearEstablished,
