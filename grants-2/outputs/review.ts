@@ -29,6 +29,7 @@ export interface Review {
   address2: string;
   city_state_zip: string;
   appeal_url: string;
+  reasons: string[];
 }
 
 const getAppealUrl = (app: DecoratedApplication, reasons: string[]): string => {

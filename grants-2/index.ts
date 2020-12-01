@@ -190,7 +190,7 @@ async function main() {
 
   // generate reviews
   const reviewObjects = <Review[]>(
-    map(decoratedApplications, generateReview, 'Generating review objects...').filter(r => r)
+    map(decoratedApplications, generateReview, 'Generating review objects...').filter(r => r?.reasons?.length)
   );
 
   // generate declines
