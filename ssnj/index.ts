@@ -17,7 +17,6 @@ import {
   init as loadPolicyMapDada,
   EligibilityStatus as OZEligibilityStatus,
 } from './inputs/policy-map';
-import { addReviewNeededData, init as loadReviewNeededData } from './inputs/review-needed';
 import { addSamsData, init as loadSamsData } from './inputs/sams';
 import { addTaxationData, init as loadTaxationData } from './inputs/taxation';
 import { addWR30Data, init as loadWR30Data } from './inputs/wr30';
@@ -57,9 +56,9 @@ function map<T extends Application, K>(
   return result;
 }
 
-function writeFile(path: string, content: string, overwrite: boolean): void {
+function writeFile(_path: string, content: string, overwrite: boolean): void {
   fs.writeFile(
-    path,
+    _path,
     content,
     {
       encoding: 'utf8',
@@ -92,9 +91,6 @@ async function main() {
   const OUTPUT_PATH = path.join(options.base, 'Output');
 
   // load
-  await loadReviewNeededData(
-    path.join(BASE_PATH, 'Review Needed', 'NJEDA Review List 8-27-2020 1-30pm.xlsx')
-  );
   await loadGrantPhse1Data(
     path.join(BASE_PATH, 'Grant Phase 1', 'Phase 1 Statuses As Of 7-16-2020 5-10pm.xlsx')
   );
@@ -138,10 +134,9 @@ async function main() {
   const apps7 = map(apps6, addTaxationData, 'Applying Taxation data...');
   const apps8 = map(apps7, addSamsData, 'Applying SAMS data...');
   const apps9 = map(apps8, addWR30Data, 'Applying WR-30 data...');
-  const apps10 = map(apps9, addReviewNeededData, 'Applying review-needed data...');
 
   // indirection
-  let decoratedApplications: DecoratedApplication[] = apps10;
+  let decoratedApplications: DecoratedApplication[] = apps9;
 
   // limit to county
   // NOTE: ApplicationSequenceID is generated prior to this step, and will therefore
