@@ -1,14 +1,9 @@
 import { Application } from '../inputs/applications';
 import { Dol } from '../inputs/dol';
 import { Duplicates } from '../inputs/duplicates';
-import { Geography } from '../inputs/geography';
-import { GrantPhase1 } from '../inputs/grant-phase-1';
-import { NonDeclinedEdaLoan } from '../inputs/non-declined-loans';
-import { PolicyMap } from '../inputs/policy-map';
 import { Sams } from '../inputs/sams';
 import { Taxation } from '../inputs/taxation';
 import { WR30 } from '../inputs/wr30';
-import { ReviewNeeded } from '../inputs/review-needed';
 
 export enum Decision {
   Approve = 'Approve',
@@ -169,14 +164,9 @@ export type CapacityOpen = RemainOpenCapacities | null;
 export type DecoratedApplication = Application &
   Dol &
   Duplicates &
-  Geography &
-  GrantPhase1 &
-  NonDeclinedEdaLoan &
-  PolicyMap &
   Sams &
   Taxation &
-  WR30 &
-  ReviewNeeded;
+  WR30;
 
 export interface QuarterlyWageData {
   fteCount: NullableNumber;
