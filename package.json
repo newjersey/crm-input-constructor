@@ -9,6 +9,7 @@
     "grant-declines": "node grants/declines.js",
     "grants-2": "tsc && node grants-2/index.js",
     "wr30": "tsc && node grants-2/wr30.js",
+    "ssnj": "ts-node ssnj/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
