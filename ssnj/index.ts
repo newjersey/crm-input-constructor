@@ -5,7 +5,6 @@ const path = require('path');
 
 import { Application, getApplications } from './inputs/applications';
 import { Decision, DecoratedApplication, OlaDatas } from './outputs/types';
-import { Decline, generateDecline } from './outputs/decline';
 import { addDolData, init as loadDolData } from './inputs/dol';
 import { addGrantPhase1Data, init as loadGrantPhse1Data } from './inputs/grant-phase-1';
 import {
@@ -26,7 +25,6 @@ import { addGeographyData } from './inputs/geography';
 import { generateOlaDatas } from './outputs/ola-datas';
 import { getDecision } from './outputs/helpers';
 import { getFindings } from './outputs/findings';
-import { Review, generateReview } from './outputs/review';
 
 function map<T extends Application, K>(
   applications: T[],
@@ -183,16 +181,6 @@ async function main() {
     'Generating OLADatas objects...'
   );
 
-  // generate reviews
-  const reviewObjects = <Review[]>(
-    map(decoratedApplications, generateReview, 'Generating review objects...').filter(r => r?.reasons?.length)
-  );
-
-  // generate declines
-  const declineObjects = <Decline[]>(
-    map(decoratedApplications, generateDecline, 'Generating decline objects...').filter(d => d)
-  );
-
   // print
   if (options.pretty) {
     console.dir(olaDatasArray, { depth: null });
@@ -231,11 +219,6 @@ async function main() {
     }${options.ozonly ? '-OZ' : ''}${
       options.county ? `-${options.county.replace(/\W+/g, '_')}` : ''
     }`;
-    const reviews: string = path.join(OUTPUT_PATH, `${base}-${reviewObjects.length}-REVIEW.json`);
-    const declines: string = path.join(
-      OUTPUT_PATH,
-      `${base}-${declineObjects.length}-DECLINES.json`
-    );
     const inputs: string = path.join(
       OUTPUT_PATH,
       `${base}-${decoratedApplications.length}-INPUTS.json`
@@ -248,14 +231,10 @@ async function main() {
 
     console.log(
       `\nWriting JSON files:\
-         \n  Declines: ${chalk.blue(declines)}\
-         \n  Reviews: ${chalk.blue(reviews)}\
          \n  Inputs: ${chalk.blue(inputs)}\
          \n  Output: ${chalk.blue(outputs)}`
     );
 
-    writeFile(reviews, JSON.stringify(reviewObjects), overwrite);
-    writeFile(declines, JSON.stringify(declineObjects), overwrite);
     writeFile(inputs, JSON.stringify(decoratedApplications), overwrite);
     writeFile(outputs, JSON.stringify(olaDatasArray), overwrite);
   }
