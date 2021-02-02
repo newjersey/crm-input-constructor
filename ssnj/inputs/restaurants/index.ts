@@ -11,8 +11,7 @@ export { Designations, YesNo } from './xlsx';
 // TODO -- kill all readonly (replace with Readonly<T>)
 export interface Restaurant extends RestaurantRow {}
 
-export type DecoratedRestaurant = Restaurant & Dol & Taxation & Sams;
-// & WR30
+export type DecoratedRestaurant = Restaurant & Dol & Taxation & Sams & WR30;
 
 export interface Restaurants {
   readonly restaurants: DecoratedRestaurant[];
@@ -28,11 +27,11 @@ export function getRestaurants(path: string): Restaurant[] {
       .map(review => review.Inputs_RestaurantForm)
       .includes(restaurant.SSNJRestaurantForm_Id);
 
-      if (!reviewed) {
-        console.log(`Skipping unreviewed restaurant form ${restaurant.SSNJRestaurantForm_Id}`);
-      }
+    if (!reviewed) {
+      console.log(`Skipping unreviewed restaurant form ${restaurant.SSNJRestaurantForm_Id}`);
+    }
 
-      return reviewed;
+    return reviewed;
   });
   const dedupedReviewedRestaurants: Restaurant[] = [];
 

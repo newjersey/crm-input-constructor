@@ -1,4 +1,4 @@
-import { DOB_Status, YesNo } from './inputs/applications';
+import { YesNo } from './inputs/applications';
 
 // TODO -- make these imports?
 const numeral = require('numeral');
@@ -7,7 +7,6 @@ const { utcToZonedTime } = require('date-fns-tz');
 
 export function bool(yesNo: YesNo): boolean {
   switch (yesNo) {
-    case YesNo.Sí:
     case YesNo.Yes:
       return true;
     case YesNo.No:
@@ -43,8 +42,16 @@ export function mround(number: number, multiple: number): number {
   return Math.round(number / multiple) * multiple;
 }
 
+export function formatNumber(number: number): string {
+  return numeral(number).format('0,0');
+}
+
 export function formatDollars(number: number): string {
   return numeral(number).format('$0,0');
+}
+
+export function formatDollarsCents(number: number): string {
+  return numeral(number).format('$0,0[.]00');
 }
 
 export function formatPercent(number: number, options?: { decimals: number }): string {

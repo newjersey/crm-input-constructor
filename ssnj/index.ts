@@ -10,14 +10,13 @@ import {
   DecoratedRestaurant,
   makeAddRestaurants,
 } from './inputs/restaurants';
-import { Decision, DecoratedApplication, OlaDatas } from './outputs/types';
+import { DecoratedApplication, OlaDatas } from './outputs/types';
 import { addDolData, init as loadDolData } from './inputs/restaurants/dol';
 import { addSamsData, init as loadSamsData } from './inputs/restaurants/sams';
 import { addTaxationData, init as loadTaxationData } from './inputs/restaurants/taxation';
 import { addWR30Data, init as loadWR30Data } from './inputs/restaurants/wr30';
 import { options, optionsSatisfied, printStartMessage, printUsage } from './options';
 import { generateOlaDatas } from './outputs/ola-datas';
-import { getDecision } from './outputs/helpers';
 
 function map<T extends Application | Restaurant, K>(
   entities: T[],
@@ -92,10 +91,10 @@ async function main() {
   const restaurants1 = map(restaurants0, addDolData, 'Applying DOL data...');
   const restaurants2 = map(restaurants1, addTaxationData, 'Applying Taxation data...');
   const restaurants3 = map(restaurants2, addSamsData, 'Applying SAMS data...');
-  // const restaurants4 = map(restaurants3, addWR30Data, 'Applying WR-30 data...');
+  const restaurants4 = map(restaurants3, addWR30Data, 'Applying WR-30 data...');
 
   // indirection
-  let decoratedRestaurants: DecoratedRestaurant[] = restaurants3;
+  let decoratedRestaurants: DecoratedRestaurant[] = restaurants4;
 
   const applications = getApplications(
     path.join(BASE_PATH, 'Modified from Cognito', 'Master.xlsx')
@@ -111,7 +110,6 @@ async function main() {
 
   // debug
   if (options.debug) {
-    // console.dir(decoratedRestaurants.filter(dr => dr.sams.possibleMatches.length), { depth: null });
     [...decoratedApplications]
       .sort((a, b) => {
         if (a.Organization_BusinessName > b.Organization_BusinessName) {
@@ -122,13 +120,19 @@ async function main() {
         }
         return 0;
       })
-      .forEach(application =>
+      .forEach(application => {
         console.log(
           `${application.ApplicationId} (${application.Organization_BusinessName}): ${application.restaurants.length} restaurants`
-        )
-      );
+        );
+        console.dir(
+          application.restaurants.map(
+            restaurant =>
+              `${restaurant.RestaurantInformation_RestaurantName} (${restaurant.RestaurantInformation_DBA})`
+          )
+        );
+      });
   }
-  /*
+
   // curry
   const generateFunc = (app: DecoratedApplication) => generateOlaDatas(app, !!options.test);
 
@@ -143,7 +147,7 @@ async function main() {
   if (options.pretty) {
     console.dir(olaDatasArray, { depth: null });
   }
-*/
+
   // write
   if (options.out) {
     const env = options.test ? 'TEST' : 'PROD';
@@ -165,11 +169,11 @@ async function main() {
     );
 
     writeFile(inputs, JSON.stringify(decoratedApplications), overwrite);
-    // writeFile(outputs, JSON.stringify(olaDatasArray), overwrite);
+    writeFile(outputs, JSON.stringify(olaDatasArray), overwrite);
   }
 
   // done
-  // console.log(`\nSuccessfully generated ${olaDatasArray.length} records.`);
+  console.log(`\nSuccessfully generated ${olaDatasArray.length} records.`);
 }
 
 main();
