@@ -4,7 +4,12 @@ const fs = require('fs');
 const path = require('path');
 
 import { Application, getApplications } from './inputs/applications';
-import { Restaurant, getRestaurants, DecoratedRestaurant } from './inputs/restaurants';
+import {
+  Restaurant,
+  getRestaurants,
+  DecoratedRestaurant,
+  makeAddRestaurants,
+} from './inputs/restaurants';
 import { Decision, DecoratedApplication, OlaDatas } from './outputs/types';
 import { addDolData, init as loadDolData } from './inputs/restaurants/dol';
 import { addSamsData, init as loadSamsData } from './inputs/restaurants/sams';
@@ -29,9 +34,7 @@ function map<T extends Application | Restaurant, K>(
     try {
       return fn(entity);
     } catch (e) {
-      throw new Error(
-        `\nError while ${message.toLowerCase().replace(/\./g, '')}: ${e.message}`
-      );
+      throw new Error(`\nError while ${message.toLowerCase().replace(/\./g, '')}: ${e.message}`);
     }
   });
 
@@ -84,9 +87,7 @@ async function main() {
   // apply data
   // Ugly number of variables, but makes type inference pick up the chained unions of generics.
   // I'm probably doing it wrong. Note that a map() chain here causes out-of-memory panics.
-  const restaurants0 = getRestaurants(
-    path.join(BASE_PATH, 'Modified from Cognito', 'Master.xlsx'),
-  );
+  const restaurants0 = getRestaurants(path.join(BASE_PATH, 'Modified from Cognito', 'Master.xlsx'));
 
   const restaurants1 = map(restaurants0, addDolData, 'Applying DOL data...');
   const restaurants2 = map(restaurants1, addTaxationData, 'Applying Taxation data...');
@@ -97,18 +98,37 @@ async function main() {
   let decoratedRestaurants: DecoratedRestaurant[] = restaurants3;
 
   const applications = getApplications(
-    path.join(BASE_PATH, 'Modified from Cognito', 'Master.xlsx'),
+    path.join(BASE_PATH, 'Modified from Cognito', 'Master.xlsx')
   );
 
   // TODO
-  let decoratedApplications: DecoratedApplication[] = applications;
+  const addRestaurants = makeAddRestaurants(decoratedRestaurants);
+  let decoratedApplications: DecoratedApplication[] = map(
+    applications,
+    addRestaurants,
+    'Adding restaurants to applications...'
+  );
 
   // debug
   if (options.debug) {
     // console.dir(decoratedRestaurants.filter(dr => dr.sams.possibleMatches.length), { depth: null });
-    console.dir(decoratedRestaurants, { depth: null });
+    [...decoratedApplications]
+      .sort((a, b) => {
+        if (a.Organization_BusinessName > b.Organization_BusinessName) {
+          return 1;
+        }
+        if (a.Organization_BusinessName < b.Organization_BusinessName) {
+          return -1;
+        }
+        return 0;
+      })
+      .forEach(application =>
+        console.log(
+          `${application.ApplicationId} (${application.Organization_BusinessName}): ${application.restaurants.length} restaurants`
+        )
+      );
   }
-/*
+  /*
   // curry
   const generateFunc = (app: DecoratedApplication) => generateOlaDatas(app, !!options.test);
 

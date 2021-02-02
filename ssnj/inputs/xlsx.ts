@@ -34,7 +34,7 @@ export enum Designations {
 }
 
 export interface Row {
-  readonly SSNJGrantApplication_Id: number;
+  readonly SSNJGrantApplication_Id: string;
   readonly Welcome_InstructionsRead: 'Yes';
   readonly Eligibility_IsRestaurant: 'No';
   readonly Organization_BusinessName: string;

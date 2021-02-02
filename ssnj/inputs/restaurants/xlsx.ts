@@ -22,8 +22,8 @@ export enum Designations {
 }
 
 export interface RestaurantRow {
-  readonly SSNJRestaurantForm_Id: number;
-  readonly Inputs_Application: number;
+  readonly SSNJRestaurantForm_Id: string;
+  readonly Inputs_Application: string;
   readonly Inputs_Application_Label: string;
   readonly Inputs_ApplicationNumber: number;
   readonly Inputs_RestaurantFormId: string;

@@ -1,4 +1,5 @@
 import { Application } from '../inputs/applications';
+import { Restaurants } from '../inputs/restaurants';
 
 export enum Decision {
   Approve = 'Approve',
@@ -154,12 +155,7 @@ export type ServicingOfficer =
   | TEST_ServicingOfficersExternal;
 export type TaxationReportedRevenueYear = RevenueYears | null;
 export type CapacityOpen = RemainOpenCapacities | null;
-export type DecoratedApplication = Application
-  // & Dol 
-  // & Taxation 
-  // & Sams 
-  // & WR30
-  ;
+export type DecoratedApplication = Application & Restaurants;
 
 export interface QuarterlyWageData {
   fteCount: NullableNumber;
