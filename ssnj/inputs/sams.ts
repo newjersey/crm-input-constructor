@@ -63,9 +63,9 @@ function isPossibleMatch<T extends Application & Taxation>(
   return (
     record.Country === 'USA' &&
     ['NJ', 'NY', 'PA', 'CT', 'DE'].includes(record['State / Province']) &&
-    (shouldFlag(record.Name, application.ContactInformation_BusinessName) ||
-      shouldFlag(record.Name, application.ContactInformation_DoingBusinessAsDBA) ||
-      shouldFlag(record.Name, application.taxation['TAXREG Name']))
+    (shouldFlag(record.Name, application.Organization_BusinessName) ||
+      shouldFlag(record.Name, application.Organization_DoingBusinessAsDBA) ||
+      shouldFlag(record.Name, application.taxation['TAX REG NAME']))
   );
 }
 

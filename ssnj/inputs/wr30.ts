@@ -95,8 +95,8 @@ export async function init(path: string, notFoundPath: string) {
 
 export function addWR30Data<T extends Application>(application: T): T & WR30 {
   const wr30: WR30Data = {
-    notFound: WR30_NOT_FOUND_EINS.has(application.Business_TIN),
-    wageRecords: WR30_MAP.get(application.Business_TIN) || [],
+    notFound: WR30_NOT_FOUND_EINS.has(application.Organization_EIN),
+    wageRecords: WR30_MAP.get(application.Organization_EIN) || [],
   };
 
   if (wr30.notFound && wr30.wageRecords.length) {

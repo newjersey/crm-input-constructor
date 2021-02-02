@@ -42,9 +42,9 @@ export async function init(activeEmployersPath: string, uidNoGoPath: string, whd
 
 export function addDolData<T extends Application>(application: T): T & Dol {
   const dol: DolData = {
-    isActiveEmployer: ACTIVE_EMPLOYER_EIN_SET.has(application.Business_TIN.trim()),
-    uidNoGo: UID_NO_GO_EIN_SET.has(application.Business_TIN.trim()),
-    whdNoGo: WHD_NO_GO_EIN_SET.has(application.Business_TIN.trim()),
+    isActiveEmployer: ACTIVE_EMPLOYER_EIN_SET.has(application.Organization_EIN.trim()),
+    uidNoGo: UID_NO_GO_EIN_SET.has(application.Organization_EIN.trim()),
+    whdNoGo: WHD_NO_GO_EIN_SET.has(application.Organization_EIN.trim()),
   };
 
   return { ...application, dol };

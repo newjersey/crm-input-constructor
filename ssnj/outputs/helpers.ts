@@ -6,13 +6,10 @@ import {
   DOB_Purposes,
   DOB_Status,
   EntityType,
-  Languages,
 } from '../inputs/applications';
 import { awardBasis, grantPhase1AmountApproved } from './award-size';
 import { bool, formatDollars, formatExcelDate } from '../util';
 
-import { EligibilityStatus as OZEligibilityStatus } from '../inputs/policy-map';
-import { ProductStatuses } from '../inputs/grant-phase-1';
 import { CleanStatus as TaxationCleanStatus } from '../inputs/taxation';
 import { getFindings } from './findings';
 
@@ -82,14 +79,6 @@ export function getWr30ReportingComments(app: types.DecoratedApplication): strin
   if (app.wr30.notFound) {
     comments.push(
       'Applicant did not file a WR-30, therefore possibly eligible for the minimum Grant Award of $1,000.'
-    );
-  }
-
-  if (grantPhase1AmountApproved(app)) {
-    comments.push(
-      `Award basis of ${formatDollars(awardBasis(app))} reduced by ${formatDollars(
-        grantPhase1AmountApproved(app)
-      )} of Grant Phase 1 funding (${app.grantPhase1?.['OLA']}).`
     );
   }
 
@@ -165,28 +154,6 @@ export function getOwnershipStructure(app: types.DecoratedApplication): types.Ow
   return result;
 }
 
-export function getGrantPhase1Status(
-  app: types.DecoratedApplication
-): types.ProgramApprovals | null {
-  if (typeof app.grantPhase1 === 'undefined') {
-    return null;
-  }
-
-  const status: ProductStatuses | undefined = app.grantPhase1['Product Status'];
-
-  switch (status) {
-    case ProductStatuses.Closed:
-    case ProductStatuses.Closing:
-      return types.ProgramApprovals.Approved;
-    case ProductStatuses.Underwriting:
-      return types.ProgramApprovals.In_Process;
-    case ProductStatuses.Ended:
-      return types.ProgramApprovals.Declined;
-    default:
-      throw new Error(`Unexpected grant phase 1 status: ${status}`);
-  }
-}
-
 export function getDesignation(app: types.DecoratedApplication, designation: number): boolean {
   return (app.Business_Designations_Value & designation) > 0;
 }
@@ -225,134 +192,7 @@ export function getServicingOfficer(
     return types.ServicingOfficersExternal.Richard_Toro;
   }
 
-  switch (app.Language) {
-    case Languages.English:
-      return getNextServicingOfficerEN(test);
-    case Languages.Spanish:
-      return getNextServicingOfficerES(test);
-    default:
-      throw new Error(`Unexpected language ${app.Language} for application$ ${app.ApplicationId}`);
-  }
-}
-
-export function getEligibleOpportunityZoneValue(
-  app: types.DecoratedApplication
-): types.EligibleOpportunityZoneValues {
-  if (
-    typeof app.policyMap === 'undefined' ||
-    app.policyMap.eligibilityStatus === OZEligibilityStatus.NA ||
-    app.policyMap.eligibilityStatus === OZEligibilityStatus.Not_Found
-  ) {
-    return types.EligibleOpportunityZoneValues.Not_Found;
-  }
-
-  const status = app.policyMap.eligibilityStatus;
-
-  switch (status) {
-    case OZEligibilityStatus.Eligible:
-    case OZEligibilityStatus.Eligible_Contiguous:
-    case OZEligibilityStatus.Eligible_LIC:
-      return types.EligibleOpportunityZoneValues.Yes;
-    case OZEligibilityStatus.Not_Eligible:
-      return types.EligibleOpportunityZoneValues.No;
-    default:
-      throw new Error(
-        `Unexpected opportunity zone eligibility status ${status} for application ${app.ApplicationId}`
-      );
-  }
-}
-
-export function getDobAmountValue(
-  indicated: Application_YesNo,
-  number: number | undefined
-): number | undefined {
-  // program not selected (but value might be present from user changing their mind)
-  if (!bool(indicated)) {
-    return undefined;
-  }
-
-  return number;
-}
-
-export function getDobApproval(
-  indicated: Application_YesNo,
-  statusValue: DOB_Status | undefined
-): types.ProgramApprovals | null {
-  // program not selected (but value might be present from user changing their mind)
-  if (!bool(indicated)) {
-    return null;
-  }
-
-  if (typeof statusValue === 'undefined') {
-    return null;
-  }
-
-  switch (statusValue) {
-    case DOB_Status.Approved:
-      return types.ProgramApprovals.Approved;
-    case DOB_Status.Declined:
-      return types.ProgramApprovals.Declined;
-    case DOB_Status.In_Process:
-      return types.ProgramApprovals.In_Process;
-    default:
-      throw new Error(`Unexpected DOB program status value: ${statusValue}`);
-  }
-}
-
-export function getDobApprovalDate(
-  indicated: Application_YesNo,
-  statusValue: DOB_Status | undefined,
-  excelFloat: number | undefined
-): types.NullableString {
-  // program not selected (but value might be present from user changing their mind)
-  if (!bool(indicated)) {
-    return null;
-  }
-
-  // program not approved (but value might be present from user changing their mind)
-  if (getDobApproval(indicated, statusValue) !== types.ProgramApprovals.Approved) {
-    return null;
-  }
-
-  if (typeof excelFloat === 'undefined') {
-    return null;
-  }
-
-  return formatExcelDate(excelFloat);
-}
-
-export function getDobPurposes(
-  indicated: Application_YesNo,
-  purposeValue: DOB_Purposes
-): types.NullableString {
-  // program not selected (but value might be present from user changing their mind)
-  if (!bool(indicated)) {
-    return null;
-  }
-
-  if (typeof purposeValue === 'undefined') {
-    return null;
-  }
-
-  const purposesOfFunds: types.PurposesOfFunds[] = [];
-
-  if (purposeValue & DOB_Purposes.Payroll) {
-    purposesOfFunds.push(types.PurposesOfFunds.Payroll);
-  }
-  if (purposeValue & DOB_Purposes.Rent_Mortgage) {
-    purposesOfFunds.push(types.PurposesOfFunds.Rent_Mortgage);
-  }
-  if (purposeValue & DOB_Purposes.Utilities) {
-    purposesOfFunds.push(types.PurposesOfFunds.Utilities);
-  }
-  if (purposeValue & DOB_Purposes.Inventory) {
-    purposesOfFunds.push(types.PurposesOfFunds.Inventory);
-  }
-  if (purposeValue & DOB_Purposes.Other) {
-    purposesOfFunds.push(types.PurposesOfFunds.Other);
-  }
-
-  return purposesOfFunds.join('; ');
+  return getNextServicingOfficerEN(test)
 }
 
 export function getNonprofitType(app: types.DecoratedApplication): types.NullableString {

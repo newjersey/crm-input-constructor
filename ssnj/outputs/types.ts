@@ -1,6 +1,5 @@
 import { Application } from '../inputs/applications';
 import { Dol } from '../inputs/dol';
-import { Duplicates } from '../inputs/duplicates';
 import { Sams } from '../inputs/sams';
 import { Taxation } from '../inputs/taxation';
 import { WR30 } from '../inputs/wr30';
@@ -154,19 +153,17 @@ export type NullableNumber = number | null;
 export type NullableString = string | null;
 export type ServicingOfficer =
   | ServicingOfficersEN
-  | ServicingOfficersES
   | ServicingOfficersExternal
   | TEST_ServicingOfficersEN
-  | TEST_ServicingOfficersES
   | TEST_ServicingOfficersExternal;
 export type TaxationReportedRevenueYear = RevenueYears | null;
 export type CapacityOpen = RemainOpenCapacities | null;
-export type DecoratedApplication = Application &
-  Dol &
-  Duplicates &
-  Sams &
-  Taxation &
-  WR30;
+export type DecoratedApplication = Application
+  // & Dol 
+  // & Taxation 
+  // & Sams 
+  // & WR30
+  ;
 
 export interface QuarterlyWageData {
   fteCount: NullableNumber;

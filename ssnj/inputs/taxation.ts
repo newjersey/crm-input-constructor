@@ -7,38 +7,10 @@ export enum CleanStatus {
   Not_Found = 'X',
 }
 
-export enum Flag {
-  True = 'X',
-  False = ' ',
-}
-
 interface TaxationData {
-  readonly 'EDA  Name': string;
-  readonly 'EDA DBA': string;
-  readonly 'EDA Entitiy Type': number;
-  readonly TIN: string;
-  readonly 'Ind Match ID': string;
-  readonly 'TAXREG Name': string;
-  readonly 'NAICS Code': number | '      ';
-  readonly 'Clean Ind': CleanStatus;
-  readonly 'SSN Check Only': Flag;
-  readonly 'TAXREG SP or SMLLC Ind.': Flag;
-  readonly '2018 Part': number;
-  readonly '2018 Part Amt': number;
-  readonly '2019 Part': number;
-  readonly '2019 Part Amt': number;
-  readonly '2018 CBT': number;
-  readonly '2018 CBT Amt': number;
-  readonly '2019 CBT': number;
-  readonly '2019 CBT Amt': number;
-  readonly '2018 TGI': number;
-  readonly '2018 TGI Amt': number;
-  readonly '2019 TGI': number;
-  readonly '2019 TGI Amt': number;
-  readonly 'S&U M 19': number;
-  readonly 'S&U M 20': number;
-  readonly 'S&U A 19': number;
-  readonly 'S&U A 20': number;
+  readonly 'TAX REG NAME': string;
+  readonly 'Clean Ind.': CleanStatus;
+  readonly 'Taxation Response': string;
 }
 
 export interface Taxation {
@@ -50,12 +22,11 @@ interface TaxationDataMap {
 }
 
 interface Row extends TaxationData {
-  readonly 'EDA ID': string;
+  readonly 'EIN      ': string;
 }
 
 // assumes single-sheet workbook
 function getData(filePath: string): TaxationDataMap {
-  const re = /(\w{2})-(\d+)/;
   const workbook = XLSX.readFile(filePath, { type: 'file' });
   const sheetName: string = Object.keys(workbook.Sheets)[0];
   const sheet = workbook.Sheets[sheetName];
@@ -63,9 +34,8 @@ function getData(filePath: string): TaxationDataMap {
 
   const map: TaxationDataMap = {};
   rows.forEach(row => {
-    const { 'EDA ID': edaId, ...rest } = row;
-    const applicationID = edaId.replace(re, 'CV19G$1$2');
-    map[applicationID.trim()] = rest;
+    const { 'EIN      ': ein, ...rest } = row;
+    map[ein] = rest;
   });
 
   return map;
@@ -79,10 +49,10 @@ export async function init(path: string) {
 }
 
 export function addTaxationData<T extends Application>(application: T): T & Taxation {
-  const taxation: TaxationData = TAXATION_DATA_MAP[application.ApplicationId];
+  const taxation: TaxationData = TAXATION_DATA_MAP[application.Organization_EIN];
 
   if (!taxation) {
-    throw new Error(`Could not find taxation data for ${application.ApplicationId}`);
+    throw new Error(`Could not find taxation data for ${application.Organization_EIN}`);
   }
 
   return { ...application, taxation };

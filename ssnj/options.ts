@@ -1,17 +1,9 @@
-import { Languages } from './inputs/applications';
-
 const chalk = require('chalk');
 const commandLineArgs = require('command-line-args');
 const commandLineUsage = require('command-line-usage');
 
 export interface Options {
   readonly base: string;
-  readonly language?: Languages;
-  readonly county?: string;
-  readonly ozonly?: boolean;
-  readonly nooz?: boolean;
-  readonly skip?: number;
-  readonly count?: number;
   readonly out?: boolean;
   readonly pretty?: boolean;
   readonly debug?: boolean;
@@ -25,42 +17,6 @@ const optionDefinitions: object[] = [
     alias: 'b',
     type: String,
     description: 'Base directory for inputs/outputs (required).',
-  },
-  {
-    name: 'language',
-    alias: 'l',
-    type: String,
-    description: 'Limit to a language (English|Spanish).',
-  },
-  {
-    name: 'county',
-    alias: 'c',
-    type: String,
-    description: 'Limit to county (do not include "County"); can be a list.',
-  },
-  {
-    name: 'ozonly',
-    alias: 'z',
-    type: Boolean,
-    description: 'Limit to those in eligible Opportunity Zones.',
-  },
-  {
-    name: 'nooz',
-    alias: 'x',
-    type: Boolean,
-    description: 'Limit to those NOT in eligible Opportunity zones.',
-  },
-  {
-    name: 'skip',
-    alias: 's',
-    type: Number,
-    description: 'Number of applications to skip (default 0).',
-  },
-  {
-    name: 'count',
-    alias: 'n',
-    type: Number,
-    description: 'Total number of applications to include (default: all).',
   },
   {
     name: 'out',
@@ -101,32 +57,26 @@ export function printUsage(): void {
     {
       header: 'CRM Input Constructor',
       content:
-        'This takes grant data from many input files (hard coded paths in index.ts) and outputs three JSON files: objects for feeding to new OLA Datas records, objects representing all raw input data, and objects used to send declinations.',
+        'This takes grant application data from many input files (hard coded paths in index.ts) and outputs two JSON files: objects for feeding to new OLA Datas records, and objects representing all raw input data.',
     },
     {
       header: 'Options',
       optionList: optionDefinitions,
     },
     {
-      content: 'Example: npm run grants-2 -- -n 10 -dtpo -b /my/base/path/',
+      content: 'Example: npm run ssnj -- -dtpo -b /my/base/path/',
     },
   ]);
 
   console.log(usage);
 }
 
-export function printStartMessage(options: Options): void {
+export function printStartMessage(_options: Options): void {
   console.log(
-    `Generating OLA Datas creation JSON for ${chalk.blue(options.count ? options.count : 'all')}${
-      options.language ? ` ${chalk.blue(options.language)}` : ''
-    } applications${
-      (options.ozonly || options.nooz) ? ` which are ${chalk.blue(options.ozonly ? 'only' : 'not')} in eligible Opportunity Zones` : ''
-    }, skipping ${chalk.blue(options.skip || 0)}, ${
-      options.county ? `filtering to only include ${chalk.blue(`${options.county} County`)}, ` : ''
-    }from ${chalk.blue(options.base)}\n`
+    `Generating OLA Datas creation JSON from ${chalk.blue(_options.base)}\n`
   );
 }
 
-export function optionsSatisfied(options: Options): boolean {
-  return !!options.base;
+export function optionsSatisfied(_options: Options): boolean {
+  return !!_options.base;
 }
