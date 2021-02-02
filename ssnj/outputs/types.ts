@@ -1,8 +1,4 @@
 import { Application } from '../inputs/applications';
-import { Dol } from '../inputs/dol';
-import { Sams } from '../inputs/sams';
-import { Taxation } from '../inputs/taxation';
-import { WR30 } from '../inputs/wr30';
 
 export enum Decision {
   Approve = 'Approve',

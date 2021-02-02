@@ -5,7 +5,6 @@ export { Designations, EntityType, YesNo } from './xlsx';
 // TODO -- kill all readonly (replace with Readonly<T>)
 export interface Application extends Row {
   readonly ApplicationId: string;
-  readonly Sequence: number;
 }
 
 // I'm probably doing this wrong.

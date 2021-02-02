@@ -4,34 +4,33 @@ const fs = require('fs');
 const path = require('path');
 
 import { Application, getApplications } from './inputs/applications';
+import { Restaurant, getRestaurants, DecoratedRestaurant } from './inputs/restaurants';
 import { Decision, DecoratedApplication, OlaDatas } from './outputs/types';
-import { addDolData, init as loadDolData } from './inputs/dol';
-import { addSamsData, init as loadSamsData } from './inputs/sams';
-import { addTaxationData, init as loadTaxationData } from './inputs/taxation';
-import { addWR30Data, init as loadWR30Data } from './inputs/wr30';
+import { addDolData, init as loadDolData } from './inputs/restaurants/dol';
+import { addSamsData, init as loadSamsData } from './inputs/restaurants/sams';
+import { addTaxationData, init as loadTaxationData } from './inputs/restaurants/taxation';
+import { addWR30Data, init as loadWR30Data } from './inputs/restaurants/wr30';
 import { options, optionsSatisfied, printStartMessage, printUsage } from './options';
 import { generateOlaDatas } from './outputs/ola-datas';
 import { getDecision } from './outputs/helpers';
 
-function map<T extends Application, K>(
-  applications: T[],
-  fn: (application: T) => K,
+function map<T extends Application | Restaurant, K>(
+  entities: T[],
+  fn: (entity: T) => K,
   message: string
 ): K[] {
   console.log(message);
 
   const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
-  bar.start(applications.length, 0);
+  bar.start(entities.length, 0);
 
-  const result = applications.map((application: T, index: number) => {
+  const result = entities.map((entity: T, index: number) => {
     bar.update(index + 1);
     try {
-      return fn(application);
+      return fn(entity);
     } catch (e) {
       throw new Error(
-        `\nError while ${message.toLowerCase().replace(/\./g, '')} to ${
-          application.ApplicationId
-        }: ${e.message}`
+        `\nError while ${message.toLowerCase().replace(/\./g, '')}: ${e.message}`
       );
     }
   });
@@ -68,38 +67,46 @@ async function main() {
   const OUTPUT_PATH = path.join(options.base, 'Output');
 
   // load
-  // await loadSamsData(path.join(BASE_PATH, 'SAMS', 'SAM_Exclusions_Public_Extract_21029.CSV'));
-  // await loadTaxationData(
-  //   path.join(BASE_PATH, 'Taxation', 'EDA Sustain and Serve - Tax Clearance Results.xlsx')
-  // );
-  // await loadWR30Data(
-  //   path.join(BASE_PATH, 'WR30', 'njeda crossmatch wage output file 7-10-2020 COMBINED.txt'),
-  //   path.join(BASE_PATH, 'WR30', '20200709 FEIN Not Found COMBINED.txt')
-  // );
-  // await loadDolData(
-  //   path.join(BASE_PATH, 'DOL Lists', 'Active-Emps-03302020.xlsx'),
-  //   path.join(BASE_PATH, 'DOL Lists', 'No.Go.List.3.30.2020.UID.xlsx'),
-  //   path.join(BASE_PATH, 'DOL Lists', 'No.Go.List.3.30.2020.WHD.xlsx')
-  // );
+  await loadSamsData(path.join(BASE_PATH, 'SAMS', 'SAM_Exclusions_Public_Extract_21029.CSV'));
+  await loadTaxationData(
+    path.join(BASE_PATH, 'Taxation', 'EDA Sustain and Serve - Tax Clearance Results.xlsx')
+  );
+  await loadWR30Data(
+    path.join(BASE_PATH, 'WR30', 'njeda crossmatch wage output file 7-10-2020 COMBINED.txt'),
+    path.join(BASE_PATH, 'WR30', '20200709 FEIN Not Found COMBINED.txt')
+  );
+  await loadDolData(
+    path.join(BASE_PATH, 'DOL Lists', 'Active-Emps-03302020.xlsx'),
+    path.join(BASE_PATH, 'DOL Lists', 'No.Go.List.3.30.2020.UID.xlsx'),
+    path.join(BASE_PATH, 'DOL Lists', 'No.Go.List.3.30.2020.WHD.xlsx')
+  );
 
   // apply data
   // Ugly number of variables, but makes type inference pick up the chained unions of generics.
   // I'm probably doing it wrong. Note that a map() chain here causes out-of-memory panics.
-  const apps0 = getApplications(
+  const restaurants0 = getRestaurants(
     path.join(BASE_PATH, 'Modified from Cognito', 'Master.xlsx'),
   );
 
-  // const apps1 = map(apps0, addDolData, 'Applying DOL data...');
-  // const apps2 = map(apps1, addTaxationData, 'Applying Taxation data...');
-  // const apps3 = map(apps2, addSamsData, 'Applying SAMS data...');
-  // const apps4 = map(apps3, addWR30Data, 'Applying WR-30 data...');
+  const restaurants1 = map(restaurants0, addDolData, 'Applying DOL data...');
+  const restaurants2 = map(restaurants1, addTaxationData, 'Applying Taxation data...');
+  const restaurants3 = map(restaurants2, addSamsData, 'Applying SAMS data...');
+  // const restaurants4 = map(restaurants3, addWR30Data, 'Applying WR-30 data...');
 
   // indirection
-  let decoratedApplications: DecoratedApplication[] = apps0;
+  let decoratedRestaurants: DecoratedRestaurant[] = restaurants3;
+
+  const applications = getApplications(
+    path.join(BASE_PATH, 'Modified from Cognito', 'Master.xlsx'),
+  );
+
+  // TODO
+  let decoratedApplications: DecoratedApplication[] = applications;
 
   // debug
   if (options.debug) {
-    console.dir(decoratedApplications, { depth: null });
+    // console.dir(decoratedRestaurants.filter(dr => dr.sams.possibleMatches.length), { depth: null });
+    console.dir(decoratedRestaurants, { depth: null });
   }
 /*
   // curry

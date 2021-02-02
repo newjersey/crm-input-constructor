@@ -2,7 +2,7 @@ const fs = require('fs');
 const neatCsv = require('neat-csv');
 const stringSimilarity = require('string-similarity');
 
-import { Application } from './applications';
+import { Restaurant } from '.';
 import { Taxation } from './taxation';
 
 interface SamsExclusionRecord {
@@ -55,17 +55,17 @@ function shouldFlag(a: string, b: string): boolean {
   );
 }
 
-function isPossibleMatch<T extends Application & Taxation>(
-  application: T,
+function isPossibleMatch<T extends Restaurant & Taxation>(
+  restaurant: T,
   record: SamsExclusionRecord
 ): boolean {
   // return false; // debug
   return (
     record.Country === 'USA' &&
     ['NJ', 'NY', 'PA', 'CT', 'DE'].includes(record['State / Province']) &&
-    (shouldFlag(record.Name, application.Organization_BusinessName) ||
-      shouldFlag(record.Name, application.Organization_DoingBusinessAsDBA) ||
-      shouldFlag(record.Name, application.taxation['TAX REG NAME']))
+    (shouldFlag(record.Name, restaurant.RestaurantInformation_RestaurantName) ||
+      shouldFlag(record.Name, restaurant.RestaurantInformation_DBA) ||
+      shouldFlag(record.Name, restaurant.taxation['TAX REG NAME']))
   );
 }
 
@@ -77,12 +77,12 @@ export async function init(path: string) {
   SAMS_EXCLUSION_RECORDS = await neatCsv(raw);
 }
 
-export function addSamsData<T extends Application & Taxation>(application: T): T & Sams {
+export function addSamsData<T extends Restaurant & Taxation>(restaurant: T): T & Sams {
   const possibleMatches: SamsExclusionRecord[] = SAMS_EXCLUSION_RECORDS.filter(record =>
-    isPossibleMatch(application, record)
+    isPossibleMatch(restaurant, record)
   );
 
   const sams: PosssibleMatches = { possibleMatches };
 
-  return { ...application, sams };
+  return { ...restaurant, sams };
 }

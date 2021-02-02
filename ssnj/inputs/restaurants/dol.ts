@@ -1,5 +1,5 @@
 import XLSX from 'xlsx';
-import { Application } from './applications';
+import { Restaurant } from './';
 
 // assumes single-sheet workbook
 function getEins(filePath: string): string[] {
@@ -40,12 +40,12 @@ export async function init(activeEmployersPath: string, uidNoGoPath: string, whd
   getEins(whdNoGoPath).forEach(ein => WHD_NO_GO_EIN_SET.add(ein));
 }
 
-export function addDolData<T extends Application>(application: T): T & Dol {
+export function addDolData<T extends Restaurant>(restaurant: T): T & Dol {
   const dol: DolData = {
-    isActiveEmployer: ACTIVE_EMPLOYER_EIN_SET.has(application.Organization_EIN.trim()),
-    uidNoGo: UID_NO_GO_EIN_SET.has(application.Organization_EIN.trim()),
-    whdNoGo: WHD_NO_GO_EIN_SET.has(application.Organization_EIN.trim()),
+    isActiveEmployer: ACTIVE_EMPLOYER_EIN_SET.has(restaurant.RestaurantInformation_EIN.trim()),
+    uidNoGo: UID_NO_GO_EIN_SET.has(restaurant.RestaurantInformation_EIN.trim()),
+    whdNoGo: WHD_NO_GO_EIN_SET.has(restaurant.RestaurantInformation_EIN.trim()),
   };
 
-  return { ...application, dol };
+  return { ...restaurant, dol };
 }

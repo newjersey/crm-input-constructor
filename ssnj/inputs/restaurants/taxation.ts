@@ -1,4 +1,4 @@
-import { Application } from './applications';
+import { Restaurant } from '.';
 import XLSX from 'xlsx';
 
 export enum CleanStatus {
@@ -18,7 +18,7 @@ export interface Taxation {
 }
 
 interface TaxationDataMap {
-  [applicationID: string]: TaxationData;
+  [Inputs_RestaurantFormId: string]: TaxationData;
 }
 
 interface Row extends TaxationData {
@@ -48,12 +48,12 @@ export async function init(path: string) {
   TAXATION_DATA_MAP = getData(path);
 }
 
-export function addTaxationData<T extends Application>(application: T): T & Taxation {
-  const taxation: TaxationData = TAXATION_DATA_MAP[application.Organization_EIN];
+export function addTaxationData<T extends Restaurant>(restaurant: T): T & Taxation {
+  const taxation: TaxationData = TAXATION_DATA_MAP[restaurant.RestaurantInformation_EIN];
 
   if (!taxation) {
-    throw new Error(`Could not find taxation data for ${application.Organization_EIN}`);
+    throw new Error(`Could not find taxation data for ${restaurant.RestaurantInformation_EIN}`);
   }
 
-  return { ...application, taxation };
+  return { ...restaurant, taxation };
 }

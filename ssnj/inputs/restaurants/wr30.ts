@@ -1,6 +1,6 @@
 const fs = require('fs');
 const neatCsv = require('neat-csv');
-import { Application } from './applications';
+import { Restaurant } from '.';
 
 interface RawRecord {
   readonly SSN: string;
@@ -93,19 +93,19 @@ export async function init(path: string, notFoundPath: string) {
     .forEach(ein => WR30_NOT_FOUND_EINS.add(ein));
 }
 
-export function addWR30Data<T extends Application>(application: T): T & WR30 {
+export function addWR30Data<T extends Restaurant>(restaurant: T): T & WR30 {
   const wr30: WR30Data = {
-    notFound: WR30_NOT_FOUND_EINS.has(application.Organization_EIN),
-    wageRecords: WR30_MAP.get(application.Organization_EIN) || [],
+    notFound: WR30_NOT_FOUND_EINS.has(restaurant.RestaurantInformation_EIN),
+    wageRecords: WR30_MAP.get(restaurant.RestaurantInformation_EIN) || [],
   };
 
   if (wr30.notFound && wr30.wageRecords.length) {
-    throw new Error(`Application ${application.ApplicationId} is on the WR-30 not-found list but does have ${wr30.wageRecords.length} wage records.`);
+    throw new Error(`Restaurant ${restaurant.Inputs_RestaurantFormId} is on the WR-30 not-found list but does have ${wr30.wageRecords.length} wage records.`);
   }
 
   if (!wr30.notFound && !wr30.wageRecords.length) {
-    throw new Error(`Application ${application.ApplicationId} does't have any wage records but isn't on the WR-30 not-found list.`);
+    throw new Error(`Restaurant ${restaurant.Inputs_RestaurantFormId} does't have any wage records but isn't on the WR-30 not-found list.`);
   }
 
-  return { ...application, wr30 };
+  return { ...restaurant, wr30 };
 }
