@@ -74,8 +74,8 @@ async function main() {
     path.join(BASE_PATH, 'Taxation', 'EDA Sustain and Serve - Tax Clearance Results.xlsx')
   );
   await loadWR30Data(
-    path.join(BASE_PATH, 'WR30', 'njeda crossmatch wage output file 7-10-2020 COMBINED.txt'),
-    path.join(BASE_PATH, 'WR30', '20200709 FEIN Not Found COMBINED.txt')
+    path.join(BASE_PATH, 'WR30', 'njeda crossmatch wage output file 2-3-2021.txt'),
+    path.join(BASE_PATH, 'WR30', '20210203 FEIN Not Found.txt')
   );
   await loadDolData(
     path.join(BASE_PATH, 'DOL Lists', 'Active-Emps-03302020.xlsx'),
@@ -122,12 +122,20 @@ async function main() {
       })
       .forEach(application => {
         console.log(
-          `${application.ApplicationId} (${application.Organization_BusinessName}): ${application.restaurants.length} restaurants`
+          `${application.Organization_EIN}: ${application.Organization_BusinessName} ${
+            application.DBA ? ` (${application.DBA})` : ''
+          }`
         );
         console.dir(
           application.restaurants.map(
             restaurant =>
-              `${restaurant.RestaurantInformation_RestaurantName} (${restaurant.RestaurantInformation_DBA})`
+              `${restaurant.RestaurantInformation_EIN}: ${
+                restaurant.RestaurantInformation_RestaurantName
+              }${
+                restaurant.RestaurantInformation_DBA
+                  ? ` (${restaurant.RestaurantInformation_DBA})`
+                  : ''
+              }`
           )
         );
       });

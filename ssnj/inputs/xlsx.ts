@@ -5,8 +5,6 @@ export enum YesNo {
   No = 'No',
 }
 
-type YesNoEmpty = YesNo | '';
-
 enum EntryStatus {
   'Incomplete',
   'Submitted',

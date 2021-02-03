@@ -252,7 +252,7 @@ export interface SSNJRestaurant {
   WebSiteURL: string;
   NAICS: string;
   SelfIdentifyAs: string;
-  ExistsPriorFeb2020: null;
+  ExistsPriorFeb2020: YesNo;
   FirstName: string;
   LastName: string;
   Title: string;

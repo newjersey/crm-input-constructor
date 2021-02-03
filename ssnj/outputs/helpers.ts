@@ -81,11 +81,11 @@ export function getFindings(restaurant: DecoratedRestaurant): string {
     findings.push('Possibly not an active employer, according to DOL.');
   }
 
-  if (!restaurant.dol.uidNoGo) {
+  if (restaurant.dol.uidNoGo) {
     findings.push('Issue with DOL status (UI).');
   }
 
-  if (!restaurant.dol.whdNoGo) {
+  if (restaurant.dol.whdNoGo) {
     findings.push('Issue with DOL status (WH).');
   }
 

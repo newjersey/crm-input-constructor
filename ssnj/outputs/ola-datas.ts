@@ -192,7 +192,7 @@ export function generateOlaDatas(app: DecoratedApplication, test: boolean): OlaD
         CompletionDate: null,
         GeneralComments: `Proposed meal count: ${formatNumber(
           app.GrantRequest_Meals
-        )}, average cost per meal: ${formatDollarsCents(app.GrantRequest_UnitCost)}`,
+        )}. Proposed average cost per meal: ${formatDollarsCents(app.GrantRequest_UnitCost)}`,
       },
       SSNJRestaurants: app.restaurants.map(
         restaurant =>
@@ -203,7 +203,7 @@ export function generateOlaDatas(app: DecoratedApplication, test: boolean): OlaD
             WebSiteURL: restaurant.RestaurantInformation_Website,
             NAICS: restaurant.NAICSCode,
             SelfIdentifyAs: restaurant.RestaurantInformation_Designations,
-            ExistsPriorFeb2020: null,
+            ExistsPriorFeb2020: restaurant.RestaurantInformation_OldEnough,
             FirstName: restaurant.AuthorizedRepresentative_Name_First,
             LastName: restaurant.AuthorizedRepresentative_Name_Last,
             Title: restaurant.AuthorizedRepresentative_Title,

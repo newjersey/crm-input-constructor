@@ -51,7 +51,7 @@ export function formatDollars(number: number): string {
 }
 
 export function formatDollarsCents(number: number): string {
-  return numeral(number).format('$0,0[.]00');
+  return numeral(number).format('$0,0.00');
 }
 
 export function formatPercent(number: number, options?: { decimals: number }): string {
