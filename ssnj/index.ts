@@ -110,6 +110,8 @@ async function main() {
 
   // debug
   if (options.debug) {
+    let tsv = `ID\tEIN\tName\tDBA`;
+
     [...decoratedApplications]
       .sort((a, b) => {
         if (a.Organization_BusinessName > b.Organization_BusinessName) {
@@ -121,24 +123,13 @@ async function main() {
         return 0;
       })
       .forEach(application => {
-        console.log(
-          `${application.Organization_EIN}: ${application.Organization_BusinessName} ${
-            application.DBA ? ` (${application.DBA})` : ''
-          }`
-        );
-        console.dir(
-          application.restaurants.map(
-            restaurant =>
-              `${restaurant.RestaurantInformation_EIN}: ${
-                restaurant.RestaurantInformation_RestaurantName
-              }${
-                restaurant.RestaurantInformation_DBA
-                  ? ` (${restaurant.RestaurantInformation_DBA})`
-                  : ''
-              }`
-          )
-        );
+        tsv += `\n${application.ApplicationId}\t${application.Organization_EIN}\t${application.Organization_BusinessName}\t${application.DBA}`;
+        application.restaurants.forEach(restaurant => {
+          tsv += `\n${restaurant.Inputs_RestaurantFormId}\t${restaurant.RestaurantInformation_EIN}\t${restaurant.RestaurantInformation_RestaurantName}\t${restaurant.RestaurantInformation_DBA}`;
+        });
       });
+
+    writeFile(path.join(OUTPUT_PATH, `ssnj.tsv`), tsv, true);
   }
 
   // curry
