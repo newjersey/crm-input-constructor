@@ -24,7 +24,11 @@ export function value(number?: number | null): types.Value {
   return valueObject;
 }
 
-export function getQuarterlyWageData(restaurant: DecoratedRestaurant): types.QuarterlyWageData {
+export function getQuarterlyWageData(
+  restaurant: DecoratedRestaurant,
+  year?: number,
+  quarter?: number
+): types.QuarterlyWageData {
   if (restaurant.wr30.notFound) {
     return {
       fteCount: null,
@@ -37,12 +41,14 @@ export function getQuarterlyWageData(restaurant: DecoratedRestaurant): types.Qua
   const WEEKS_PER_QUARTER = 13.0;
   const FTE_QUARTERLY_MIN_WAGE = DOLLARS_PER_HOUR * HOURS_PER_WEEK * WEEKS_PER_QUARTER;
 
-  const year: number = Math.max(...restaurant.wr30.wageRecords.map(record => record.Year));
-  const quarter: number = Math.max(
-    ...restaurant.wr30.wageRecords
-      .filter(record => record.Year === year)
-      .map(record => record.Quarter)
-  );
+  year = year || Math.max(...restaurant.wr30.wageRecords.map(record => record.Year));
+  quarter =
+    quarter ||
+    Math.max(
+      ...restaurant.wr30.wageRecords
+        .filter(record => record.Year === year)
+        .map(record => record.Quarter)
+    );
 
   const fractionalFtes: number = restaurant.wr30.wageRecords
     .filter(record => record.Year === year && record.Quarter === quarter)
