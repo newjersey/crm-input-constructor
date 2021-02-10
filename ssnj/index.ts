@@ -17,6 +17,7 @@ import { addTaxationData, init as loadTaxationData } from './inputs/restaurants/
 import { addWR30Data, init as loadWR30Data } from './inputs/restaurants/wr30';
 import { options, optionsSatisfied, printStartMessage, printUsage } from './options';
 import { generateOlaDatas } from './outputs/ola-datas';
+import { getQuarterlyWageData } from './outputs/helpers';
 
 function map<T extends Application | Restaurant, K>(
   entities: T[],
@@ -169,6 +170,24 @@ async function main() {
 
     writeFile(inputs, JSON.stringify(decoratedApplications), overwrite);
     writeFile(outputs, JSON.stringify(olaDatasArray), overwrite);
+  }
+
+  if (options.debug) {
+    let wr30 = `ID\tEIN\tName\tDBA\tQ2\tQ3\tQ4\tApplication Date\tRestaurant Form Date\tRestaurant Review Date`;
+
+    decoratedRestaurants.forEach(r => {
+      const id = r.SSNJRestaurantForm_Id;
+      const ein = r.RestaurantInformation_EIN;
+      const name = r.RestaurantInformation_RestaurantName;
+      const dba = r.RestaurantInformation_DBA;
+      const q2 = getQuarterlyWageData(r, 2020, 2).fteCount;
+      const q3 = getQuarterlyWageData(r, 2020, 3).fteCount;
+      const q4 = getQuarterlyWageData(r, 2020, 4).fteCount;
+
+      wr30 += `\n${id}\t${ein}\t${name}\t${dba}\t${q2}\t${q3}\t${q4}\t?\t${r.Entry_DateSubmitted}\t?`
+    });
+
+    writeFile(path.join(OUTPUT_PATH, `wr30.tsv`), wr30, true);
   }
 
   // done
