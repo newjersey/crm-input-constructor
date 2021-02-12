@@ -184,10 +184,23 @@ async function main() {
       const q3 = getQuarterlyWageData(r, 2020, 3).fteCount;
       const q4 = getQuarterlyWageData(r, 2020, 4).fteCount;
 
-      wr30 += `\n${id}\t${ein}\t${name}\t${dba}\t${q2}\t${q3}\t${q4}\t?\t${r.Entry_DateSubmitted}\t?`
+      wr30 += `\n${id}\t${ein}\t${name}\t${dba}\t${q2}\t${q3}\t${q4}\t?\t${r.Entry_DateSubmitted}\t?`;
     });
 
     writeFile(path.join(OUTPUT_PATH, `wr30.tsv`), wr30, true);
+  }
+
+  if (options.debug) {
+    const fte: Record<string, number | null> = {};
+
+    decoratedRestaurants.forEach(r => {
+      const ein = r.RestaurantInformation_EIN;
+      const fteCount = getQuarterlyWageData(r, 2020, 3).fteCount;
+
+      fte[ein] = fteCount;
+    });
+
+    writeFile(path.join(OUTPUT_PATH, `fte.json`), JSON.stringify(fte), true);
   }
 
   // done
