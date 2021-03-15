@@ -191,14 +191,12 @@ async function main() {
   }
 
   if (options.debug) {
-    const fte: Record<string, number | null> = {};
-
-    decoratedRestaurants.forEach(r => {
-      const ein = r.RestaurantInformation_EIN;
-      const fteCount = getQuarterlyWageData(r, 2020, 3).fteCount;
-
-      fte[ein] = fteCount;
-    });
+    const fte = decoratedRestaurants
+      .map(r => ({
+        ein: r.RestaurantInformation_EIN,
+        fte: getQuarterlyWageData(r, 2020, 3).fteCount,
+      }))
+      .filter(obj => obj.fte);
 
     writeFile(path.join(OUTPUT_PATH, `fte.json`), JSON.stringify(fte), true);
   }
