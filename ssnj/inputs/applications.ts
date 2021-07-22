@@ -19,7 +19,7 @@ export function getApplications(path: string): Application[] {
 
   const decoratedRows: DecoratedRow[] = rows.map(row =>
     Object.assign(row, {
-      ApplicationId: `SSNJ${row["App Number"]}`,
+      ApplicationId: `SSNJ2-${row["App Number"]}`,
     })
   );
 
