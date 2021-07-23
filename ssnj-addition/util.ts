@@ -33,25 +33,12 @@ export function formatDate(date: Date): string {
   return `\/Date(${date.getTime()})\/`;
 }
 
-// given an excel-style date string, return the day part in the right format and time zone
-export function formatExcelDate(excelFloat: number): string {
-  return formatDate(dateFromExcel(excelFloat));
-}
-
 export function mround(number: number, multiple: number): number {
   return Math.round(number / multiple) * multiple;
 }
 
-export function formatNumber(number: number): string {
-  return numeral(number).format('0,0');
-}
-
 export function formatDollars(number: number): string {
   return numeral(number).format('$0,0');
-}
-
-export function formatDollarsCents(number: number): string {
-  return numeral(number).format('$0,0.00');
 }
 
 export function formatPercent(number: number, options?: { decimals: number }): string {

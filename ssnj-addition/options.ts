@@ -6,9 +6,8 @@ export interface Options {
   readonly base: string;
   readonly out?: boolean;
   readonly pretty?: boolean;
-  readonly debug?: boolean;
   readonly force?: boolean;
-  readonly test?: boolean;
+  readonly round?: number;
 }
 
 const optionDefinitions: object[] = [
@@ -31,22 +30,16 @@ const optionDefinitions: object[] = [
     description: 'Format JSON nicely on screen (does not effect JSON lines in output file).',
   },
   {
-    name: 'debug',
-    alias: 'd',
-    type: Boolean,
-    description: 'Include extra data useful for debugging.',
-  },
-  {
     name: 'force',
     alias: 'f',
     type: Boolean,
     description: 'Force overwrite of existing files (suggested only during development).',
   },
   {
-    name: 'test',
-    alias: 't',
-    type: Boolean,
-    description: 'If this run is meant for the CRM TEST environment (uses different entity IDs).',
+    name: 'round',
+    alias: 'r',
+    type: Number,
+    description: 'Limit to an addition round.',
   },
 ];
 
@@ -64,7 +57,7 @@ export function printUsage(): void {
       optionList: optionDefinitions,
     },
     {
-      content: 'Example: npm run ssnj -- -dtpo -b /my/base/path/',
+      content: 'Example: npm run ssnj-addition -- -dtpo -r 1 -b /my/base/path/',
     },
   ]);
 

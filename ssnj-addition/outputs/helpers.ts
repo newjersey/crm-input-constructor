@@ -1,7 +1,6 @@
 import * as types from './types';
-import { EntityType } from '../inputs/applications';
-import { CleanStatus as TaxationCleanStatus } from '../inputs/restaurants/taxation';
-import { DecoratedRestaurant } from '../inputs/restaurants';
+import { Restaurant } from '..//inputs/restaurants';
+import { TaxClearance } from '../inputs/restaurants/xlsx';
 
 export function yesNo(test: boolean): types.YesNo {
   return test ? 'Yes' : 'No';
@@ -24,74 +23,28 @@ export function value(number?: number | null): types.Value {
   return valueObject;
 }
 
-export function getQuarterlyWageData(
-  restaurant: DecoratedRestaurant,
-  year?: number,
-  quarter?: number
-): types.QuarterlyWageData {
-  if (restaurant.wr30.notFound) {
-    return {
-      fteCount: null,
-      quarterDesc: null,
-    };
-  }
-
-  const DOLLARS_PER_HOUR = 10.0;
-  const HOURS_PER_WEEK = 35.0;
-  const WEEKS_PER_QUARTER = 13.0;
-  const FTE_QUARTERLY_MIN_WAGE = DOLLARS_PER_HOUR * HOURS_PER_WEEK * WEEKS_PER_QUARTER;
-
-  year = year || Math.max(...restaurant.wr30.wageRecords.map(record => record.Year));
-  quarter =
-    quarter ||
-    Math.max(
-      ...restaurant.wr30.wageRecords
-        .filter(record => record.Year === year)
-        .map(record => record.Quarter)
-    );
-
-  const fractionalFtes: number = restaurant.wr30.wageRecords
-    .filter(record => record.Year === year && record.Quarter === quarter)
-    .map(record => Math.min(1, record.Dollars / FTE_QUARTERLY_MIN_WAGE))
-    .reduce((sum, fraction) => sum + fraction, 0);
-
-  const fteCount: number = Math.round(fractionalFtes);
-  const quarterDesc: string = `Q${quarter} ${year}`;
-
-  return {
-    fteCount,
-    quarterDesc,
-  };
-}
-
-export function getFindings(restaurant: DecoratedRestaurant): string {
-  const fteCount = getQuarterlyWageData(restaurant).fteCount;
-  const wr30Desc = getQuarterlyWageData(restaurant).quarterDesc;
+export function getFindings(restaurant: Restaurant): string {
+  const NO_FINDINGS_STRING = 'NO FINDINGS';
+  const fteCount = restaurant.Restaurant_FTE;
   let findings: string[] = [];
 
-  if (restaurant.taxation['Clean Ind.'] === TaxationCleanStatus.Not_Found) {
+  if (restaurant.Tax_Clear === TaxClearance.Unknown) {
     findings.push('Unknown to Taxation.');
   }
 
-  if (restaurant.taxation['Clean Ind.'] === TaxationCleanStatus.Not_Clear) {
-    findings.push(
-      `Taxation not clear${
-        restaurant.taxation['Taxation Response']
-          ? ` (${restaurant.taxation['Taxation Response']})`
-          : ''
-      }.`
-    );
+  if (restaurant.Tax_Clear === TaxClearance.No) {
+    findings.push(`Taxation not clear.`);
   }
 
-  if (!restaurant.dol.isActiveEmployer) {
+  if (!restaurant.Known_to_DOL) {
     findings.push('Possibly not an active employer, according to DOL.');
   }
 
-  if (restaurant.dol.uidNoGo) {
+  if (!restaurant.DOL_UI_Clear) {
     findings.push('Issue with DOL status (UI).');
   }
 
-  if (restaurant.dol.whdNoGo) {
+  if (!restaurant.DOL_WH_Clear) {
     findings.push('Issue with DOL status (WH).');
   }
 
@@ -101,32 +54,9 @@ export function getFindings(restaurant: DecoratedRestaurant): string {
 
   if (fteCount && fteCount > 50) {
     findings.push(
-      `More than 50 Full-Time Equivalent workers at time of application (${fteCount}) based on ${wr30Desc} WR-30.`
+      `More than 50 Full-Time Equivalent workers at time of application (${fteCount}) based on WR-30 data used for restaurant addition round ${restaurant.Addition_Round} (of SSJ Phase 1).`
     );
   }
 
-  return findings.join(' ');
-}
-
-export function getOwnershipStructure(app: types.DecoratedApplication): types.OwnershipStructures {
-  const _value = app.Organization_EntityType;
-  const map = new Map<EntityType, types.OwnershipStructures>([
-    [EntityType['Sole Proprietorship'], types.OwnershipStructures.SoleProprietorship],
-    [EntityType['Limited Liability Corporation (LLC)'], types.OwnershipStructures.LLC],
-    [EntityType['C-Corporation'], types.OwnershipStructures.C_Corporation],
-    [EntityType['S-Corporation'], types.OwnershipStructures.S_Corporation],
-    [EntityType['501(c)(3) nonprofit'], types.OwnershipStructures.Nonprofit],
-    [EntityType['Other (e.g. estate)'], types.OwnershipStructures.Other],
-    [EntityType['Public entity (e.g. municipality)'], types.OwnershipStructures.Other],
-  ]);
-
-  const result: types.OwnershipStructures | undefined = map.get(_value);
-
-  if (typeof result === 'undefined') {
-    throw new Error(
-      `Unknown ownership structure value ${_value} for application ${app.ApplicationId}`
-    );
-  }
-
-  return result;
+  return findings.join(' ') || NO_FINDINGS_STRING;
 }

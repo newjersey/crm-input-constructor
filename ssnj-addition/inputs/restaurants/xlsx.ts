@@ -5,80 +5,76 @@ export enum YesNo {
   No = 'No',
 }
 
-enum EntryStatus {
-  'Incomplete',
-  'Submitted',
-  'Reviewed',
-  'Complete',
-}
-
-export enum Designations {
-  None = 0,
-  Small_Business = 1,
-  Minority_Owned = 2,
-  Woman_Owned = 4,
-  Veteran_Owned = 8,
-  Disabled_Owned = 16,
+export enum TaxClearance {
+  Yes = 'Y',
+  No = 'N',
+  Unknown = 'X',
 }
 
 export interface RestaurantRow {
-  readonly SSNJRestaurantForm_Id: string;
-  readonly Inputs_Application: string;
-  readonly Inputs_Application_Label: string;
-  readonly Inputs_ApplicationNumber: number;
-  readonly Inputs_RestaurantFormId: string;
-  readonly Inputs_Checksum: number;
-  readonly Inputs_ReviewCode: string;
-  readonly Inputs_ReviewURL: string;
-  readonly Inputs_ParentheticalDBA: string;
+  readonly Addition_Round: number;
+  readonly SSNJRestaurantAdditionReview_Id: string;
+  readonly Inputs_RestaurantAdditionForm: string;
+  readonly Inputs_RestaurantAdditionForm_Label: string;
+  readonly Inputs_RestaurantFormNumber: string;
   readonly Inputs_DBA: string;
-  readonly Inputs_RestaurantIndex: number;
-  readonly Inputs_RestaurantName: string;
-  readonly Inputs_RestaurantContact: string;
-  readonly Inputs_RestaurantEmail: string;
-  readonly Welcome_InstructionConfirmation: 'Yes';
-  readonly RestaurantInformation_RestaurantName: string;
-  readonly RestaurantInformation_DBA: string;
-  readonly RestaurantInformation_EIN: string;
-  readonly RestaurantInformation_Website: string;
-  readonly RestaurantInformation_PrimaryBusinessAddress_Line1: string;
-  readonly RestaurantInformation_PrimaryBusinessAddress_Line2: string;
-  readonly RestaurantInformation_PrimaryBusinessAddress_City: string;
-  readonly RestaurantInformation_PrimaryBusinessAddress_State: string;
-  readonly RestaurantInformation_PrimaryBusinessAddress_PostalCode: string;
-  readonly RestaurantInformation_Designations: string;
-  readonly RestaurantInformation_Designations_Value: number;
-  readonly RestaurantInformation_OldEnough: 'Yes';
-  readonly ThankYouForYourInterest2_Regards: 'NJEDA';
-  readonly AuthorizedRepresentative_Name_First: string;
-  readonly AuthorizedRepresentative_Name_Last: string;
-  readonly AuthorizedRepresentative_Title: string;
-  readonly AuthorizedRepresentative_Email: string;
-  readonly AuthorizedRepresentative_Phone: string;
-  readonly AuthorizedRepresentative_AlternatePhone: string;
-  readonly NAICSCodeKnown: YesNo;
-  readonly NAICSCode: string;
-  readonly NAICSCodeInfo_Industry: string;
-  readonly NAICSCodeInfo_Industry_Label: string;
-  readonly NAICSCodeFinder_Sector: string;
-  readonly NAICSCodeFinder_Industry: string;
-  readonly NAICSCodeFinder_Industry_Label: string;
-  readonly NAICSCodeVerification_ConfirmNAICSCode: 'Yes';
-  readonly ThankYouForYourInterest_Regards: 'NJEDA';
-  readonly COVID19HarmAttestation_NegativeImpacts: string;
-  readonly COVID19HarmAttestation_Explanation: string;
+  readonly Inputs_ParentheticalDBA: string;
+  readonly Inputs_Checksum: number;
+  readonly Inputs_ExpectedChecksum: string;
+  readonly Inputs_ChecksumMatches: string;
+  readonly Inputs_ApplicationNumber: number;
+  readonly Inputs_ApplicationNumberMatches: string;
+  readonly Inputs_AllChecksPass: string;
+  readonly Inputs_ConfirmationID: string;
+  readonly Inputs_RestaurantFormID: string;
+  readonly InvalidLink_NJEDA: string;
   readonly ElectronicSignature_ElectronicSignatureAgreement: 'Yes';
   readonly ElectronicSignature_AcceptTerms: 'Yes';
   readonly ElectronicSignature_FullNameSignature: string;
-  readonly Entry_Status: EntryStatus;
+  readonly Entry_Status: string;
   readonly Entry_DateCreated: number;
   readonly Entry_DateSubmitted: number;
   readonly Entry_DateUpdated: number;
+  readonly Grantee_PROD: string;
+  readonly PROD_ID: string;
+  readonly PROD_ID_Check: string;
+  readonly Name_Check: string;
+  readonly Grantee_Name: string;
+  readonly Restaurant_form_ID: string;
+  readonly Restaurant_Name: string;
+  readonly Restaurant_DBA: string;
+  readonly Restaurant_SSN: string;
+  readonly Restaurant_FTE: number;
+  readonly Tax_Clear: TaxClearance;
+  readonly Known_to_DOL: boolean;
+  readonly DOL_UI_Clear: boolean;
+  readonly DOL_WH_Clear: boolean;
+  readonly WebSiteURL: string;
+  readonly NAICS: string;
+  readonly SelfIdentifyAs: string;
+  readonly ExistsPriorFeb2020: YesNo;
+  readonly FirstName: string;
+  readonly LastName: string;
+  readonly Title: string;
+  readonly Phone: string;
+  readonly AlternatePhone: string;
+  readonly Email: string;
+  readonly Address1: string;
+  readonly Address2: string;
+  readonly City: string;
+  readonly Zip: string;
+  readonly NegativeImpacts: string;
+  readonly ExplainNegativeImpacts: string;
+  readonly Prefixed_Addition_ID: string;
+  readonly Addition_ID: string;
+  readonly Addition_RoundID: string;
+  readonly Review_Row: number;
+  readonly Ignore: boolean;
 }
 
 export function getRows(filePath: string): RestaurantRow[] {
   const workbook = XLSX.readFile(filePath, { type: 'file' });
-  const sheet = workbook.Sheets['SSNJRestaurantForm'];
+  const sheet = workbook.Sheets['Restaurants'];
   const rows = XLSX.utils.sheet_to_json(sheet, { defval: undefined });
 
   return rows;
