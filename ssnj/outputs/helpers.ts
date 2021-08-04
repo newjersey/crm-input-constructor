@@ -75,13 +75,7 @@ export function getFindings(restaurant: DecoratedRestaurant): string {
   }
 
   if (restaurant.taxation['Clean Ind.'] === TaxationCleanStatus.Not_Clear) {
-    findings.push(
-      `Taxation not clear${
-        restaurant.taxation['Taxation Response']
-          ? ` (${restaurant.taxation['Taxation Response']})`
-          : ''
-      }.`
-    );
+    findings.push('Taxation not clear.');
   }
 
   if (!restaurant.dol.isActiveEmployer) {

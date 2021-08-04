@@ -32,7 +32,8 @@ export enum Designations {
 }
 
 export interface Row {
-  readonly SSNJGrantApplication_Id: string;
+  readonly SSNJ2GrantApplication_Id: string;
+  readonly Eligibility_ProductNumber: string;
   readonly Welcome_InstructionsRead: 'Yes';
   readonly Eligibility_IsRestaurant: 'No';
   readonly Organization_BusinessName: string;
@@ -41,7 +42,7 @@ export interface Row {
   readonly Organization_EntityType_Value: number;
   readonly Organization_NonprofitClassification: '';
   readonly Organization_OtherEntityType: '' | 'NJ Non Profit Corp' | '501(c)(3) pending nonprofit';
-  readonly Organization_EIN: string;
+  readonly Eligibility_EIN: string;
   readonly Organization_Website: string;
   readonly Organization_Religious: YesNo;
   readonly Organization_LobbyingPolitical: 'No';
@@ -54,6 +55,7 @@ export interface Row {
   readonly NAICSCodeFinder_Industry_Label: string;
   readonly NAICSCodeVerification_ConfirmNAICSCode: 'Yes';
   readonly ThankYouForYourInterest_Regards: 'NJEDA';
+  readonly Organization_StateOfIncorporation_State: string;
   readonly OrganizationAddress_PhysicalAddress_Line1: string;
   readonly OrganizationAddress_PhysicalAddress_Line2: string;
   readonly OrganizationAddress_PhysicalAddress_City: string;
