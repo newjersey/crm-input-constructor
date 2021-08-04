@@ -76,6 +76,7 @@ interface Account {
   AnnualRevenue: null;
   TaxClearanceComments: null;
   ACHNonCompliance: '';
+  StateOfIncorporation: string;
   address2Line1: string;
   address2Line2: string;
   address2City: string;
@@ -97,6 +98,7 @@ interface Project {
 }
 
 interface Product {
+  CopyFilesAndEligiblePRDUFrom: string, // existing PROD number, if exists
   DevelopmentOfficer: '';
   ServicingOfficerId: null;
   AppReceivedDate: string;
@@ -186,7 +188,7 @@ interface Underwriting {
   accountantEmailAddress: '';
   totalCost: Value;
   applicationID: string;
-  selectedProducts: 'Sustain and Serve NJ';
+  selectedProducts: 'Sustain and Serve NJ Phase 2';
   ReceivedPreiousFundingFromEDA: '';
   ReceivedPreiousFundingFromOtherthanEDA: '';
   TotalFullTimeEligibleJobs: NullableNumber;

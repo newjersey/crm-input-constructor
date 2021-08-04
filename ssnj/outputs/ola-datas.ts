@@ -11,6 +11,7 @@ import {
 } from './types';
 import { getOwnershipStructure, getFindings, getQuarterlyWageData } from './helpers';
 import { formatExcelDate, formatDollarsCents, formatNumber } from '../util';
+import { YesNo } from '../inputs/xlsx';
 
 export function generateOlaDatas(app: DecoratedApplication, test: boolean): OlaDatas {
   try {
@@ -25,11 +26,27 @@ export function generateOlaDatas(app: DecoratedApplication, test: boolean): OlaD
         AnnualRevenue: null,
         TaxClearanceComments: null,
         ACHNonCompliance: '',
-        address2Line1: app.OrganizationAddress_MailingAddress_Line1,
-        address2Line2: app.OrganizationAddress_MailingAddress_Line2,
-        address2City: app.OrganizationAddress_MailingAddress_City,
-        address2Zip: app.OrganizationAddress_MailingAddress_PostalCode,
-        address2State: app.OrganizationAddress_MailingAddress_State,
+        StateOfIncorporation: app.Organization_StateOfIncorporation_State,
+        address2Line1:
+          app.OrganizationAddress_MailingAddressSame === YesNo.Yes
+            ? app.OrganizationAddress_MailingAddress_Line1
+            : '',
+        address2Line2:
+          app.OrganizationAddress_MailingAddressSame === YesNo.Yes
+            ? app.OrganizationAddress_MailingAddress_Line2
+            : '',
+        address2City:
+          app.OrganizationAddress_MailingAddressSame === YesNo.Yes
+            ? app.OrganizationAddress_MailingAddress_City
+            : '',
+        address2Zip:
+          app.OrganizationAddress_MailingAddressSame === YesNo.Yes
+            ? app.OrganizationAddress_MailingAddress_PostalCode
+            : '',
+        address2State:
+          app.OrganizationAddress_MailingAddressSame === YesNo.Yes
+            ? app.OrganizationAddress_MailingAddress_State
+            : '',
         address2County: '',
         address2Country: '',
         WomanOwned: '',
@@ -44,6 +61,7 @@ export function generateOlaDatas(app: DecoratedApplication, test: boolean): OlaD
         ProjectDescription: '',
       },
       Product: {
+        CopyFilesAndEligiblePRDUFrom: app.Eligibility_ProductNumber,
         DevelopmentOfficer: '',
         ServicingOfficerId: null,
         AppReceivedDate: formatExcelDate(app.Entry_DateSubmitted),
@@ -87,7 +105,7 @@ export function generateOlaDatas(app: DecoratedApplication, test: boolean): OlaD
         email: app.AuthorizedRepresentitive_Email,
         organizationName: app.Organization_BusinessName,
         knownAs: app.Organization_DoingBusinessAsDBA,
-        ein: app.Organization_EIN,
+        ein: app.Eligibility_EIN,
         naicsCode: app.NAICSCode,
         ownershipStructure: getOwnershipStructure(app),
         applicantBackground: '',
@@ -137,7 +155,7 @@ export function generateOlaDatas(app: DecoratedApplication, test: boolean): OlaD
         accountantEmailAddress: '',
         totalCost: null,
         applicationID: app.ApplicationId,
-        selectedProducts: 'Sustain and Serve NJ',
+        selectedProducts: 'Sustain and Serve NJ Phase 2',
         ReceivedPreiousFundingFromEDA: '',
         ReceivedPreiousFundingFromOtherthanEDA: '',
         TotalFullTimeEligibleJobs: null,

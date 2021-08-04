@@ -70,24 +70,26 @@ async function main() {
   const OUTPUT_PATH = path.join(options.base, 'Output');
 
   // load
-  await loadSamsData(path.join(BASE_PATH, 'SAMS', 'SAM_Exclusions_Public_Extract_21029.CSV'));
+  await loadSamsData(path.join(BASE_PATH, 'SAMS', 'SAM_Exclusions_Public_Extract_21215.CSV'));
   await loadTaxationData(
-    path.join(BASE_PATH, 'Taxation', 'EDA Sustain and Serve - Tax Clearance Results.xlsx')
+    path.join(BASE_PATH, 'Taxation', 'EDA Sustain and Serve 2 - Tax Clearance Results.xlsx')
   );
   await loadWR30Data(
-    path.join(BASE_PATH, 'WR30', 'njeda crossmatch wage output file 2-3-2021.txt'),
-    path.join(BASE_PATH, 'WR30', '20210203 FEIN Not Found.txt')
+    path.join(BASE_PATH, 'WR30', 'njeda crossmatch wage output file 7-26-2021.txt'),
+    path.join(BASE_PATH, 'WR30', '20210726 FEIN Not Found.txt')
   );
   await loadDolData(
     path.join(BASE_PATH, 'DOL Lists', 'Active-Emps-03302020.xlsx'),
-    path.join(BASE_PATH, 'DOL Lists', 'No.Go.List.3.30.2020.UID.xlsx'),
-    path.join(BASE_PATH, 'DOL Lists', 'No.Go.List.3.30.2020.WHD.xlsx')
+    path.join(BASE_PATH, 'DOL Lists', 'No.Go.List.3.23.2021.UID.xlsx'),
+    path.join(BASE_PATH, 'DOL Lists', 'No.Go.List.3.23.2021.WHD.xlsx')
   );
 
   // apply data
   // Ugly number of variables, but makes type inference pick up the chained unions of generics.
   // I'm probably doing it wrong. Note that a map() chain here causes out-of-memory panics.
-  const restaurants0 = getRestaurants(path.join(BASE_PATH, 'Modified from Cognito', 'Master.xlsx'));
+  const restaurants0 = getRestaurants(
+    path.join(BASE_PATH, 'Modified from Cognito', 'Master Phase 2.xlsx')
+  );
 
   const restaurants1 = map(restaurants0, addDolData, 'Applying DOL data...');
   const restaurants2 = map(restaurants1, addTaxationData, 'Applying Taxation data...');
@@ -98,7 +100,11 @@ async function main() {
   let decoratedRestaurants: DecoratedRestaurant[] = restaurants4;
 
   const applications = getApplications(
-    path.join(BASE_PATH, 'Modified from Cognito', 'Master.xlsx')
+    path.join(BASE_PATH, 'Modified from Cognito', 'Master Phase 2.xlsx')
+  ).filter(
+    application =>
+      (options.new && !application.Eligibility_ProductNumber) ||
+      (options.existing && application.Eligibility_ProductNumber)
   );
 
   // TODO
@@ -124,7 +130,7 @@ async function main() {
         return 0;
       })
       .forEach(application => {
-        tsv += `\n${application.ApplicationId}\t${application.Organization_EIN}\t${application.Organization_BusinessName}\t${application.DBA}`;
+        tsv += `\n${application.ApplicationId}\t${application.Eligibility_EIN}\t${application.Organization_BusinessName}\t${application.DBA}`;
         application.restaurants.forEach(restaurant => {
           tsv += `\n${restaurant.Inputs_RestaurantFormId}\t${restaurant.RestaurantInformation_EIN}\t${restaurant.RestaurantInformation_RestaurantName}\t${restaurant.RestaurantInformation_DBA}`;
         });
@@ -154,11 +160,11 @@ async function main() {
     const base = `${env}`;
     const inputs: string = path.join(
       OUTPUT_PATH,
-      `${base}-${decoratedApplications.length}-INPUTS.json`
+      `${base}-${options.new ? 'NEW' : ''}-${options.existing ? 'EXISTING' : ''}-${decoratedApplications.length}-INPUTS.json`
     );
     const outputs: string = path.join(
       OUTPUT_PATH,
-      `${base}-${decoratedApplications.length}-OUTPUTS.json`
+      `${base}-${options.new ? 'NEW' : ''}-${options.existing ? 'EXISTING' : ''}-${decoratedApplications.length}-OUTPUTS.json`
     );
     const overwrite: boolean = !!options.force;
 
@@ -173,18 +179,16 @@ async function main() {
   }
 
   if (options.debug) {
-    let wr30 = `ID\tEIN\tName\tDBA\tQ2\tQ3\tQ4\tApplication Date\tRestaurant Form Date\tRestaurant Review Date`;
+    let wr30 = `ID\tEIN\tName\tDBA\tQ1\tApplication Date\tRestaurant Form Date\tRestaurant Review Date`;
 
     decoratedRestaurants.forEach(r => {
-      const id = r.SSNJRestaurantForm_Id;
+      const id = r.SSNJ2RestaurantForm_Id;
       const ein = r.RestaurantInformation_EIN;
       const name = r.RestaurantInformation_RestaurantName;
       const dba = r.RestaurantInformation_DBA;
-      const q2 = getQuarterlyWageData(r, 2020, 2).fteCount;
-      const q3 = getQuarterlyWageData(r, 2020, 3).fteCount;
-      const q4 = getQuarterlyWageData(r, 2020, 4).fteCount;
+      const q1 = getQuarterlyWageData(r, 2021, 1).fteCount;
 
-      wr30 += `\n${id}\t${ein}\t${name}\t${dba}\t${q2}\t${q3}\t${q4}\t?\t${r.Entry_DateSubmitted}\t?`;
+      wr30 += `\n${id}\t${ein}\t${name}\t${dba}\t${q1}\t?\t${r.Entry_DateSubmitted}\t?`;
     });
 
     writeFile(path.join(OUTPUT_PATH, `wr30.tsv`), wr30, true);
@@ -194,7 +198,7 @@ async function main() {
     const fte = decoratedRestaurants
       .map(r => ({
         ein: r.RestaurantInformation_EIN,
-        fte: getQuarterlyWageData(r, 2020, 3).fteCount,
+        fte: getQuarterlyWageData(r, 2021, 1).fteCount,
       }))
       .filter(obj => obj.fte);
 

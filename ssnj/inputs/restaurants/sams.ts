@@ -65,7 +65,7 @@ function isPossibleMatch<T extends Restaurant & Taxation>(
     ['NJ', 'NY', 'PA', 'CT', 'DE'].includes(record['State / Province']) &&
     (shouldFlag(record.Name, restaurant.RestaurantInformation_RestaurantName) ||
       shouldFlag(record.Name, restaurant.RestaurantInformation_DBA) ||
-      shouldFlag(record.Name, restaurant.taxation['TAX REG NAME']))
+      shouldFlag(record.Name, restaurant.taxation['TAXREG NAME']))
   );
 }
 

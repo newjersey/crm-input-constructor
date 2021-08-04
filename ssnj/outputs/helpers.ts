@@ -65,6 +65,7 @@ export function getQuarterlyWageData(
 }
 
 export function getFindings(restaurant: DecoratedRestaurant): string {
+  const NO_FINDINGS_STRING = 'NO FINDINGS';
   const fteCount = getQuarterlyWageData(restaurant).fteCount;
   const wr30Desc = getQuarterlyWageData(restaurant).quarterDesc;
   let findings: string[] = [];
@@ -74,13 +75,7 @@ export function getFindings(restaurant: DecoratedRestaurant): string {
   }
 
   if (restaurant.taxation['Clean Ind.'] === TaxationCleanStatus.Not_Clear) {
-    findings.push(
-      `Taxation not clear${
-        restaurant.taxation['Taxation Response']
-          ? ` (${restaurant.taxation['Taxation Response']})`
-          : ''
-      }.`
-    );
+    findings.push('Taxation not clear.');
   }
 
   if (!restaurant.dol.isActiveEmployer) {
@@ -105,7 +100,7 @@ export function getFindings(restaurant: DecoratedRestaurant): string {
     );
   }
 
-  return findings.join(' ');
+  return findings.join(' ') || NO_FINDINGS_STRING;
 }
 
 export function getOwnershipStructure(app: types.DecoratedApplication): types.OwnershipStructures {

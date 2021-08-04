@@ -22,7 +22,7 @@ export enum Designations {
 }
 
 export interface RestaurantRow {
-  readonly SSNJRestaurantForm_Id: string;
+  readonly SSNJ2RestaurantForm_Id: string;
   readonly Inputs_Application: string;
   readonly Inputs_Application_Label: string;
   readonly Inputs_ApplicationNumber: number;
@@ -78,7 +78,7 @@ export interface RestaurantRow {
 
 export function getRows(filePath: string): RestaurantRow[] {
   const workbook = XLSX.readFile(filePath, { type: 'file' });
-  const sheet = workbook.Sheets['SSNJRestaurantForm'];
+  const sheet = workbook.Sheets['SSNJ2RestaurantForm'];
   const rows = XLSX.utils.sheet_to_json(sheet, { defval: undefined });
 
   return rows;

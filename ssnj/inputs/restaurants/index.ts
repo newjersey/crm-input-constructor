@@ -25,10 +25,10 @@ export function getRestaurants(path: string): Restaurant[] {
   const reviewedRestaurants = restaurants.filter(restaurant => {
     const reviewed: boolean = reviews
       .map(review => review.Inputs_RestaurantForm)
-      .includes(restaurant.SSNJRestaurantForm_Id);
+      .includes(restaurant.SSNJ2RestaurantForm_Id);
 
     if (!reviewed) {
-      console.log(`Skipping unreviewed restaurant form ${restaurant.SSNJRestaurantForm_Id}`);
+      console.log(`Skipping unreviewed restaurant form ${restaurant.SSNJ2RestaurantForm_Id}`);
     }
 
     return reviewed;
@@ -47,7 +47,7 @@ export function getRestaurants(path: string): Restaurant[] {
 
       if (dup) {
         console.log(
-          `Skipping duplicate restaurant form ${restaurant.SSNJRestaurantForm_Id} in favor of ${dup.SSNJRestaurantForm_Id}`
+          `Skipping duplicate restaurant form ${restaurant.SSNJ2RestaurantForm_Id} in favor of ${dup.SSNJ2RestaurantForm_Id}`
         );
       } else {
         dedupedReviewedRestaurants.push(restaurant);
@@ -60,7 +60,7 @@ export function getRestaurants(path: string): Restaurant[] {
 export function makeAddRestaurants(allRestaurants: DecoratedRestaurant[]) {
   const addRestaurants = function <T extends Application>(application: T): T & Restaurants {
     const restaurants: DecoratedRestaurant[] = allRestaurants.filter(
-      restaurant => restaurant.Inputs_Application === application.SSNJGrantApplication_Id
+      restaurant => restaurant.Inputs_Application === application.SSNJ2GrantApplication_Id
     );
 
     return { ...application, restaurants };

@@ -8,9 +8,8 @@ export enum CleanStatus {
 }
 
 interface TaxationData {
-  readonly 'TAX REG NAME': string;
+  readonly 'TAXREG NAME': string;
   readonly 'Clean Ind.': CleanStatus;
-  readonly 'Taxation Response': string;
 }
 
 export interface Taxation {
@@ -22,7 +21,7 @@ interface TaxationDataMap {
 }
 
 interface Row extends TaxationData {
-  readonly 'EIN      ': string;
+  readonly TPID: string;
 }
 
 // assumes single-sheet workbook
@@ -34,7 +33,7 @@ function getData(filePath: string): TaxationDataMap {
 
   const map: TaxationDataMap = {};
   rows.forEach(row => {
-    const { 'EIN      ': ein, ...rest } = row;
+    const { TPID: ein, ...rest } = row;
     map[ein] = rest;
   });
 

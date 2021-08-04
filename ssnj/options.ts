@@ -9,6 +9,8 @@ export interface Options {
   readonly debug?: boolean;
   readonly force?: boolean;
   readonly test?: boolean;
+  readonly new?: boolean;
+  readonly existing?: boolean;
 }
 
 const optionDefinitions: object[] = [
@@ -47,6 +49,18 @@ const optionDefinitions: object[] = [
     alias: 't',
     type: Boolean,
     description: 'If this run is meant for the CRM TEST environment (uses different entity IDs).',
+  },
+  {
+    name: 'new',
+    alias: 'n',
+    type: Boolean,
+    description: 'Include new applicants.',
+  },
+  {
+    name: 'existing',
+    alias: 'e',
+    type: Boolean,
+    description: 'Include existing applicants.',
   },
 ];
 
