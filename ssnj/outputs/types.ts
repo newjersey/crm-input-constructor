@@ -7,6 +7,10 @@ export enum TaxClearanceValues {
   Not_Found = 'Not Found',
 }
 
+export enum Users {
+  EmilyApple = '{ABEE151C-3C03-EB11-A815-001DD801DF87}',
+}
+
 export enum OwnershipStructures {
   SoleProprietorship = 'Sole Proprietorship',
   Partnership = 'Partnership',
@@ -100,7 +104,7 @@ interface Project {
 interface Product {
   CopyFilesAndEligiblePRDUFrom: string, // existing PROD number, if exists
   DevelopmentOfficer: '';
-  ServicingOfficerId: null;
+  ServicingOfficerId: Users;
   AppReceivedDate: string;
   Amount: Value;
   nol_total_NOL_benefit: null;

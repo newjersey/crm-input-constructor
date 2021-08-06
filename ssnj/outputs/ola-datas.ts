@@ -8,6 +8,7 @@ import {
   ProductSubStatuses,
   MonitoringStatuses,
   MonitoringTypes,
+  Users,
 } from './types';
 import { getOwnershipStructure, getFindings, getQuarterlyWageData } from './helpers';
 import { formatExcelDate, formatDollarsCents, formatNumber } from '../util';
@@ -63,7 +64,7 @@ export function generateOlaDatas(app: DecoratedApplication, test: boolean): OlaD
       Product: {
         CopyFilesAndEligiblePRDUFrom: app.Eligibility_ProductNumber,
         DevelopmentOfficer: '',
-        ServicingOfficerId: null,
+        ServicingOfficerId: Users.EmilyApple,
         AppReceivedDate: formatExcelDate(app.Entry_DateSubmitted),
         Amount: {
           Value: app.GrantRequest_GrantRequest,
@@ -74,9 +75,7 @@ export function generateOlaDatas(app: DecoratedApplication, test: boolean): OlaD
         benefit_allocation_factor: null,
         nol_prior_years_tax_credits_sold: null,
         ProductStatusId: ProductStatuses.InProgress,
-        ProductSubStatusId: app.Flags
-          ? ProductSubStatuses.InProgress_Application
-          : ProductSubStatuses.InProgress_ApplicationSubmitted,
+        ProductSubStatusId: ProductSubStatuses.InProgress_ApplicationSubmitted,
         ProductTypeId: '{C1DE0936-4436-EB11-A813-001DD8018831}',
         LocatedInCommercialLocation: '',
         ProductDescription: '',
