@@ -160,11 +160,11 @@ async function main() {
     const base = `${env}`;
     const inputs: string = path.join(
       OUTPUT_PATH,
-      `${base}-${options.new ? 'NEW' : ''}-${options.existing ? 'EXISTING' : ''}-${decoratedApplications.length}-INPUTS.json`
+      `${base}-${options.new ? 'NEW-' : ''}${options.existing ? 'EXISTING-' : ''}${decoratedApplications.length}-INPUTS.json`
     );
     const outputs: string = path.join(
       OUTPUT_PATH,
-      `${base}-${options.new ? 'NEW' : ''}-${options.existing ? 'EXISTING' : ''}-${decoratedApplications.length}-OUTPUTS.json`
+      `${base}-${options.new ? 'NEW-' : ''}${options.existing ? 'EXISTING-' : ''}${decoratedApplications.length}-OUTPUTS.json`
     );
     const overwrite: boolean = !!options.force;
 
