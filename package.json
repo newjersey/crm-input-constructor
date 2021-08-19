@@ -33,7 +33,7 @@
     "string-similarity": "^4.0.2",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.7",
-    "xlsx": "^0.16.5"
+    "xlsx": "^0.17.0"
   },
   "devDependencies": {
     "husky": "^4.2.5",
