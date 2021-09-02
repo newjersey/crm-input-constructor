@@ -77,7 +77,7 @@ async function main() {
   // Ugly number of variables, but makes type inference pick up the chained unions of generics.
   // I'm probably doing it wrong. Note that a map() chain here causes out-of-memory panics.
   const restaurants0 = getRestaurants(
-    path.join(BASE_PATH, 'Raw From CRM', 'SSNJ All Phase 2 Restaurants (old and new).xlsx')
+    path.join(BASE_PATH, 'Raw From CRM', 'Additional 12 Restaurants.xlsx')
   );
 
   const restaurants1 = map(restaurants0, addDolData, 'Applying DOL data...');
@@ -97,7 +97,7 @@ async function main() {
 
   // write
   if (options.out) {
-    const base = `SSNJ-2-Restaurant-Findings`;
+    const base = `SSNJ-2-Restaurant-Findings-12-Additional-Restaurants`;
     const inputs: string = path.join(
       OUTPUT_PATH,
       `${base}-${decoratedRestaurants.length}-INPUTS.json`
