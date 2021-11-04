@@ -1,31 +1,38 @@
 const chalk = require('chalk');
 
 import { OlaDatas } from './types';
-import { RestaurantRow } from '../inputs/restaurants/xlsx';
-import { getFindings } from './helpers';
+import { Restaurant } from '../inputs/restaurants';
 
-export function generateOlaDatas(restaurantRows: RestaurantRow[]): OlaDatas {
+function selfIdentifyAs(restaurant: Restaurant): string {
+  const SOLE_PROP_SMLLC_TEXT = 'Sole Prop or SMLLC';
+  const designations: string = restaurant.form.RestaurantInformation_Designations;
+  const solePropSmllc: boolean = restaurant.form.DocumentUploads_IsSolePropOrSMLLC === 'Yes';
+
+  return `${designations}${designations ? ', ' : ''}${solePropSmllc ? SOLE_PROP_SMLLC_TEXT : ''}`;
+}
+
+export function generateOlaDatas(restaurants: Restaurant[]): OlaDatas {
   try {
     const olaDatas: OlaDatas = {
-      SSNJRestaurants: restaurantRows.map(restaurant => ({
-        ProductRecordId: restaurant.PROD_ID,
-        Name: restaurant.Restaurant_Name,
-        DoingBusinessAs: restaurant.Restaurant_DBA,
-        EIN: restaurant.Restaurant_SSN,
-        WebSiteURL: restaurant.WebSiteURL,
-        NAICS: restaurant.NAICS,
-        SelfIdentifyAs: restaurant.SelfIdentifyAs,
-        ExistsPriorFeb2020: restaurant.ExistsPriorFeb2020,
-        FirstName: restaurant.FirstName,
-        LastName: restaurant.LastName,
-        Title: restaurant.Title,
-        Phone: restaurant.Phone,
-        Cell: restaurant.AlternatePhone,
-        Email: restaurant.Email,
-        address1Line1: restaurant.Address1,
-        address1Line2: restaurant.Address2,
-        address1City: restaurant.City,
-        address1Zip: restaurant.Zip,
+      SSNJRestaurants: restaurants.map(restaurant => ({
+        ProductRecordId: 'PROD-XXXXXX', // TODO: 
+        Name: restaurant.form.RestaurantInformation_RestaurantName,
+        DoingBusinessAs: restaurant.form.RestaurantInformation_DBA,
+        EIN: restaurant.form.RestaurantInformation_EIN,
+        WebSiteURL: restaurant.form.RestaurantInformation_Website,
+        NAICS: restaurant.form.NAICSCode,
+        SelfIdentifyAs: selfIdentifyAs(restaurant),
+        ExistsPriorFeb2020: restaurant.form.RestaurantInformation_OldEnough,
+        FirstName: restaurant.form.AuthorizedRepresentative_Name_First,
+        LastName: restaurant.form.AuthorizedRepresentative_Name_Last,
+        Title: restaurant.form.AuthorizedRepresentative_Title,
+        Phone: restaurant.form.AuthorizedRepresentative_Phone,
+        Cell: restaurant.form.AuthorizedRepresentative_AlternatePhone,
+        Email: restaurant.form.AuthorizedRepresentative_Email,
+        address1Line1: restaurant.form.RestaurantInformation_PrimaryBusinessAddress_Line1,
+        address1Line2: restaurant.form.RestaurantInformation_PrimaryBusinessAddress_Line2,
+        address1City: restaurant.form.RestaurantInformation_PrimaryBusinessAddress_City,
+        address1Zip: restaurant.form.RestaurantInformation_PrimaryBusinessAddress_PostalCode,
         address1State: 'NJ',
         address1County: '',
         address2Line1: '',
@@ -34,11 +41,11 @@ export function generateOlaDatas(restaurantRows: RestaurantRow[]): OlaDatas {
         address2Zip: '',
         address2State: '',
         address2County: '',
-        NegativeImpacts: restaurant.NegativeImpacts,
-        ExplainNegativeImpacts: restaurant.ExplainNegativeImpacts,
-        TotalFTECountfromWR30: restaurant.Restaurant_FTE,
+        NegativeImpacts: restaurant.form.COVID19HarmAttestation_NegativeImpacts,
+        ExplainNegativeImpacts: restaurant.form.COVID19HarmAttestation_Explanation,
+        TotalFTECountfromWR30: 0, // TODO: get from Bruce, calculate
         Status: 'In Review',
-        Findings: getFindings(restaurant),
+        Findings: '', // staff to complete manually
       })),
     };
 

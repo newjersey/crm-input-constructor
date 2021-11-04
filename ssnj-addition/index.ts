@@ -1,5 +1,11 @@
+// TODO: get PROD record ID for each applicant (Inputs_Addition)
+// TODO: check for duplicates against existing PRDU records
+// TODO: as input, min/max review numbers
+// TODO: review existing input parameters for usefulness, update usage docs
+// TODO: format output file names to include min/max review numbers
+// TODO: add WR-30 calculation back in
+
 const chalk = require('chalk');
-const cliProgress = require('cli-progress');
 const fs = require('fs');
 const path = require('path');
 
@@ -33,10 +39,12 @@ async function main() {
   const BASE_PATH = options.base;
   const OUTPUT_PATH = path.join(options.base, 'Output');
 
-  const restaurants = getRestaurants(path.join(BASE_PATH, 'SSNJ Phase 1 Additions – CREATE Dups.xlsx'));
-  const olaDatas = generateOlaDatas(
-    restaurants.filter(r => !r.Ignore && (!options.round || options.round === r.Addition_Round))
+  const restaurants = getRestaurants(
+    path.join(BASE_PATH, 'SSNJ Restaurant Addition Form.xlsx'),
+    path.join(BASE_PATH, 'SSNJ Restaurant Addition Review.xlsx')
   );
+
+  const olaDatas = generateOlaDatas(restaurants);
 
   // print
   if (options.pretty) {
