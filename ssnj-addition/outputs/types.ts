@@ -1,6 +1,3 @@
-import { Application } from '../inputs/applications';
-import { Restaurants } from '../inputs/restaurants';
-
 export enum TaxClearanceValues {
   Clear = 'Clear',
   Not_Clear = 'Not Clear',
@@ -22,7 +19,6 @@ export type YesNo = 'Yes' | 'No';
 export type YesNoNA = 'Yes' | 'No' | 'N/A';
 export type NullableNumber = number | null;
 export type NullableString = string | null;
-export type DecoratedApplication = Application & Restaurants;
 
 export interface QuarterlyWageData {
   fteCount: NullableNumber;

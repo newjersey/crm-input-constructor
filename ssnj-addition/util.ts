@@ -1,20 +1,7 @@
-import { YesNo } from './inputs/applications';
-
 // TODO -- make these imports?
 const numeral = require('numeral');
 const { getJsDateFromExcel } = require('excel-date-to-js');
 const { utcToZonedTime } = require('date-fns-tz');
-
-export function bool(yesNo: YesNo): boolean {
-  switch (yesNo) {
-    case YesNo.Yes:
-      return true;
-    case YesNo.No:
-      return false;
-    default:
-      throw new Error(`Cannot convert to boolean: ${yesNo}`);
-  }
-}
 
 export function dateFromExcel(excelFloat: number): Date {
   const excelFloatString: string = excelFloat.toString(10);
