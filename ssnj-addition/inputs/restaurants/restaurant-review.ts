@@ -31,6 +31,8 @@ export interface RestaurantReview {
 }
 
 export function getRestaurantReviews(filePath: string): RestaurantReview[] {
+  console.log('Getting all restaurant reviews...');
+
   const workbook = XLSX.readFile(filePath, { type: 'file' });
   const sheet = workbook.Sheets['SSNJRestaurantAdditionReview'];
   const rows = XLSX.utils.sheet_to_json(sheet, { defval: undefined });

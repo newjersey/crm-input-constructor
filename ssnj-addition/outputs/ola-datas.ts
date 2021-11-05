@@ -4,18 +4,24 @@ import { OlaDatas } from './types';
 import { Restaurant } from '../inputs/restaurants';
 
 function selfIdentifyAs(restaurant: Restaurant): string {
+  const DELIMITER = ', ';
   const SOLE_PROP_SMLLC_TEXT = 'Sole Prop or SMLLC';
   const designations: string = restaurant.form.RestaurantInformation_Designations;
-  const solePropSmllc: boolean = restaurant.form.DocumentUploads_IsSolePropOrSMLLC === 'Yes';
+  const identities: string[] = designations.split(DELIMITER).filter(s => !!s);
+  const isSolePropOrSmllc: boolean = restaurant.form.DocumentUploads_IsSolePropOrSMLLC === 'Yes';
 
-  return `${designations}${designations ? ', ' : ''}${solePropSmllc ? SOLE_PROP_SMLLC_TEXT : ''}`;
+  if (isSolePropOrSmllc) {
+    identities.push(SOLE_PROP_SMLLC_TEXT);
+  }
+
+  return identities.join(DELIMITER);
 }
 
 export function generateOlaDatas(restaurants: Restaurant[]): OlaDatas {
   try {
     const olaDatas: OlaDatas = {
       SSNJRestaurants: restaurants.map(restaurant => ({
-        ProductRecordId: 'PROD-XXXXXX', // TODO: 
+        ProductRecordId: restaurant.applicant["Product ID"],
         Name: restaurant.form.RestaurantInformation_RestaurantName,
         DoingBusinessAs: restaurant.form.RestaurantInformation_DBA,
         EIN: restaurant.form.RestaurantInformation_EIN,
@@ -51,11 +57,7 @@ export function generateOlaDatas(restaurants: Restaurant[]): OlaDatas {
 
     return olaDatas;
   } catch (e) {
-    console.error(
-      chalk.red(
-        `Error found while generating OLA Datas:`
-      )
-    );
+    console.error(chalk.red(`Error found while generating OLA Datas:`));
     console.dir(e, { depth: null });
 
     throw e;

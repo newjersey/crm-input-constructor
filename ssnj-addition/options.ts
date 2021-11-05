@@ -7,7 +7,8 @@ export interface Options {
   readonly out?: boolean;
   readonly pretty?: boolean;
   readonly force?: boolean;
-  readonly round?: number;
+  readonly min?: number;
+  readonly max?: number;
 }
 
 const optionDefinitions: object[] = [
@@ -22,24 +23,33 @@ const optionDefinitions: object[] = [
     alias: 'o',
     type: Boolean,
     description: 'Whether or not to write output files.',
+    optional: true,
   },
   {
     name: 'pretty',
     alias: 'p',
     type: Boolean,
     description: 'Format JSON nicely on screen (does not effect JSON lines in output file).',
+    optional: true,
   },
   {
     name: 'force',
     alias: 'f',
     type: Boolean,
     description: 'Force overwrite of existing files (suggested only during development).',
+    optional: true,
   },
   {
-    name: 'round',
-    alias: 'r',
+    name: 'min',
     type: Number,
-    description: 'Limit to an addition round.',
+    description: 'Minimum Cognito review entry number (inclusive).',
+    optional: true,
+  },
+  {
+    name: 'max',
+    type: Number,
+    description: 'Maximum Cognito review entry number (inclusive).',
+    optional: true,
   },
 ];
 
@@ -57,7 +67,7 @@ export function printUsage(): void {
       optionList: optionDefinitions,
     },
     {
-      content: 'Example: npm run ssnj-addition -- -dtpo -r 1 -b /my/base/path/',
+      content: 'Example: npm run ssnj-addition -- -dtpo --min=1 --max=103 -b /my/base/path/',
     },
   ]);
 
@@ -65,9 +75,7 @@ export function printUsage(): void {
 }
 
 export function printStartMessage(_options: Options): void {
-  console.log(
-    `Generating OLA Datas creation JSON from ${chalk.blue(_options.base)}\n`
-  );
+  console.log(`Generating OLA Datas creation JSON from ${chalk.blue(_options.base)}\n`);
 }
 
 export function optionsSatisfied(_options: Options): boolean {

@@ -61,10 +61,31 @@ export interface RestaurantForm {
   readonly Entry_DateUpdated: number;
 }
 
-export function getRestaurantForms(filePath: string): RestaurantForm[] {
+function getRestaurantForms(filePath: string): RestaurantForm[] {
+  console.log('Getting all restaurant forms...');
+
   const workbook = XLSX.readFile(filePath, { type: 'file' });
   const sheet = workbook.Sheets['SSNJRestaurantAdditionForm'];
   const rows = XLSX.utils.sheet_to_json(sheet, { defval: undefined });
 
   return rows;
+}
+
+export function makeGetRestaurantForm(filePath: string) {
+  const allRestaurantForms = getRestaurantForms(filePath);
+  const getRestaurantForm = (entryNumber: string): RestaurantForm => {
+    const restaurantForms = allRestaurantForms.filter(
+      restaurantForm => restaurantForm.SSNJRestaurantAdditionForm_Id === entryNumber
+    );
+
+    if (restaurantForms.length < 1) {
+      throw new Error(`Could not find restaurant form with entry number ${entryNumber}`);
+    } else if (restaurantForms.length > 1) {
+      throw new Error(`Found multiple restaurant form with entry number ${entryNumber}`);
+    } else {
+      return restaurantForms[0];
+    }
+  };
+
+  return getRestaurantForm;
 }
