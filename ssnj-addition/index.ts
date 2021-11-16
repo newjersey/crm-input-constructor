@@ -1,4 +1,5 @@
 // TODO: add WR-30 calculation back in
+// TODO: add status and findings from staff spreadsheet
 
 const chalk = require('chalk');
 const fs = require('fs');
@@ -35,7 +36,8 @@ function flagInternalDuplicates(restaurants: Restaurant[]) {
     const key = `Applicant: ${r.addition.Organization_EIN}, Restaurant: ${r.form.RestaurantInformation_EIN}`;
 
     if (seen.has(key)) {
-      throw new Error(`Duplicate new applicant/restaurant pair: ${key}`);
+      // throw new Error(`Duplicate new applicant/restaurant pair: ${key}`);
+      console.log(`Duplicate new applicant/restaurant pair: ${key}`);
     }
 
     seen.add(key);
@@ -49,7 +51,7 @@ function flagExternalDuplicates(restaurants: Restaurant[]) {
   const prduPath = path.join(
     BASE_PATH,
     'Raw from CRM',
-    'Product User Advanced Find View 11-4-2021 2-03-06 PM.xlsx'
+    'Product User Advanced Find View 11-16-2021 2-20-45 PM.xlsx'
   );
   const existing = new Set<string>(
     getProductUsers(prduPath).map(prdu =>
@@ -61,7 +63,8 @@ function flagExternalDuplicates(restaurants: Restaurant[]) {
     const key = getCompositeKey(r.applicant['Product ID'], r.form.RestaurantInformation_EIN);
 
     if (existing.has(key)) {
-      throw new Error(`New applicant/restaurant pair already in CRM: ${key}`);
+      // throw new Error(`New applicant/restaurant pair already in CRM: ${key}`);
+      console.log(`New applicant/restaurant pair already in CRM (but might be a false positive if restaurant/applicant warning thrown for this EIN above): ${key}`);
     }
 
     existing.add(key);
@@ -80,7 +83,7 @@ async function main() {
   const max: number = options.max || Infinity;
 
   const restaurants = getRestaurants(
-    path.join(BASE_PATH, 'Raw from CRM', 'Product Advanced Find View 11-4-2021 6-35-06 PM.xlsx'),
+    path.join(BASE_PATH, 'Raw from CRM', 'Product Advanced Find View 11-16-2021 2-19-17 PM.xlsx'),
     path.join(BASE_PATH, 'Raw from Cognito', 'SSNJ Restaurant Addition.xlsx'),
     path.join(BASE_PATH, 'Raw from Cognito', 'SSNJ Restaurant Addition Form.xlsx'),
     path.join(BASE_PATH, 'Raw from Cognito', 'SSNJ Restaurant Addition Review.xlsx'),
