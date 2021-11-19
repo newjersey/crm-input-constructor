@@ -2,6 +2,10 @@ const chalk = require('chalk');
 
 import { OlaDatas } from './types';
 import { Restaurant } from '../inputs/restaurants';
+import { WR30 } from '../inputs/staff/wr30';
+import { getQuarterlyWageData } from './helpers';
+
+type RestaurantWithWr30 = Restaurant & WR30;
 
 function selfIdentifyAs(restaurant: Restaurant): string {
   const DELIMITER = ', ';
@@ -17,7 +21,7 @@ function selfIdentifyAs(restaurant: Restaurant): string {
   return identities.join(DELIMITER);
 }
 
-export function generateOlaDatas(restaurants: Restaurant[]): OlaDatas {
+export function generateOlaDatas(restaurants: RestaurantWithWr30[]): OlaDatas {
   try {
     const olaDatas: OlaDatas = {
       SSNJRestaurants: restaurants.map(restaurant => ({
@@ -49,7 +53,7 @@ export function generateOlaDatas(restaurants: Restaurant[]): OlaDatas {
         address2County: '',
         NegativeImpacts: restaurant.form.COVID19HarmAttestation_NegativeImpacts,
         ExplainNegativeImpacts: restaurant.form.COVID19HarmAttestation_Explanation,
-        TotalFTECountfromWR30: 0, // TODO: get from Bruce, calculate
+        TotalFTECountfromWR30: getQuarterlyWageData(restaurant).fteCount,
         Status: restaurant.manualReview.Eligibility, // TODO: translate to a code
         Findings: restaurant.manualReview.Findings,
       })),

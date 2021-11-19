@@ -61,7 +61,7 @@ export interface SSNJRestaurant {
   address2County: string;
   NegativeImpacts: string;
   ExplainNegativeImpacts: string;
-  TotalFTECountfromWR30: number;
+  TotalFTECountfromWR30: NullableNumber;
   Status: string; // TODO: make a code enum
   Findings: string;
 }

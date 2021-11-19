@@ -1,6 +1,3 @@
-// TODO: add WR-30 calculation back in
-// TODO: add status and findings from staff spreadsheet
-
 const chalk = require('chalk');
 const fs = require('fs');
 const path = require('path');
@@ -9,6 +6,9 @@ import { Restaurant, getRestaurants } from './inputs/restaurants';
 import { options, optionsSatisfied, printStartMessage, printUsage } from './options';
 import { generateOlaDatas } from './outputs/ola-datas';
 import { getProductUsers } from './inputs/crm/product-user';
+import { WR30, makeAddWR30Data } from './inputs/staff/wr30';
+
+type RestaurantWithWr30 = Restaurant & WR30;
 
 const BASE_PATH = options.base;
 const OUTPUT_PATH = path.join(options.base, 'Output');
@@ -81,6 +81,11 @@ async function main() {
     return;
   }
 
+  const addWR30Data = await makeAddWR30Data(
+    path.join(BASE_PATH, 'WR30', 'njeda crossmatch wage output file 11-16-2021.txt'),
+    path.join(BASE_PATH, 'WR30', 'FEIN NOT FOUND.txt')
+  );
+
   const min: number = options.min || 1;
   const max: number = options.max || Infinity;
 
@@ -94,12 +99,17 @@ async function main() {
     max
   );
 
+  // WR-30 data is added in a different way, to reuse existing logic
+  const restaurantsWithWr30: RestaurantWithWr30[] = restaurants.map(restaurant =>
+    addWR30Data(restaurant)
+  );
+
   // catch dups
-  flagInternalDuplicates(restaurants);
-  flagExternalDuplicates(restaurants);
+  flagInternalDuplicates(restaurantsWithWr30);
+  flagExternalDuplicates(restaurantsWithWr30);
 
   // stringify
-  const olaDatas = generateOlaDatas(restaurants);
+  const olaDatas = generateOlaDatas(restaurantsWithWr30);
 
   // print
   if (options.pretty) {
@@ -119,7 +129,7 @@ async function main() {
          \n  Output: ${chalk.blue(outputs)}`
     );
 
-    writeFile(inputs, JSON.stringify(restaurants), overwrite);
+    writeFile(inputs, JSON.stringify(restaurantsWithWr30), overwrite);
     writeFile(outputs, JSON.stringify(olaDatas), overwrite);
   }
 
