@@ -62,7 +62,7 @@ export interface SSNJRestaurant {
   NegativeImpacts: string;
   ExplainNegativeImpacts: string;
   TotalFTECountfromWR30: number;
-  Status: 'In Review';
+  Status: string; // TODO: make a code enum
   Findings: string;
 }
 

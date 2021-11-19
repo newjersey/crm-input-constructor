@@ -2,12 +2,14 @@ import { RestaurantReview, getRestaurantReviews } from './restaurant-review';
 import { RestaurantForm, makeGetRestaurantForm } from './restaurant-form';
 import { RestaurantAddition, makeGetRestaurantAddition } from './restaurant-addition';
 import { Applicant, makeGetApplicant } from '../crm/applicant';
+import { ManualReview, makeGetManualReview } from '../staff/manual-review';
 
 export default interface Restaurant {
   readonly review: RestaurantReview;
   readonly form: RestaurantForm;
   readonly addition: RestaurantAddition;
   readonly applicant: Applicant;
+  readonly manualReview: ManualReview;
 }
 
 export function getRestaurants(
@@ -15,6 +17,7 @@ export function getRestaurants(
   restaurantAdditionsFilePath: string,
   restaurantFormsFilePath: string,
   restaurantReviewsFilePath: string,
+  manualReviewsFilePath: string,
   min: number,
   max: number
 ): Restaurant[] {
@@ -23,6 +26,7 @@ export function getRestaurants(
   const getApplicant = makeGetApplicant(applicantsFilePath);
   const getRestaurantAddition = makeGetRestaurantAddition(restaurantAdditionsFilePath);
   const getRestaurantForm = makeGetRestaurantForm(restaurantFormsFilePath);
+  const getManualReview = makeGetManualReview(manualReviewsFilePath);
   const restaurantReviews = getRestaurantReviews(restaurantReviewsFilePath)
     // limit
     .filter(review => {
@@ -42,12 +46,14 @@ export function getRestaurants(
     const form = getRestaurantForm(review.Inputs_RestaurantAdditionForm);
     const addition = getRestaurantAddition(form.Inputs_Addition);
     const applicant = getApplicant(addition.Organization_EIN);
+    const manualReview = getManualReview(form.RestaurantInformation_EIN, applicant['Product ID']);
 
     return {
       review,
       form,
       addition,
       applicant,
+      manualReview,
     };
   });
 }

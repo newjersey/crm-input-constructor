@@ -50,8 +50,8 @@ export function generateOlaDatas(restaurants: Restaurant[]): OlaDatas {
         NegativeImpacts: restaurant.form.COVID19HarmAttestation_NegativeImpacts,
         ExplainNegativeImpacts: restaurant.form.COVID19HarmAttestation_Explanation,
         TotalFTECountfromWR30: 0, // TODO: get from Bruce, calculate
-        Status: 'In Review',
-        Findings: '', // staff to complete manually
+        Status: restaurant.manualReview.Eligibility, // TODO: translate to a code
+        Findings: restaurant.manualReview.Findings,
       })),
     };
 

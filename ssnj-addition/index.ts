@@ -64,7 +64,9 @@ function flagExternalDuplicates(restaurants: Restaurant[]) {
 
     if (existing.has(key)) {
       // throw new Error(`New applicant/restaurant pair already in CRM: ${key}`);
-      console.log(`New applicant/restaurant pair already in CRM (but might be a false positive if restaurant/applicant warning thrown for this EIN above): ${key}`);
+      console.log(
+        `New applicant/restaurant pair already in CRM (but might be a false positive if restaurant/applicant warning thrown for this EIN above): ${key}`
+      );
     }
 
     existing.add(key);
@@ -87,6 +89,7 @@ async function main() {
     path.join(BASE_PATH, 'Raw from Cognito', 'SSNJ Restaurant Addition.xlsx'),
     path.join(BASE_PATH, 'Raw from Cognito', 'SSNJ Restaurant Addition Form.xlsx'),
     path.join(BASE_PATH, 'Raw from Cognito', 'SSNJ Restaurant Addition Review.xlsx'),
+    path.join(BASE_PATH, 'Raw from Staff', 'CRM Restaurant Updates 11.16.21.xlsx'), // mostly raw -- needs leading columns/rows deleted
     min,
     max
   );
