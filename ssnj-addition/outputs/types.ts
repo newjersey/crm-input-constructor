@@ -14,6 +14,12 @@ export enum OwnershipStructures {
   Other = 'Other',
 }
 
+export enum Status {
+  InReview = 506340001,
+  Eligible = 506340002,
+  Ineligible = 506340003,
+}
+
 export type Flag = 'Yes' | '';
 export type YesNo = 'Yes' | 'No';
 export type YesNoNA = 'Yes' | 'No' | 'N/A';
@@ -62,7 +68,7 @@ export interface SSNJRestaurant {
   NegativeImpacts: string;
   ExplainNegativeImpacts: string;
   TotalFTECountfromWR30: NullableNumber;
-  Status: string; // TODO: make a code enum
+  Status: Status;
   Findings: string;
 }
 
