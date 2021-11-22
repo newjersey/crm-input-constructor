@@ -37,7 +37,9 @@ export function getQuarterlyWageData(restaurant: WR30): types.QuarterlyWageData 
 
   const year: number = Math.max(...restaurant.wr30.wageRecords.map(record => record.Year));
   const quarter: number = Math.max(
-    ...restaurant.wr30.wageRecords.filter(record => record.Year === year).map(record => record.Quarter)
+    ...restaurant.wr30.wageRecords
+      .filter(record => record.Year === year)
+      .map(record => record.Quarter)
   );
 
   const fractionalFtes: number = restaurant.wr30.wageRecords

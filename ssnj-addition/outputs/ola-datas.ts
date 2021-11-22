@@ -25,7 +25,7 @@ export function generateOlaDatas(restaurants: RestaurantWithWr30[]): OlaDatas {
   try {
     const olaDatas: OlaDatas = {
       SSNJRestaurants: restaurants.map(restaurant => ({
-        ProductRecordId: restaurant.applicant["Product ID"],
+        ProductRecordId: restaurant.applicant['Product ID'],
         Name: restaurant.form.RestaurantInformation_RestaurantName,
         DoingBusinessAs: restaurant.form.RestaurantInformation_DBA,
         EIN: restaurant.form.RestaurantInformation_EIN,
