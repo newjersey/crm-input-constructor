@@ -7,6 +7,7 @@ import { options, optionsSatisfied, printStartMessage, printUsage } from './opti
 import { generateOlaDatas } from './outputs/ola-datas';
 import { getProductUsers } from './inputs/crm/product-user';
 import { WR30, makeAddWR30Data } from './inputs/staff/wr30';
+import { getQuarterlyWageData } from './outputs/helpers';
 
 type RestaurantWithWr30 = Restaurant & WR30;
 
@@ -107,6 +108,12 @@ async function main() {
   // catch dups
   flagInternalDuplicates(restaurantsWithWr30);
   flagExternalDuplicates(restaurantsWithWr30);
+
+  // double check
+  restaurantsWithWr30.forEach(restaurant => {
+    const fte = getQuarterlyWageData(restaurant).fteCount;
+    console.log(`${restaurant.form.RestaurantInformation_EIN}: ${fte || 'UNKNOWN'}`);
+  });
 
   // stringify
   const olaDatas = generateOlaDatas(restaurantsWithWr30);
