@@ -3,7 +3,7 @@ const chalk = require('chalk');
 import { OlaDatas, Status } from './types';
 import { Restaurant } from '../inputs/restaurants';
 import { WR30 } from '../inputs/staff/wr30';
-import { getQuarterlyWageData } from './helpers';
+import { getQuarterlyWageData, dateFromExcel } from './helpers';
 
 type RestaurantWithWr30 = Restaurant & WR30;
 
@@ -31,6 +31,22 @@ function getStatus(restaurant: Restaurant): Status {
       return Status.Ineligible;
     default:
       throw new Error(`Unexpected status: ${restaurant.manualReview.Eligibility}`);
+  }
+}
+
+function getFindings(restaurant: Restaurant): string {
+  const findings = restaurant.manualReview.Findings;
+  const type = typeof findings;
+
+  switch (type) {
+    case 'number':
+      return dateFromExcel(findings as number).toLocaleDateString();
+    case 'string':
+      return findings as string;
+    case 'undefined':
+      return '';
+    default:
+      throw new Error(`Unexpected findings data type: ${type}`);
   }
 }
 
@@ -68,7 +84,7 @@ export function generateOlaDatas(restaurants: RestaurantWithWr30[]): OlaDatas {
         ExplainNegativeImpacts: restaurant.form.COVID19HarmAttestation_Explanation,
         TotalFTECountfromWR30: getQuarterlyWageData(restaurant).fteCount,
         Status: getStatus(restaurant),
-        Findings: restaurant.manualReview.Findings,
+        Findings: getFindings(restaurant),
       })),
     };
 

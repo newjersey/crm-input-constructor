@@ -1,6 +1,19 @@
 import * as types from './types';
 import { WR30 } from '../inputs/staff/wr30';
 
+const { getJsDateFromExcel } = require('excel-date-to-js');
+const { utcToZonedTime } = require('date-fns-tz');
+
+export function dateFromExcel(excelFloat: number): Date {
+  const excelFloatString: string = excelFloat.toString(10);
+
+  // dumb getJsDateFromExcel API wants a string for some reason
+  const utcDate: Date = getJsDateFromExcel(excelFloatString);
+
+  // dumb getJsDateFromExcel library returns local date as UTC
+  return utcToZonedTime(utcDate, 'UTC');
+}
+
 export function yesNo(test: boolean): types.YesNo {
   return test ? 'Yes' : 'No';
 }

@@ -13,7 +13,7 @@ interface RawManualReview {
   readonly 'DBA (if different)': string;
   readonly EIN: string;
   readonly 'Eligibility Determination': string;
-  readonly Findings: string;
+  readonly Findings: string | number | undefined;
 }
 
 export interface ManualReview extends RawManualReview {
